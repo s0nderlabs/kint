@@ -4,7 +4,9 @@ Epoch plaintext (before gzip, padding and AES-GCM):
     {"v": 1, "tenant": ..., "space": hex, "seq": n, "prev": hex,
      "rows": [wire rows that changed], "deleted": [[tier, category, key], ...],
      "rows_root": hex (merkle root of the FULL state after this epoch),
-     "n_rows": total rows after this epoch, "created_at": iso}
+     "n_rows": total rows after this epoch, "created_at": iso,
+     "snapshot": true (ONLY on a snapshot epoch, whose "rows" are the full state
+     and whose header carries crypto.FLAG_SNAPSHOT; absent otherwise)}
 
 Mirror: what this machine believes the chain last saw: the full row set,
 its leaves, the root, and the head (seq, digest, block, bucket).
@@ -143,10 +145,13 @@ def head_lock(space_hex: str, timeout: float = 30.0):
 # ---------------------------------------------------------------------------
 
 def build_plaintext(tenant: str, space_hex: str, seq: int, prev_hex: str, rows: list[Row],
-                    deleted: list[list[str]], rows_root: bytes, n_rows: int) -> bytes:
+                    deleted: list[list[str]], rows_root: bytes, n_rows: int, snapshot: bool = False) -> bytes:
     doc = {"v": EPOCH_VERSION, "tenant": tenant, "space": space_hex, "seq": seq, "prev": prev_hex,
            "rows": [r.to_wire() for r in rows], "deleted": deleted, "rows_root": rows_root.hex(),
            "n_rows": n_rows, "created_at": now_iso()}
+    if snapshot:
+        # only present on a snapshot epoch, so every ordinary epoch stays byte-identical to v1
+        doc["snapshot"] = True
     return json.dumps(doc, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
 
 
@@ -155,6 +160,7 @@ def parse_plaintext(data: bytes) -> dict[str, Any]:
     if doc.get("v") != EPOCH_VERSION:
         raise ValueError(f"unsupported epoch version {doc.get('v')}")
     doc["rows"] = [Row.from_wire(r) for r in doc.get("rows", [])]
+    doc["snapshot"] = bool(doc.get("snapshot", False))
     return doc
 
 

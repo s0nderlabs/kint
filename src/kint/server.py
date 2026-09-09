@@ -74,7 +74,7 @@ def _client_factory():
     return c
 
 
-def _do_push(reason: str) -> dict[str, Any]:
+def _do_push(reason: str, snapshot: bool = False) -> dict[str, Any]:
     owner = _owner()
     if not owner:
         return {"ok": False, "error": "NOT_CONNECTED", "hint": "call memory_connect"}
@@ -82,7 +82,7 @@ def _do_push(reason: str) -> dict[str, Any]:
         return {"ok": False, "error": "BUSY", "hint": "a push is already running"}
     _state["pushing"] = True
     try:
-        rep = push(owner=owner, tenant=_state["tenant"], db_path=_state["db"], log=_log.info)
+        rep = push(owner=owner, tenant=_state["tenant"], db_path=_state["db"], snapshot=snapshot, log=_log.info)
         _state["first_dirty"] = None
         _state["last_change"] = None
         return {"ok": True, "reason": reason, "pushed": rep.pushed, "changed_rows": rep.changed_rows,
@@ -242,23 +242,26 @@ def build_kint_server():
             return {"ok": False, "error": type(e).__name__, "message": str(e)}
 
     @mcp.tool()
-    def memory_pull(discard_local: bool = False, force_scan: bool = False) -> dict[str, Any]:
+    def memory_pull(discard_local: bool = False, force_scan: bool = False, full: bool = False) -> dict[str, Any]:
         """kint: restore/refresh this machine's Sibyl store from Base.
 
         Checks freshness first (watermark; two RPCs on a cold start), refuses over a fork
         (local unanchored changes while the chain moved) unless discard_local, then walks the
         epochs from the head, verifies each against the chain, decrypts, and replays the rows
-        through Sibyl's own write methods. Reports every epoch it had to skip.
+        through Sibyl's own write methods. Reports every epoch it had to skip. The walk stops
+        at the newest snapshot epoch (its rows are the whole state); `full` walks past snapshots
+        to the first epoch, which is what you want when the older versions matter too.
         """
         owner = _owner()
         if not owner:
             return {"ok": False, "error": "NOT_CONNECTED", "hint": "call memory_connect"}
         try:
             rep = pull(owner=owner, tenant=tenant, db_path=db, client_factory=_client_factory,
-                       discard_local=discard_local, force_scan=force_scan, log=_log.info)
+                       discard_local=discard_local, force_scan=force_scan, full=full, log=_log.info)
             return {"ok": True, "applied": rep.applied, "skipped": rep.skipped, "head_seq": rep.head_seq,
                     "head_digest": rep.head_digest, "head_block": rep.head_block, "rows_total": rep.rows_total,
-                    "root_ok": rep.root_ok, "rpcs_agreed": rep.rpcs_agreed, "message": rep.message}
+                    "root_ok": rep.root_ok, "rpcs_agreed": rep.rpcs_agreed, "unopenable": rep.unopenable,
+                    "backfilled": rep.backfilled, "message": rep.message}
         except Fork as e:
             return {"ok": False, "error": "FORK", "message": str(e)}
         except NotFresh as e:
@@ -270,11 +273,20 @@ def build_kint_server():
             return {"ok": False, "error": type(e).__name__, "message": str(e)}
 
     @mcp.tool()
-    def memory_push() -> dict[str, Any]:
+    def memory_push(snapshot: bool = False) -> dict[str, Any]:
         """kint: anchor every unanchored change now (diff against the last anchored epoch,
         compress, pad to a size bucket, encrypt to the wallet, one Base transaction per epoch
-        from this machine's session key)."""
-        return _do_push("tool")
+        from this machine's session key).
+
+        With `snapshot`, anchor ONE epoch carrying the whole state instead of the diff (the
+        same thing `kint compact` does), even when nothing changed: a restore on a new machine
+        can then stop at that epoch instead of replaying the whole history.
+        """
+        return _do_push("tool", snapshot=snapshot)
+
+    # There is deliberately no memory_rekey tool. Rotating the data key needs the wallet
+    # signature or the vault passphrase, and those never travel through an agent chat:
+    # `kint rekey` reads them on stdin in the human's own terminal.
 
     @mcp.tool()
     def memory_verify(query: str, limit: int = 5) -> dict[str, Any]:

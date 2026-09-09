@@ -1,9 +1,10 @@
 """kint: the thin CLI over the same functions the MCP server exposes.
 
 Only the commands that need a shell: the connect pipe (a signature on stdin),
-the session key, push/pull/verify/status/doctor for SDK-direct harnesses such
-as Hermes, and `kint setup` to point Claude Code, Codex, Hermes and OpenClaw
-at kint-server instead of sibyl-memory-mcp.
+the key rotation (same pipe, same secrecy rules), the session key,
+push/pull/compact/verify/status/doctor for SDK-direct harnesses such as Hermes,
+and `kint setup` to point Claude Code, Codex, Hermes and OpenClaw at
+kint-server instead of sibyl-memory-mcp.
 """
 
 from __future__ import annotations
@@ -21,7 +22,7 @@ from pathlib import Path
 from . import crypto, keys, paths, store
 from .chain import Anchor, authorization_typed_data, sign_authorization
 from .connect import (ConnectError, connect_eoa, connect_recovery, connect_smart_account, doctor,
-                      read_secret, session_key_info)
+                      read_secret, rekey, session_key_info)
 from .epoch import Mirror
 from .push import ChainMoved, KeyExpired, PushError, push, unanchored_changes
 from .pull import Fork, NotFresh, PullError, pull
@@ -75,9 +76,11 @@ def cmd_connect(args):
             src = args.signature or args.signature_file
             if not src:
                 _err("give the derive signature with --signature - (stdin) or --signature-file PATH; never on argv")
+            if args.passphrase_stdin and args.signature == "-":
+                _err("--passphrase-stdin and --signature - cannot share stdin: use --passphrase-prompt, or --signature-file")
             sig = crypto.hex_signature(read_secret(src, "signature"))
             pw = None
-            if args.passphrase_stdin and args.signature != "-":
+            if args.passphrase_stdin:
                 pw = read_secret("-", "passphrase")
             elif args.passphrase_prompt:
                 pw = getpass.getpass("vault passphrase (salts the wallet key): ")
@@ -199,6 +202,70 @@ def cmd_push(args):
               f"del {e['deleted']} cost {e['cost_wei'] / 1e18:.8f} ETH")
 
 
+def cmd_compact(args):
+    """One snapshot epoch carrying the whole state, so a cold start stops there."""
+    tenant = _tenant(args)
+    owner = _owner(args, tenant)
+    try:
+        rep = push(owner=owner, tenant=tenant, db_path=_db(args), dry_run=args.dry_run,
+                   confirmations=args.confirmations, snapshot=True)
+    except KeyExpired as e:
+        _err(str(e), 3)
+    except ChainMoved as e:
+        _err(str(e), 4)
+    except PushError as e:
+        _err(str(e), 5)
+    except keys.KeyError_ as e:
+        _err(str(e), 3)
+    print(rep.message)
+    for e in rep.epochs:
+        print(f"  epoch {e['seq']}: tx {e['tx']} block {e['block']} bucket {e['bucket']} B rows {e['rows']} "
+              f"del {e['deleted']} cost {e['cost_wei'] / 1e18:.8f} ETH")
+
+
+def cmd_rekey(args):
+    tenant = _tenant(args)
+    owner = _owner(args, tenant)
+    sig = pw = sa = add = None
+    src = args.signature or args.signature_file
+    if not src and not args.smart_account:
+        _err("give the key(s) that open the vault: --signature - (stdin) or --signature-file PATH, and/or "
+             "--smart-account; never on argv")
+    if args.passphrase_stdin and args.signature == "-":
+        _err("--passphrase-stdin and --signature - cannot share stdin: use --passphrase-prompt, or --signature-file")
+    try:
+        if src:
+            sig = crypto.hex_signature(read_secret(src, "signature"))
+            if args.passphrase_stdin:
+                pw = read_secret("-", "passphrase")
+            elif args.passphrase_prompt:
+                pw = getpass.getpass("vault passphrase (salts the wallet key): ")
+        if args.smart_account:
+            # --passphrase-stdin feeds one secret: the salt when a signature is given, else this one
+            sa = read_secret("-", "passphrase") if (args.passphrase_stdin and not src) else getpass.getpass("vault passphrase: ")
+        if args.add_passphrase:
+            add = getpass.getpass("extra passphrase wrap (empty to skip): ") or None
+        r = rekey(owner, tenant, signature=sig, passphrase=pw, smart_account_passphrase=sa,
+                  extra_passphrase=add, drop_missing=args.drop_missing, db_path=_db(args),
+                  confirmations=args.confirmations)
+    except (ConnectError, crypto.KintCryptoError) as e:
+        _err(str(e))
+    except KeyExpired as e:
+        _err(str(e), 3)
+    except ChainMoved as e:
+        _err(str(e), 4)
+    except PushError as e:
+        _err(str(e), 5)
+    except keys.KeyError_ as e:
+        _err(str(e), 3)
+    print(f"rekeyed: data key {r.old_dek_id} -> {r.new_dek_id}")
+    print(f"snapshot epoch {r.seq} anchored, tx {r.tx}")
+    print(f"{r.wraps_carried} key(s) carried over"
+          + (f"; dropped {', '.join(r.dropped_kinds)}" if r.dropped_kinds else ""))
+    print(f"new recovery code written to {paths.recovery_path(crypto.space_id(tenant).hex())}")
+    print("the old recovery code no longer opens this vault; copy the new one somewhere that is not this machine")
+
+
 def cmd_pull(args):
     tenant = _tenant(args)
     owner = _owner(args, tenant)
@@ -209,7 +276,7 @@ def cmd_pull(args):
 
     try:
         rep = pull(owner=owner, tenant=tenant, db_path=db, client_factory=factory,
-                   discard_local=args.discard_local, force_scan=args.force_scan)
+                   discard_local=args.discard_local, force_scan=args.force_scan, full=args.full)
     except Fork as e:
         _err(str(e), 4)
     except NotFresh as e:
@@ -223,6 +290,10 @@ def cmd_pull(args):
         print(f"cold start: two RPCs agreed on the head: {rep.rpcs_agreed}")
     for s in rep.skipped:
         print(f"  SKIPPED epoch {s.get('seq')} block {s.get('block')}: {s.get('reason')}")
+    for u in rep.unopenable:
+        print(f"  CLOSED epoch {u.get('seq')} block {u.get('block')}: {u.get('reason')}")
+    if rep.backfilled:
+        print(f"  {rep.backfilled} older epoch(s) cached for history")
 
 
 def cmd_verify(args):
@@ -421,10 +492,33 @@ def main(argv=None) -> None:
     s.add_argument("--confirmations", type=int, default=2)
     s.set_defaults(fn=cmd_push)
 
+    s = sub.add_parser("compact", help="anchor ONE snapshot epoch with the whole state (a cold start stops there)")
+    s.add_argument("--owner")
+    s.add_argument("--dry-run", action="store_true")
+    s.add_argument("--confirmations", type=int, default=2)
+    s.set_defaults(fn=cmd_compact)
+
+    s = sub.add_parser("rekey", help="rotate the data key: new key, new wraps, one snapshot epoch, a new recovery code")
+    s.add_argument("--owner")
+    s.add_argument("--signature", help="'-' reads the 65-byte hex signature from stdin")
+    s.add_argument("--signature-file", help="file read then unlinked")
+    s.add_argument("--smart-account", action="store_true",
+                   help="carry over the vault passphrase wrap (prompted); combine with --signature to carry both")
+    s.add_argument("--passphrase-stdin", action="store_true",
+                   help="read ONE passphrase from stdin: the salt when a signature is given, else the vault passphrase")
+    s.add_argument("--passphrase-prompt", action="store_true", help="EOA mode: the passphrase that salts the wallet key")
+    s.add_argument("--add-passphrase", action="store_true", help="also carry over the extra passphrase wrap")
+    s.add_argument("--drop-missing", action="store_true",
+                   help="rotate even though a key that opens the vault today was not supplied (it stops opening new epochs)")
+    s.add_argument("--confirmations", type=int, default=2)
+    s.set_defaults(fn=cmd_rekey)
+
     s = sub.add_parser("pull", help="restore or refresh the store from Base")
     s.add_argument("--owner")
     s.add_argument("--discard-local", action="store_true", help="move the local store aside and restore from the chain")
     s.add_argument("--force-scan", action="store_true")
+    s.add_argument("--full", action="store_true",
+                   help="walk past snapshot epochs to the first epoch (the whole history, not just the current state)")
     s.set_defaults(fn=cmd_pull)
 
     s = sub.add_parser("verify", help="search through Sibyl, verify the hits against Base, decide")

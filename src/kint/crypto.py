@@ -79,6 +79,7 @@ KEK_KIND_SMART_ACCOUNT = 0x04  # reserved: EOA-owned smart account inner signatu
 
 # Header flags
 FLAG_SIGNATURE_WRAP_PASSPHRASE_SALTED = 0x01
+FLAG_SNAPSHOT = 0x02  # this epoch carries the FULL row set; a cold start may stop here
 
 ENVELOPE_VERSION = 1
 

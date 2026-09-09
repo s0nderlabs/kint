@@ -6,4 +6,4 @@ by wallet connect, and verifies every recalled row against the chain before
 the agent acts on it.
 """
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"

@@ -80,12 +80,17 @@ Header, big-endian, byte-exact:
 version(1)=0x01 | flags(1) | gcm_nonce(12) | rows_root(32) | dek_id(8) | lenBucket(4) | n_wraps(1)
 wrap × n_wraps: kek_kind(1) | kek_tag(16) | wrap_nonce(12) | wrapped_dek(48)
 ```
+- `flags` bits: `0x02` FLAG_SNAPSHOT, this epoch's `rows` are the FULL state rather than a diff.
+  `0x01` is defined (signature wrap salted with a passphrase) but NO kint writer sets it, so a
+  reader must never branch on it: a salted and an unsalted signature wrap look the same in the
+  header. Derive the unsalted KEK first; if no wrap carries its `kek_tag`, ask for the salt
+  passphrase and derive again. Unknown bits are reserved: ignore them, never refuse on them.
 - `wrapped_dek = AES-256-GCM(KEK, wrap_nonce, DEK, aad = "kint-wrap-v1" || kek_kind || kek_tag)` (32 + 16 tag).
 - `dek_id = HMAC-SHA256(DEK, "kint-dek-id-v1")[:8]`.
 - `aad = keccak256(abi.encode(uint256 chainId = 8453, address owner, bytes32 space, uint64 seq, bytes32 prev, uint32 lenBucket, bytes32 rows_root, bytes8 dek_id))`.
 - `padded = uint32(len(gz)) || gz || zeros` up to `lenBucket` (one of 4096, 8192, 16384, 32768, 65536, 98304). The bucket is the only public length.
 - `gz = gzip(plaintext, level 9, mtime 0)`.
-- Plaintext is JSON: `{"v":1,"tenant","space","seq","prev","rows":[...],"deleted":[[tier,category,key]...],"rows_root","n_rows","created_at"}` where each row is `{tier,key,category,status,body,meta,ts,evaluated,acted,forward,extra}` with `body`/`meta`/journal fields as the EXACT stored TEXT (strings), never re-serialised.
+- Plaintext is JSON: `{"v":1,"tenant","space","seq","prev","rows":[...],"deleted":[[tier,category,key]...],"rows_root","n_rows","created_at"}`, plus `"snapshot":true` as the LAST key on a snapshot epoch and absent on every other one, where each row is `{tier,key,category,status,body,meta,ts,evaluated,acted,forward,extra}` with `body`/`meta`/journal fields as the EXACT stored TEXT (strings), never re-serialised.
 - `rows_root` is the merkle root over the leaves of the FULL state after the epoch, leaves sorted by canonical id `tier\0category\0key`; pairs hashed with keccak256(left || right), an odd last node carried up unchanged; empty state root = keccak256("kint-empty-v1"). Leaf = keccak256("kint-leaf-v1" || lp(tier) || lp(category) || lp(key) || lp(status) || lp(body) || lp(meta)) with `lp(x) = uint32(len) || utf8(x)` and `lp(null) = 0xFFFFFFFF`. Journal leaf: `"journal" || null || key || null || lp(ts) || lp(evaluated) || lp(acted) || lp(forward) || lp(extra)` where key = keccak256("kint-journal-key-v1" || lp(ts) || lp(evaluated) || lp(acted) || lp(forward) || lp(extra)) as hex.
 
 ## 6. Reading the chain (the viewer)
@@ -93,6 +98,20 @@ wrap × n_wraps: kek_kind(1) | kek_tag(16) | wrap_nonce(12) | wrapped_dek(48)
 1. `head(owner, space)` -> `{digest, seq, blockNumber}`; `space = keccak256("kint-space-v1" || tenant)`.
 2. `eth_getLogs` at exactly `blockNumber` for `Epoch(owner indexed, space indexed, writer indexed, seq, prev, digest, prevBlock)`; take the event with that `seq`; fetch the transaction, decode `push(owner, space, prev, ct)` from its input; require `keccak256(ct) == digest`; then walk to `prevBlock` and repeat until `prevBlock == 0`.
 3. For each epoch, find your wrap by `kek_tag`, unwrap the DEK, decrypt with the AAD above (`prev` is the previous epoch's digest, zero for seq 1), gunzip, apply rows and deletions in seq order. The row's block height is an UPPER bound ("existed no later than block N"); never show a wall-clock "as of".
+4. **Snapshots.** An epoch whose header carries `FLAG_SNAPSHOT` (0x02) holds the whole state, so a
+   viewer that only needs the CURRENT memory may stop walking there: it is the epoch that says
+   what everything is, and its `rows_root` is the root of exactly its own rows. Walk past it only
+   when you are showing the timeline. When a snapshot is applied, rows the viewer already holds
+   and the snapshot does not are gone, not merely unchanged. A snapshot's `deleted` list names
+   the rows deleted since the previous epoch; they are already absent from its `rows`, so it is
+   informational for the state (a timeline uses it to show when a row disappeared) and never
+   needed to reach `rows_root`.
+5. **The flags are not covered by the AAD**, so a header flag on its own is not authenticated. A
+   reader MUST check that `FLAG_SNAPSHOT` and the plaintext `"snapshot"` key agree, and treat an
+   epoch where they disagree as unreadable (kint's pull stops there and says so by name).
+6. The `dek_id` in a header is what a rotation changes (`kint rekey`): epochs before the rotation
+   are sealed under the old data key. A viewer holding only the current key stops at the newest
+   epoch it can open, which after a rotation is the snapshot the rotation wrote.
 
 ## 7. Handoff from the page to the local kint
 

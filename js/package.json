@@ -1,0 +1,26 @@
+{
+  "name": "@s0nderlabs/kint-core",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "description": "Browser-side decrypt path for kint: key derivation, envelope, canonical leaves and the EpochAnchor reads.",
+  "license": "MIT",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "bun test",
+    "typecheck": "tsc --noEmit",
+    "open-epoch": "bun run scripts/open-epoch.ts"
+  },
+  "dependencies": {
+    "@noble/hashes": "2.4.0",
+    "fflate": "0.8.3",
+    "viem": "2.56.3"
+  },
+  "devDependencies": {
+    "@types/bun": "1.4.2",
+    "typescript": "5.9.3"
+  }
+}

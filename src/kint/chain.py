@@ -190,8 +190,12 @@ class Anchor:
         return [self._parse_epoch_log(l) for l in logs]
 
     def walk_epochs(self, owner: str, space: bytes, *, stop_seq: int = 0, head: Head | None = None,
-                    max_epochs: int = 100000) -> list[EpochEvent]:
-        """Head to genesis (or to stop_seq exclusive), newest first, via prevBlock."""
+                    max_epochs: int = 100000, stop_when=None) -> list[EpochEvent]:
+        """Head to genesis (or to stop_seq exclusive), newest first, via prevBlock.
+
+        `stop_when(ev) -> bool` is evaluated AFTER the event is appended: True ends the
+        walk with that event included (a cold start stops at the newest snapshot epoch).
+        """
         head = head or self.head(owner, space)
         out: list[EpochEvent] = []
         if head.seq == 0:
@@ -204,6 +208,8 @@ class Anchor:
                 raise ChainError(f"no Epoch event for seq {want_seq} at block {block}; the RPC may be pruned or lying")
             e = evs[0]
             out.append(e)
+            if stop_when is not None and stop_when(e):
+                break
             block = e.prev_block
             want_seq -= 1
         return out

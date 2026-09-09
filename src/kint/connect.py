@@ -18,6 +18,11 @@ On a fresh vault the DEK is generated here, wrapped, and the recovery code is
 written to ~/.kint/RECOVERY-<space>.txt; push refuses until that file exists.
 On a machine that restores an existing vault, the DEK is unwrapped from the
 head epoch's own header on the chain.
+
+`rekey` rotates the data key itself: a new DEK, new wraps under the same keys
+(every one of them has to be supplied, a wrap needs its KEK), one snapshot
+epoch sealed under the new key, and a new recovery code. It is a CLI command,
+never an MCP tool: the secrets that open a vault do not travel through a chat.
 """
 
 from __future__ import annotations
@@ -34,12 +39,25 @@ from eth_utils import to_checksum_address
 
 from . import crypto, keys, paths
 from .chain import Anchor, ChainError, redact
-from .epoch import Mirror
-from .push import load_wraps, save_wraps
+from .epoch import Mirror, head_lock
+from .push import _push_locked, load_wraps, save_wraps
 
 
 class ConnectError(Exception):
     pass
+
+
+class ChainUnreadable(ConnectError):
+    """The chain could not be read (RPC down, rate limited, pruned). Never a security verdict."""
+
+
+def _write_recovery(owner: str, space_hex: str, dek: bytes) -> Path:
+    """The one place the recovery file is written (fresh vault, `kint recovery-code`, rekey)."""
+    p = paths.recovery_path(space_hex)
+    paths.write_private(p, (f"kint recovery code for owner {owner}, space {space_hex}\n"
+                            f"Keep this somewhere that is not this machine. It opens the vault without the wallet.\n\n"
+                            f"{crypto.recovery_code(dek)}\n").encode())
+    return p
 
 
 def read_secret(source: str, what: str = "signature") -> str:
@@ -78,13 +96,18 @@ def _chain_head_header(owner: str, space: bytes, anchor: Anchor | None) -> crypt
         anchor = anchor or Anchor()
         head = anchor.head(owner, space)
     except Exception as e:  # noqa: BLE001
-        raise ConnectError(f"cannot read the chain head: {e}") from e
+        raise ChainUnreadable(f"cannot read the chain head: {e}") from e
     if head.seq == 0:
         return None
-    evs = [e for e in anchor.epoch_at_block(owner, space, head.block_number) if e.seq == head.seq]
-    if not evs:
-        raise ConnectError("the head says there are epochs but none was found at its block")
-    _, _, _, blob = anchor.epoch_ciphertext(evs[0].tx_hash)
+    try:
+        evs = [e for e in anchor.epoch_at_block(owner, space, head.block_number) if e.seq == head.seq]
+        if not evs:
+            raise ChainUnreadable("the head says there are epochs but none was found at its block")
+        _, _, _, blob = anchor.epoch_ciphertext(evs[0].tx_hash)
+    except ChainUnreadable:
+        raise
+    except Exception as e:  # noqa: BLE001
+        raise ChainUnreadable(f"cannot read the head epoch: {e}") from e
     if crypto.keccak(blob) != evs[0].digest:
         raise ConnectError("head ciphertext digest does not match the Epoch event")
     return crypto.peek_header(blob)
@@ -99,10 +122,7 @@ def _finish(owner: str, tenant: str, space: bytes, kek: bytes | None, tag: bytes
         raise ConnectError("no data key could be obtained")
     if fresh:
         recovery = crypto.recovery_code(dek)
-        paths.write_private(paths.recovery_path(space_hex),
-                            (f"kint recovery code for owner {owner}, space {space_hex}\n"
-                             f"Keep this somewhere that is not this machine. It opens the vault without the wallet.\n\n"
-                             f"{recovery}\n").encode())
+        _write_recovery(owner, space_hex, dek)
     if extra_passphrase and kind != crypto.KEK_KIND_PASSPHRASE:
         pk, _ = crypto.derive_kek_from_passphrase(extra_passphrase, owner, space)
         if crypto.find_wrap(wraps, pk) is None:
@@ -122,13 +142,32 @@ def _finish(owner: str, tenant: str, space: bytes, kek: bytes | None, tag: bytes
 
 
 def _dek_for(owner: str, space: bytes, kek: bytes, kind: int, anchor: Anchor | None, allow_fresh: bool):
-    """Find the DEK: local wraps, then the chain head header, else a fresh vault."""
+    """Find the DEK: local wraps, then the chain head header, else a fresh vault.
+
+    The local wraps only win while they hold the CURRENT data key: after a `kint rekey` on another
+    machine they hold a stale one, which opens nothing sealed after the rotation. When the chain
+    can be read, the head epoch's own header decides. When it cannot, the local key is the best
+    this machine has and connect stays offline-usable.
+    """
     space_hex = space.hex()
     local = load_wraps(space_hex)
     w = crypto.find_wrap(local, kek) if local else None
-    if w is not None:
-        return crypto.unwrap_dek(w, kek), local, False, "local wraps"
-    header = _chain_head_header(owner, space, anchor) if os.environ.get("KINT_OFFLINE") != "1" else None
+    header = None
+    if os.environ.get("KINT_OFFLINE") != "1":
+        try:
+            header = _chain_head_header(owner, space, anchor)
+        except ChainUnreadable:
+            if w is None:
+                raise
+            header = None   # cannot ask the chain; fall back to the key this machine already has
+    local_dek = crypto.unwrap_dek(w, kek) if w is not None else None
+    if local_dek is not None and (header is None or crypto.dek_id(local_dek) == header.dek_id):
+        return local_dek, local, False, "local wraps"
+    if w is not None and header is not None and crypto.find_wrap(header.wraps, kek) is None:
+        raise ConnectError(
+            f"the data key of this vault was rotated and this key (tag {crypto.kek_tag(kek).hex()[:8]}) was not "
+            "carried over: it opens the epochs sealed before the rotation and nothing after it. Connect with a key "
+            "that was carried over, or with the recovery code written by that rotation.")
     if header is not None:
         w = crypto.find_wrap(header.wraps, kek)
         if w is None:
@@ -174,7 +213,12 @@ def connect_recovery(owner: str, tenant: str, code: str, *, anchor: Anchor | Non
     want = crypto.dek_id(dek)
     # The code's own checksum only proves it was typed correctly. Bind it to THIS vault before
     # caching it: the chain head header, else a cached epoch header, else the cached data key.
-    header = _chain_head_header(owner, space, anchor) if os.environ.get("KINT_OFFLINE") != "1" else None
+    header = None
+    if os.environ.get("KINT_OFFLINE") != "1":
+        try:
+            header = _chain_head_header(owner, space, anchor)
+        except ChainUnreadable:
+            header = None   # the offline checks below still bind the code to this vault
     if header is not None:
         if header.dek_id != want:
             raise ConnectError("this recovery code does not belong to the vault anchored under this owner")
@@ -199,6 +243,128 @@ def connect_recovery(owner: str, tenant: str, code: str, *, anchor: Anchor | Non
         if not wraps:
             raise ConnectError("no key wraps on this machine and none on the chain: connect with the wallet or passphrase")
     return _finish(owner, tenant, space, None, None, 0, account_kind, dek, wraps, False, "recovery code", None, anchor)
+
+
+# ---------------------------------------------------------------------------
+# Key rotation
+# ---------------------------------------------------------------------------
+
+_KIND_NAMES = {
+    crypto.KEK_KIND_SIGNATURE: "wallet signature",
+    crypto.KEK_KIND_PASSPHRASE: "passphrase",
+    crypto.KEK_KIND_PRF: "webauthn prf",
+    crypto.KEK_KIND_SMART_ACCOUNT: "smart account",
+}
+
+
+def _kind_name(kind: int) -> str:
+    return _KIND_NAMES.get(kind, f"kind 0x{kind:02x}")
+
+
+@dataclass
+class RekeyResult:
+    old_dek_id: str
+    new_dek_id: str
+    seq: int
+    tx: str | None
+    recovery_code: str
+    dropped_kinds: list[str]
+    wraps_carried: int
+
+
+def rekey(owner: str, tenant: str, *, signature: bytes | None = None, passphrase: str | None = None,
+          smart_account_passphrase: str | None = None, extra_passphrase: str | None = None,
+          drop_missing: bool = False, anchor: Anchor | None = None, db_path,
+          confirmations: int = 2, log=print) -> RekeyResult:
+    """Rotate the data key: a new DEK, new wraps under the SAME keys, one snapshot epoch, a new
+    recovery code.
+
+    Every key that is to keep opening the vault must be supplied here, because a wrap can only be
+    made by whoever holds its KEK. Nothing local changes until the snapshot epoch is on the chain:
+    if the push fails, this machine still opens the vault with the key it had.
+
+    Epochs sealed before the rotation stay readable to whoever held the old key. That is a
+    property of a public ledger, not something a rotation can undo.
+    """
+    owner = to_checksum_address(owner)
+    space = crypto.space_id(tenant)
+    space_hex = space.hex()
+    enrol = keys.Enrolment.load(space_hex)
+    if enrol is None:
+        raise ConnectError("this machine is not connected to the vault: `kint connect` first "
+                           "(rekey rotates the key of a vault this machine can already open)")
+    with head_lock(space_hex):
+        return _rekey_locked(owner, tenant, space, enrol, signature=signature, passphrase=passphrase,
+                             smart_account_passphrase=smart_account_passphrase, extra_passphrase=extra_passphrase,
+                             drop_missing=drop_missing, anchor=anchor, db_path=db_path,
+                             confirmations=confirmations, log=log)
+
+
+def _rekey_locked(owner: str, tenant: str, space: bytes, enrol, *, signature, passphrase, smart_account_passphrase,
+                  extra_passphrase, drop_missing, anchor, db_path, confirmations, log) -> RekeyResult:
+    space_hex = space.hex()
+    header = _chain_head_header(owner, space, anchor) if os.environ.get("KINT_OFFLINE") != "1" else None
+    # The chain head header is the set of keys a NEW machine sees, so it decides what must be
+    # carried over; the local file only speaks when the chain has no epochs yet.
+    current = list(header.wraps) if header is not None else load_wraps(space_hex)
+    if not current:
+        raise ConnectError("no key wraps for this space on this machine and none on the chain: connect first")
+
+    supplied: list[tuple[int, bytes, str]] = []   # (kind, kek, how it was given)
+    if signature is not None:
+        kek, _ = crypto.derive_kek_from_signature(signature, owner, space, passphrase=passphrase)
+        supplied.append((crypto.KEK_KIND_SIGNATURE, kek, "the wallet signature"))
+    if smart_account_passphrase is not None:
+        kek, _ = crypto.derive_kek_from_passphrase(smart_account_passphrase, owner, space)
+        supplied.append((crypto.KEK_KIND_PASSPHRASE, kek, "the vault passphrase"))
+    if extra_passphrase is not None:
+        kek, _ = crypto.derive_kek_from_passphrase(extra_passphrase, owner, space)
+        supplied.append((crypto.KEK_KIND_PASSPHRASE, kek, "the extra passphrase"))
+    if not supplied:
+        raise ConnectError("rekey needs at least one key to carry over: give the wallet signature "
+                           "(--signature -), the vault passphrase (--smart-account) or the extra "
+                           "passphrase (--add-passphrase)")
+    for _kind, kek, how in supplied:
+        if crypto.find_wrap(current, kek) is None:
+            raise ConnectError(f"this key does not open the current vault (tag {crypto.kek_tag(kek).hex()[:8]}, "
+                               f"from {how}): rekey re-wraps the keys that work today, it cannot add a key that "
+                               "never did. Check the wallet, the passphrase and the tenant.")
+    dek = crypto.unwrap_dek(crypto.find_wrap(current, supplied[0][1]), supplied[0][1])
+    if header is not None and crypto.dek_id(dek) != header.dek_id:
+        raise ConnectError("the wraps on this machine open a different data key than the one the head epoch "
+                           "was sealed with: `kint connect` again (or `kint pull`) before rotating")
+
+    by_tag: dict[str, tuple[int, bytes]] = {}
+    for kind, kek, _how in supplied:
+        by_tag.setdefault(crypto.kek_tag(kek).hex(), (kind, kek))
+    missing = [w for w in current if w.tag.hex() not in by_tag]
+    dropped_kinds = [f"{_kind_name(w.kind)} (tag {w.tag.hex()[:8]})" for w in missing]
+    if missing and not drop_missing:
+        raise ConnectError(
+            f"rekey would drop {len(missing)} key(s) that open this vault today: {', '.join(dropped_kinds)}. "
+            "Supply them in the same command, or pass --drop-missing to rotate without them (they keep opening "
+            "the epochs sealed before the rotation and open nothing after it).")
+
+    new_dek = crypto.new_dek()
+    new_wraps = [crypto.wrap_dek(new_dek, by_tag[w.tag.hex()][1], w.kind) for w in current if w.tag.hex() in by_tag]
+    log(f"rekey: {len(new_wraps)} key(s) carried over"
+        + (f", dropping {', '.join(dropped_kinds)}" if dropped_kinds else "")
+        + "; anchoring one snapshot epoch under the new data key")
+    rep = _push_locked(owner=owner, tenant=tenant, db_path=db_path, anchor=anchor, dek=new_dek, wraps=new_wraps,
+                       snapshot=True, confirmations=confirmations, log=log)
+
+    # only now, with the new key on the chain, does anything on this machine change; the head
+    # lock is still held, so no other process on this machine can seal under the retired key
+    save_wraps(space_hex, new_wraps)
+    keys.cache_dek(space_hex, new_dek)
+    _write_recovery(owner, space_hex, new_dek)
+    enrol.kek_tags = [w.tag.hex() for w in new_wraps]
+    enrol.wrap_kinds = [w.kind for w in new_wraps]
+    enrol.save()
+    return RekeyResult(old_dek_id=crypto.dek_id(dek).hex(), new_dek_id=crypto.dek_id(new_dek).hex(),
+                       seq=rep.head_seq, tx=(rep.epochs[-1]["tx"] if rep.epochs else None),
+                       recovery_code=crypto.recovery_code(new_dek), dropped_kinds=dropped_kinds,
+                       wraps_carried=len(new_wraps))
 
 
 # ---------------------------------------------------------------------------
@@ -305,9 +471,14 @@ def write_recovery_file(tenant: str) -> Path:
     if dek is None:
         raise ConnectError("no data key cached on this machine: kint connect first")
     enrol = keys.Enrolment.load(space_hex)
-    owner = enrol.owner if enrol else "?"
-    p = paths.recovery_path(space_hex)
-    paths.write_private(p, (f"kint recovery code for owner {owner}, space {space_hex}\n"
-                            f"Keep this somewhere that is not this machine. It opens the vault without the wallet.\n\n"
-                            f"{crypto.recovery_code(dek)}\n").encode())
-    return p
+    if enrol is not None and os.environ.get("KINT_OFFLINE") != "1":
+        # a key rotated on another machine leaves this cache holding a retired key; a recovery
+        # code for it would open nothing sealed since
+        try:
+            header = _chain_head_header(enrol.owner, bytes.fromhex(space_hex), None)
+        except ChainUnreadable:
+            header = None
+        if header is not None and crypto.dek_id(dek) != header.dek_id:
+            raise ConnectError("the data key cached on this machine is not the one the head epoch was sealed with "
+                               "(the key was rotated elsewhere): `kint connect` again, then write the recovery code")
+    return _write_recovery(enrol.owner if enrol else "?", space_hex, dek)

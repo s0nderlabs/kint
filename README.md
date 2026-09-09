@@ -58,6 +58,11 @@ header), then `kint pull`. A cold start reads the head from two different RPC op
 agent. `kint doctor` checks every moving part. `kint status` shows the head, the mirror, the
 unanchored change count and the cap accounting: kint's own state is volunteered into the same
 5 MiB free-tier cap Sibyl enforces, through Sibyl's public `CapGate(db_size_fn=...)` hook.
+`kint compact` anchors one snapshot epoch holding the whole state, which is where the next cold
+start stops (`kint pull --full` walks past it for the older versions). `kint rekey` rotates the
+data key itself: a new key, new wraps under the same wallet or passphrase, one snapshot epoch
+under the new key, a new recovery code. Both are CLI commands, because the secrets that open a
+vault are typed in a terminal, never in an agent chat.
 
 ## Where memory is written and read (the critical path)
 
@@ -78,7 +83,10 @@ unanchored change count and the cap accounting: kint's own state is volunteered 
 
 `memory_status`, `memory_connect`, `memory_pull`, `memory_push`, `memory_verify`, `memory_history`.
 Every kint operation is a tool; the human does two things ever: sign once per machine (or type
-the vault passphrase) and put a few cents on a session key.
+the vault passphrase) and put a few cents on a session key. `memory_push(snapshot=true)` anchors
+the whole state as one snapshot epoch instead of the diff, and `memory_pull(full=true)` walks past
+snapshots. Rotating the data key is deliberately NOT a tool: `kint rekey` needs the wallet
+signature or the vault passphrase, and those never travel through a chat.
 
 ## Honest limits
 
@@ -94,6 +102,13 @@ the vault passphrase) and put a few cents on a session key.
   own ciphertext cache per epoch.
 - A phished derive signature is a permanent key. The EIP-712 message says so in the one field
   every wallet renders. kint never accepts that signature as a login and never sends it anywhere.
+- A space has one data key at a time. `kint rekey` rotates it: a new key, new wraps, one snapshot
+  epoch under the new key, a new recovery code. Epochs sealed before the rotation stay readable to
+  whoever held the old key; that is a property of any ledger, not something a rotation can undo.
+- A cold start stops at the newest snapshot epoch (`kint compact` writes one), so restore cost is
+  bounded by the size of the memory, not its history. `kint pull --full` walks past snapshots for
+  the older versions, as far back as the newest key rotation: epochs sealed under a retired key stay
+  closed to a machine that only holds the current one.
 
 ## Prior work
 
@@ -117,9 +132,14 @@ mainnet and shown in the demo.
 
 ```
 uv sync
-env -u PYTHONPATH .venv/bin/python -m pytest -q      # 30 tests: vectors, fidelity, stdio MCP, anvil lifecycle, review regressions
+env -u PYTHONPATH .venv/bin/python -m pytest -q      # 40 tests: vectors, fidelity, stdio MCP, anvil lifecycle, snapshots and rekey, review regressions
 cd contracts && forge test                            # 29 tests incl. a Base mainnet fork
 scripts/e2e_cli_anvil.sh                              # the CLI, the way a human runs it
+scripts/e2e_cli_snapshot_anvil.sh                     # compact, rekey, a cold start and pull --full through the CLI
+cd js && bun install && bun test                      # the browser decrypt path against Python-generated vectors
 ```
+
+`js/` is `@s0nderlabs/kint-core`, the browser side (read epochs off Base, open them locally, nothing
+decrypted leaves the page); `scripts/gen_vectors.py` regenerates its test vectors from the Python.
 
 MIT. Built for the Sibyl Labs Hackathon, September 2026.

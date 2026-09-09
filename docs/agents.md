@@ -32,6 +32,21 @@ cast wallet sign --data --from-file kint-canonical.json --ledger | kint connect 
 Pin the demo tenant for every harness with `kint setup <target> --env KINT_TENANT=kint-demo`;
 without it kint uses the tenant from Sibyl's `credentials.json` (or Sibyl's default).
 
+Three commands beyond the daily loop:
+
+```
+kint compact                         # ONE snapshot epoch holding the whole state; the next cold start stops there
+kint pull --full                     # walk past snapshots when the older versions matter on this machine
+cast wallet sign --data --from-file kint-canonical.json --ledger | kint rekey --signature -
+                                     # rotate the data key: new key, new wraps, one snapshot epoch, a new recovery code
+```
+
+`kint rekey` needs every key that is to keep opening the vault (a wrap can only be made by whoever
+holds its key), so pass `--smart-account` or `--add-passphrase` alongside the signature when the
+vault has those wraps; it refuses and names any key it would otherwise drop, and `--drop-missing`
+is how you say you meant it. There is deliberately no `memory_rekey` tool: those secrets are typed
+in a terminal, never in an agent chat.
+
 ## Claude Code
 
 `kint setup claude` runs
@@ -110,7 +125,10 @@ a chain-polling plugin (`string`) made every CLI invocation take minutes; disabl
 Same as a laptop: `kint session-key create` (passphrase from `KINT_SESSION_PASSPHRASE`, no
 Keychain), authorize it from the owner, fund it, `kint connect` once over SSH with a long TTL
 (`KINT_KEY_TTL=30d`), then the agent pulls on start and pushes when quiet. A compromised VPS can
-read that space (Sibyl's `memory.db` is already plaintext there); revoke the key and rekey.
+read that space (Sibyl's `memory.db` is already plaintext there); revoke its session key on the
+contract and run `kint rekey` from a machine you trust. Everything anchored before that rotation
+stays readable to whoever took the old key: a rotation protects what comes next, not what is
+already on a public ledger.
 
 ## What `memory_verify` returns
 

@@ -85,9 +85,13 @@ def anchored_version(space_hex: str, rid: str) -> tuple[int, int, str, str] | No
     """(seq, block, tx, leaf_hex) of the LAST epoch that changed this row, from the epoch cache."""
     last = None
     for seq, meta, doc in cached_epochs(space_hex):
+        snap = bool(meta.get("snapshot") or doc.get("snapshot"))
         for r in doc["rows"]:
             if row_id(r) == rid:
-                last = (seq, int(meta.get("block", 0)), meta.get("tx", ""), leaf(r).hex())
+                lf = leaf(r).hex()
+                if snap and last is not None and last[3] == lf:
+                    continue   # a snapshot re-anchors an unchanged row: its provenance stays where it changed
+                last = (seq, int(meta.get("block", 0)), meta.get("tx", ""), lf)
         for d in doc.get("deleted", []):
             if f"{d[0]}\x00{d[1] or ''}\x00{d[2]}" == rid:
                 last = (seq, int(meta.get("block", 0)), meta.get("tx", ""), None)
@@ -95,16 +99,24 @@ def anchored_version(space_hex: str, rid: str) -> tuple[int, int, str, str] | No
 
 
 def history(space_hex: str, tier: str, key: str, category: str | None = None) -> list[dict[str, Any]]:
-    """Every anchored version of a row, oldest first, each with its block-height upper bound."""
+    """Every anchored version of a row, oldest first, each with its block-height upper bound.
+
+    A snapshot epoch re-anchors every row, so its entries are marked "snapshot": True and are
+    omitted when the row did not actually change: a rotation must not invent a new version.
+    """
     rid = f"{tier}\x00{category or ''}\x00{key}"
     out = []
     for seq, meta, doc in cached_epochs(space_hex):
+        snap = bool(meta.get("snapshot") or doc.get("snapshot"))
         for r in doc["rows"]:
             if row_id(r) == rid:
+                lf = leaf(r).hex()
+                if snap and out and out[-1].get("leaf") == lf:
+                    continue
                 out.append({"seq": seq, "block": int(meta.get("block", 0)), "tx": meta.get("tx"),
-                            "leaf": leaf(r).hex(), "body": r.body if r.tier != "journal" else
+                            "leaf": lf, "body": r.body if r.tier != "journal" else
                             {"ts": r.ts, "evaluated": r.evaluated, "acted": r.acted, "forward": r.forward, "extra": r.extra},
-                            "status": r.status, "deleted": False})
+                            "status": r.status, "deleted": False, **({"snapshot": True} if snap else {})})
         for d in doc.get("deleted", []):
             if f"{d[0]}\x00{d[1] or ''}\x00{d[2]}" == rid:
                 out.append({"seq": seq, "block": int(meta.get("block", 0)), "tx": meta.get("tx"), "deleted": True})
