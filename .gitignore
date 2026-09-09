@@ -1,0 +1,10 @@
+# local instructions for Claude Code, never committed
+CLAUDE.md
+.claude/settings.local.json
+# secrets and local state
+.env
+.env.*
+*.key
+credentials.json
+__pycache__/
+.venv/

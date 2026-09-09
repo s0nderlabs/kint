@@ -1,0 +1,451 @@
+{
+ "address": "0xa22E03f7a4145Bf4909a83595C90a38E14d79600",
+ "txHash": "0xf2e03cd1c4e7ca005ee602a6c61ed50861d2238acee217b2c19f8670ba2cc9f6",
+ "blockNumber": 51081696,
+ "chainId": 8453,
+ "deployer": "0xC635e6Eb223aE14143E23cEEa9440bC773dc87Ec",
+ "gasUsed": 885843,
+ "effectiveGasPriceWei": 7833683,
+ "l1FeeWei": 1526707829,
+ "compiler": "solc 0.8.28, evm cancun, optimizer 200 runs, bytecode_hash none",
+ "abi": [
+  {
+   "type": "function",
+   "name": "DOMAIN_SEPARATOR",
+   "inputs": [],
+   "outputs": [
+    {
+     "name": "",
+     "type": "bytes32",
+     "internalType": "bytes32"
+    }
+   ],
+   "stateMutability": "view"
+  },
+  {
+   "type": "function",
+   "name": "authNonce",
+   "inputs": [
+    {
+     "name": "owner",
+     "type": "address",
+     "internalType": "address"
+    }
+   ],
+   "outputs": [
+    {
+     "name": "nonce",
+     "type": "uint256",
+     "internalType": "uint256"
+    }
+   ],
+   "stateMutability": "view"
+  },
+  {
+   "type": "function",
+   "name": "authorizationDigest",
+   "inputs": [
+    {
+     "name": "owner",
+     "type": "address",
+     "internalType": "address"
+    },
+    {
+     "name": "key",
+     "type": "address",
+     "internalType": "address"
+    },
+    {
+     "name": "expiry",
+     "type": "uint64",
+     "internalType": "uint64"
+    },
+    {
+     "name": "nonce",
+     "type": "uint256",
+     "internalType": "uint256"
+    },
+    {
+     "name": "deadline",
+     "type": "uint256",
+     "internalType": "uint256"
+    }
+   ],
+   "outputs": [
+    {
+     "name": "",
+     "type": "bytes32",
+     "internalType": "bytes32"
+    }
+   ],
+   "stateMutability": "view"
+  },
+  {
+   "type": "function",
+   "name": "canWrite",
+   "inputs": [
+    {
+     "name": "owner",
+     "type": "address",
+     "internalType": "address"
+    },
+    {
+     "name": "writer",
+     "type": "address",
+     "internalType": "address"
+    }
+   ],
+   "outputs": [
+    {
+     "name": "",
+     "type": "bool",
+     "internalType": "bool"
+    }
+   ],
+   "stateMutability": "view"
+  },
+  {
+   "type": "function",
+   "name": "head",
+   "inputs": [
+    {
+     "name": "owner",
+     "type": "address",
+     "internalType": "address"
+    },
+    {
+     "name": "space",
+     "type": "bytes32",
+     "internalType": "bytes32"
+    }
+   ],
+   "outputs": [
+    {
+     "name": "digest",
+     "type": "bytes32",
+     "internalType": "bytes32"
+    },
+    {
+     "name": "seq",
+     "type": "uint64",
+     "internalType": "uint64"
+    },
+    {
+     "name": "blockNumber",
+     "type": "uint64",
+     "internalType": "uint64"
+    }
+   ],
+   "stateMutability": "view"
+  },
+  {
+   "type": "function",
+   "name": "push",
+   "inputs": [
+    {
+     "name": "owner",
+     "type": "address",
+     "internalType": "address"
+    },
+    {
+     "name": "space",
+     "type": "bytes32",
+     "internalType": "bytes32"
+    },
+    {
+     "name": "prev",
+     "type": "bytes32",
+     "internalType": "bytes32"
+    },
+    {
+     "name": "ct",
+     "type": "bytes",
+     "internalType": "bytes"
+    }
+   ],
+   "outputs": [
+    {
+     "name": "digest",
+     "type": "bytes32",
+     "internalType": "bytes32"
+    },
+    {
+     "name": "seq",
+     "type": "uint64",
+     "internalType": "uint64"
+    }
+   ],
+   "stateMutability": "nonpayable"
+  },
+  {
+   "type": "function",
+   "name": "revokeSessionKey",
+   "inputs": [
+    {
+     "name": "key",
+     "type": "address",
+     "internalType": "address"
+    }
+   ],
+   "outputs": [],
+   "stateMutability": "nonpayable"
+  },
+  {
+   "type": "function",
+   "name": "sessionKeyExpiry",
+   "inputs": [
+    {
+     "name": "owner",
+     "type": "address",
+     "internalType": "address"
+    },
+    {
+     "name": "key",
+     "type": "address",
+     "internalType": "address"
+    }
+   ],
+   "outputs": [
+    {
+     "name": "expiry",
+     "type": "uint64",
+     "internalType": "uint64"
+    }
+   ],
+   "stateMutability": "view"
+  },
+  {
+   "type": "function",
+   "name": "setSessionKey",
+   "inputs": [
+    {
+     "name": "key",
+     "type": "address",
+     "internalType": "address"
+    },
+    {
+     "name": "expiry",
+     "type": "uint64",
+     "internalType": "uint64"
+    }
+   ],
+   "outputs": [],
+   "stateMutability": "nonpayable"
+  },
+  {
+   "type": "function",
+   "name": "setSessionKeyBySig",
+   "inputs": [
+    {
+     "name": "owner",
+     "type": "address",
+     "internalType": "address"
+    },
+    {
+     "name": "key",
+     "type": "address",
+     "internalType": "address"
+    },
+    {
+     "name": "expiry",
+     "type": "uint64",
+     "internalType": "uint64"
+    },
+    {
+     "name": "deadline",
+     "type": "uint256",
+     "internalType": "uint256"
+    },
+    {
+     "name": "signature",
+     "type": "bytes",
+     "internalType": "bytes"
+    }
+   ],
+   "outputs": [],
+   "stateMutability": "nonpayable"
+  },
+  {
+   "type": "function",
+   "name": "setStartSeq",
+   "inputs": [
+    {
+     "name": "space",
+     "type": "bytes32",
+     "internalType": "bytes32"
+    },
+    {
+     "name": "seq",
+     "type": "uint64",
+     "internalType": "uint64"
+    }
+   ],
+   "outputs": [],
+   "stateMutability": "nonpayable"
+  },
+  {
+   "type": "function",
+   "name": "startSeq",
+   "inputs": [
+    {
+     "name": "owner",
+     "type": "address",
+     "internalType": "address"
+    },
+    {
+     "name": "space",
+     "type": "bytes32",
+     "internalType": "bytes32"
+    }
+   ],
+   "outputs": [
+    {
+     "name": "seq",
+     "type": "uint64",
+     "internalType": "uint64"
+    }
+   ],
+   "stateMutability": "view"
+  },
+  {
+   "type": "event",
+   "name": "Epoch",
+   "inputs": [
+    {
+     "name": "owner",
+     "type": "address",
+     "indexed": true,
+     "internalType": "address"
+    },
+    {
+     "name": "space",
+     "type": "bytes32",
+     "indexed": true,
+     "internalType": "bytes32"
+    },
+    {
+     "name": "writer",
+     "type": "address",
+     "indexed": true,
+     "internalType": "address"
+    },
+    {
+     "name": "seq",
+     "type": "uint64",
+     "indexed": false,
+     "internalType": "uint64"
+    },
+    {
+     "name": "prev",
+     "type": "bytes32",
+     "indexed": false,
+     "internalType": "bytes32"
+    },
+    {
+     "name": "digest",
+     "type": "bytes32",
+     "indexed": false,
+     "internalType": "bytes32"
+    },
+    {
+     "name": "prevBlock",
+     "type": "uint64",
+     "indexed": false,
+     "internalType": "uint64"
+    }
+   ],
+   "anonymous": false
+  },
+  {
+   "type": "event",
+   "name": "SessionKeySet",
+   "inputs": [
+    {
+     "name": "owner",
+     "type": "address",
+     "indexed": true,
+     "internalType": "address"
+    },
+    {
+     "name": "key",
+     "type": "address",
+     "indexed": true,
+     "internalType": "address"
+    },
+    {
+     "name": "expiry",
+     "type": "uint64",
+     "indexed": false,
+     "internalType": "uint64"
+    }
+   ],
+   "anonymous": false
+  },
+  {
+   "type": "event",
+   "name": "StartSeqSet",
+   "inputs": [
+    {
+     "name": "owner",
+     "type": "address",
+     "indexed": true,
+     "internalType": "address"
+    },
+    {
+     "name": "space",
+     "type": "bytes32",
+     "indexed": true,
+     "internalType": "bytes32"
+    },
+    {
+     "name": "seq",
+     "type": "uint64",
+     "indexed": false,
+     "internalType": "uint64"
+    }
+   ],
+   "anonymous": false
+  },
+  {
+   "type": "error",
+   "name": "AuthorizationExpired",
+   "inputs": []
+  },
+  {
+   "type": "error",
+   "name": "BadSignature",
+   "inputs": []
+  },
+  {
+   "type": "error",
+   "name": "EmptyCiphertext",
+   "inputs": []
+  },
+  {
+   "type": "error",
+   "name": "NotAuthorized",
+   "inputs": []
+  },
+  {
+   "type": "error",
+   "name": "SeqNotMonotone",
+   "inputs": []
+  },
+  {
+   "type": "error",
+   "name": "StaleHead",
+   "inputs": [
+    {
+     "name": "expected",
+     "type": "bytes32",
+     "internalType": "bytes32"
+    },
+    {
+     "name": "got",
+     "type": "bytes32",
+     "internalType": "bytes32"
+    }
+   ]
+  }
+ ]
+}
