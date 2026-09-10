@@ -40,6 +40,18 @@ from .restore import replay
 
 
 
+# Why an epoch could not be applied, as a kind the walk can act on. Only a failure a LATER
+# snapshot GENUINELY supersedes may be walked past: this machine cannot OPEN the epoch (the bytes
+# are not a kint epoch, or it is sealed under a key this machine does not hold), and a snapshot's
+# rows are the whole state, so nothing is lost. Everything else means the chain was not read
+# cleanly (a down, pruned or lying RPC, calldata that disagrees with the event, a broken prev
+# chain) or the epoch opened and then contradicted the chain: those stop the pull where they are,
+# so the next pull retries instead of the machine declaring itself complete over a gap it never read.
+OPEN_UNREADABLE = "unreadable"   # not a kint epoch, or no key on this machine opens it
+OPEN_CHAIN = "chain"             # the RPC failed, or what it served disagrees with the event
+OPEN_CONTENT = "content"         # it opened, and its plaintext disagrees with the chain
+
+
 class PullError(Exception):
     pass
 
@@ -100,7 +112,7 @@ def _check_freshness(anchor: Anchor, owner: str, space: bytes, space_hex: str, l
             raise
         except Exception as e:  # noqa: BLE001
             if os.environ.get("KINT_ALLOW_SINGLE_RPC") == "1":
-                log(f"pull: second RPC unavailable ({e}); KINT_ALLOW_SINGLE_RPC=1, continuing on one RPC")
+                log(f"pull: second RPC unavailable ({redact(str(e))}); KINT_ALLOW_SINGLE_RPC=1, continuing on one RPC")
             else:
                 raise NotFresh(f"could not get a second opinion on the head from {redact(secondary_rpc_url())}: "
                                f"{type(e).__name__}. Set KINT_ALLOW_SINGLE_RPC=1 to accept a single RPC on this cold start") from e
@@ -164,8 +176,9 @@ def pull(*, owner: str, tenant: str, db_path, client_factory, anchor: Anchor | N
                 if not discard_local:
                     raise Fork(f"the chain moved to seq {head.seq} and this store has {len(changed)} changed and "
                                f"{len(deleted)} deleted rows that were never anchored: a fork. Push is impossible "
-                               "(the head moved) and pulling would lose them. `kint pull --discard-local` throws "
-                               "them away; `kint pull --rebase` replays them on top (stretch).")
+                               "(the head moved) and pulling would lose them. Save what you need out of the store "
+                               "yourself, then `kint pull --discard-local` to drop this machine's unanchored changes "
+                               "and take the chain's state.")
         if discard_local and db_path.exists():
             _wipe_store(db_path, log)
             mirror = None
@@ -174,7 +187,7 @@ def pull(*, owner: str, tenant: str, db_path, client_factory, anchor: Anchor | N
             rep.rows_total = len(mirror.rows)
             write_watermark(space_hex, head.seq, head.digest.hex(), head.block_number)
             if full:
-                _backfill_history(anchor, owner, space, space_hex, dek, kek, rep, memo, log)
+                _backfill_history(anchor, owner, space, space_hex, dek, kek, rep, memo, log, head=head)
                 if rep.backfilled or rep.unopenable:
                     rep.message += (f"; {rep.backfilled} older epoch(s) cached for history"
                                     f"{f', {len(rep.unopenable)} sealed under a retired key stay closed' if rep.unopenable else ''}")
@@ -214,14 +227,38 @@ def pull(*, owner: str, tenant: str, db_path, client_factory, anchor: Anchor | N
                 prev_digest = events[0].prev
             state.skipped = []
             gap_at: int | None = None
-            for ev in events:
-                ok, why, doc, blob, header = _open_one(anchor, ev, owner, space, prev_digest, dek, kek, space_hex, memo)
+            resume_from = 0
+            for idx, ev in enumerate(events):
+                if idx < resume_from:
+                    continue   # subsumed by the snapshot this walk resumed at
+                ok, why, kind, doc, blob, header = _open_one(anchor, ev, owner, space, prev_digest, dek, kek,
+                                                             space_hex, memo)
                 if not ok:
-                    # A gap. Nothing after it is applied: the mirror stays at the last applied epoch so the
+                    # An epoch that cannot be applied is a gap. A LATER snapshot carries the whole state,
+                    # so when one is in this walk the restore resumes there (its prev comes from the
+                    # prevBlock walk, exactly as on a cold start) instead of being wedged for good.
+                    # ONLY for an epoch this machine cannot open: a failure to READ the chain (a down,
+                    # pruned or lying RPC) is never superseded by a later snapshot, because nobody has
+                    # seen what is in the epoch yet. Walking past that one would let a corrupt RPC talk
+                    # this machine into calling its picture complete.
+                    resume = None
+                    if kind == OPEN_UNREADABLE:
+                        resume = next((j for j in range(idx + 1, len(events))
+                                       if _is_snapshot_event(anchor, events[j], owner, space, space_hex, memo)
+                                       and _key_opens(anchor, events[j], owner, space, space_hex, dek, kek, memo)), None)
+                    if resume is not None:
+                        rep.skipped.append({"seq": ev.seq, "block": ev.block_number, "tx": ev.tx_hash,
+                                            "reason": why, "superseded_by": events[resume].seq})
+                        log(f"pull: cannot apply epoch {ev.seq} at block {ev.block_number}: {why}; snapshot epoch "
+                            f"{events[resume].seq} carries the whole state, resuming there")
+                        prev_digest = events[resume].prev
+                        resume_from = resume
+                        continue
+                    # Nothing after it is applied: the mirror stays at the last applied epoch so the
                     # next pull retries from here (a transient RPC failure heals itself; a wrong key does not).
                     rep.skipped.append({"seq": ev.seq, "block": ev.block_number, "tx": ev.tx_hash, "reason": why})
                     log(f"pull: cannot apply epoch {ev.seq} at block {ev.block_number}: {why}; stopping here, "
-                        f"{len(events) - events.index(ev) - 1} later epoch(s) left for the next pull")
+                        f"{len(events) - idx - 1} later epoch(s) left for the next pull")
                     gap_at = ev.seq
                     break
                 rows, deleted = doc["rows"], doc.get("deleted", [])
@@ -292,9 +329,13 @@ def pull(*, owner: str, tenant: str, db_path, client_factory, anchor: Anchor | N
         state.save()
         rep.head_seq, rep.head_digest, rep.head_block = state.seq, state.digest, state.block
         if full and gap_at is None:
-            _backfill_history(anchor, owner, space, space_hex, dek, kek, rep, memo, log)
+            _backfill_history(anchor, owner, space, space_hex, dek, kek, rep, memo, log, head=head)
         gap = (f"; epoch {gap_at} could NOT be applied, the mirror stays at seq {state.seq}; pull again to retry "
                f"(a wrong key needs `kint connect`); push and verify refuse until it applies") if gap_at is not None else ""
+        jumped = [s for s in rep.skipped if s.get("superseded_by")]
+        if jumped:
+            gap += ("; epoch(s) " + ", ".join(str(s["seq"]) for s in jumped) + " could not be applied but a later "
+                    "snapshot carries the whole state, so this machine's picture is complete")
         warn = f"; {len(rep.warnings)} warning(s), see the report" if rep.warnings else ""
         closed = (f"; {len(rep.unopenable)} older epoch(s) sealed under a retired key stay closed on this machine"
                   if rep.unopenable else "")
@@ -306,45 +347,51 @@ def pull(*, owner: str, tenant: str, db_path, client_factory, anchor: Anchor | N
 
 
 def _epoch_meta(ev: EpochEvent, header: crypto.Header) -> dict[str, Any]:
-    meta = {"seq": ev.seq, "digest": ev.digest.hex(), "prev": ev.prev.hex(), "block": ev.block_number,
-            "tx": ev.tx_hash, "bucket": header.bucket, "rows_root": header.rows_root.hex(), "writer": ev.writer}
+    meta = {"seq": ev.seq, "digest": ev.digest.hex(), "prev": ev.prev.hex(), "prev_block": ev.prev_block,
+            "block": ev.block_number, "tx": ev.tx_hash, "bucket": header.bucket, "rows_root": header.rows_root.hex(),
+            "writer": ev.writer}
     if header.flags & crypto.FLAG_SNAPSHOT:
         meta["snapshot"] = True
     return meta
 
 
 def _backfill_history(anchor: Anchor, owner: str, space: bytes, space_hex: str, dek: bytes | None,
-                      kek: bytes | None, rep: PullReport, memo: dict, log) -> None:
-    """`full` on a machine whose restore already stopped at a snapshot: walk the epochs BELOW the
-    oldest one this machine has decrypted and cache their plaintext for history and at_block.
-    The store and the mirror are not touched (the current state is already complete); an epoch
-    the key cannot open (sealed before a rotation) is reported, and the walk carries on past it
-    because the chain, not the plaintext, vouches for the prev digests."""
+                      kek: bytes | None, rep: PullReport, memo: dict, log, head: Head | None = None) -> None:
+    """`full`: walk the WHOLE chain of epochs, head to genesis, and cache the plaintext of every
+    one this machine has not decrypted yet, for history and at_block. A warm pull that stopped at
+    a snapshot leaves gaps ABOVE the oldest cached epoch as well as below it, so the walk starts
+    at the head and skips what is already cached. The store and the mirror are not touched (the
+    current state is already complete); an epoch the key cannot open (sealed before a rotation)
+    is reported, and the walk carries on past it because the chain, not the plaintext, vouches
+    for the prev digests."""
     from .epoch import cached_epochs
     have = cached_epochs(space_hex)
-    if not have:
-        return
-    low_seq, low_meta, _doc = have[0]
-    if low_seq <= 1:
-        return
+    known = {seq for seq, _m, _d in have} | {u["seq"] for u in rep.unopenable}   # already cached or reported
     try:
-        evs = [e for e in anchor.epoch_at_block(owner, space, int(low_meta["block"])) if e.seq == low_seq]
-        if not evs:
-            raise ChainError(f"no Epoch event for seq {low_seq} at block {low_meta['block']}")
-        low_ev = evs[0]
-        events = anchor.walk_epochs(owner, space, stop_seq=0,
-                                    head=Head(digest=low_ev.prev, seq=low_seq - 1, block_number=low_ev.prev_block))
+        head = head or anchor.head(owner, space)
+        if head.seq == 0 or known >= set(range(1, head.seq + 1)):
+            return   # nothing on the chain, or every epoch is already accounted for
+        low = min(known) if known else None
+        low_meta = next((m for seq, m, _d in have if seq == low), None) if low else None
+        if low and low > 1 and low_meta and known >= set(range(low, head.seq + 1)) and low_meta.get("prev"):
+            # nothing is missing above the oldest cached epoch: walk only what lies below it
+            start = Head(digest=bytes.fromhex(low_meta["prev"]), seq=low - 1, block_number=int(low_meta.get("prev_block") or 0))
+            if start.block_number:
+                events = anchor.walk_epochs(owner, space, stop_seq=0, head=start)
+            else:
+                events = anchor.walk_epochs(owner, space, stop_seq=0, head=head)
+        else:
+            events = anchor.walk_epochs(owner, space, stop_seq=0, head=head)
     except Exception as e:  # noqa: BLE001
-        log(f"pull: could not walk the epochs below {low_seq} for history: {redact(str(e))}")
+        log(f"pull: could not walk the epoch history: {redact(str(e))}")
         return
     events.reverse()
     prev_digest = bytes(32)
-    known = {seq for seq, _m, _d in have} | {u["seq"] for u in rep.unopenable}   # already cached or reported
     for ev in events:
         if ev.seq in known:
             prev_digest = ev.digest
             continue
-        ok, why, doc, blob, header = _open_one(anchor, ev, owner, space, prev_digest, dek, kek, space_hex, memo)
+        ok, why, _kind, doc, blob, header = _open_one(anchor, ev, owner, space, prev_digest, dek, kek, space_hex, memo)
         if ok:
             cache_epoch(space_hex, ev.seq, blob, _plain_bytes(blob, doc, dek, kek, owner, space, ev, prev_digest, header),
                         _epoch_meta(ev, header))
@@ -413,7 +460,7 @@ def _fetch_blob_uncached(anchor: Anchor, ev: EpochEvent, owner: str, space: byte
     try:
         o, s, p, blob = anchor.epoch_ciphertext(ev.tx_hash)
     except Exception as e:  # noqa: BLE001
-        return None, f"could not fetch calldata: {e}"
+        return None, f"could not fetch calldata: {redact(str(e))}"
     if o != owner or s != space or p != ev.prev:
         return None, "calldata owner/space/prev disagree with the event"
     if keccak(blob) != ev.digest:
@@ -458,35 +505,40 @@ def _is_snapshot_event(anchor: Anchor, ev: EpochEvent, owner: str, space: bytes,
 
 def _open_one(anchor: Anchor, ev: EpochEvent, owner: str, space: bytes, prev_digest: bytes,
               dek: bytes | None, kek: bytes | None, space_hex: str, memo: dict | None = None):
-    """Returns (ok, why, doc, blob, header)."""
+    """Returns (ok, why, kind, doc, blob, header).
+
+    `kind` is one of OPEN_UNREADABLE / OPEN_CHAIN / OPEN_CONTENT on a failure and "" on success.
+    It is what decides whether a later snapshot may be resumed at; `why` is the sentence a human reads.
+    """
     if ev.prev != prev_digest:
-        return False, f"prev continuity broken: event prev {ev.prev.hex()[:12]} != expected {prev_digest.hex()[:12]}", None, None, None
+        return (False, f"prev continuity broken: event prev {ev.prev.hex()[:12]} != expected "
+                f"{prev_digest.hex()[:12]}", OPEN_CHAIN, None, None, None)
     blob, why = _fetch_blob(anchor, ev, owner, space, space_hex, memo)
     if blob is None:
-        return False, why, None, None, None
+        return False, why, OPEN_CHAIN, None, None, None
     header = _header_of(blob, memo, ev.seq)
     if header is None:
-        return False, "bad header: cannot parse", None, blob, None
+        return False, "bad header: cannot parse", OPEN_UNREADABLE, None, blob, None
     try:
         d = dek if (dek is not None and crypto.dek_id(dek) == header.dek_id) else _dek_from_header(header, kek)
     except Exception as e:  # noqa: BLE001
-        return False, f"wrap/dek: {e}", None, blob, header
+        return False, f"wrap/dek: {e}", OPEN_UNREADABLE, None, blob, header
     try:
         header, pt = crypto.open_epoch(blob, dek=d, owner=owner, space=space, seq=ev.seq, prev=prev_digest)
     except Exception as e:  # noqa: BLE001
-        return False, f"AEAD failed: {type(e).__name__}", None, blob, header
+        return False, f"AEAD failed: {type(e).__name__}", OPEN_UNREADABLE, None, blob, header
     try:
         doc = parse_plaintext(pt)
     except Exception as e:  # noqa: BLE001
-        return False, f"plaintext unreadable: {e}", None, blob, header
+        return False, f"plaintext unreadable: {e}", OPEN_CONTENT, None, blob, header
     if doc.get("seq") != ev.seq or doc.get("space") != space_hex or doc.get("prev") != prev_digest.hex():
-        return False, "plaintext seq/space/prev disagree with the chain", None, blob, header
+        return False, "plaintext seq/space/prev disagree with the chain", OPEN_CONTENT, None, blob, header
     if doc.get("rows_root") != header.rows_root.hex():
-        return False, "plaintext rows_root disagrees with the header", None, blob, header
+        return False, "plaintext rows_root disagrees with the header", OPEN_CONTENT, None, blob, header
     # the header flag is the authoritative signal and is NOT covered by the AAD, so it has to
     # agree with the plaintext key before either is acted on
     if bool(header.flags & crypto.FLAG_SNAPSHOT) != bool(doc.get("snapshot", False)):
-        return False, "snapshot flag disagrees between header and plaintext", None, blob, header
+        return False, "snapshot flag disagrees between header and plaintext", OPEN_CONTENT, None, blob, header
     if dek is None and d is not None:
         keys.cache_dek(space_hex, d)
-    return True, "", doc, blob, header
+    return True, "", "", doc, blob, header

@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>kint word: font match</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=Manrope:wght@700;800&family=Sora:wght@700;800&family=Urbanist:wght@700;800;900&family=Plus+Jakarta+Sans:wght@700;800&family=Figtree:wght@700;800;900&family=Lexend:wght@700;800&family=DM+Sans:wght@700;800;900&family=Poppins:wght@700;800&family=Nunito+Sans:wght@800;900&family=Red+Hat+Display:wght@700;800;900&family=Albert+Sans:wght@700;800;900&family=Onest:wght@700;800;900&family=Geologica:wght@700;800&family=Golos+Text:wght@700;800;900&family=Wix+Madefor+Display:wght@700;800&family=Instrument+Sans:wght@700&display=swap" rel="stylesheet">
+<style>
+@font-face{font-family:'Outfit';src:url('fonts/Outfit-latin.woff2') format('woff2');font-weight:100 900}
+@font-face{font-family:'Cal Sans';src:url('fonts/CalSans-latin.woff2') format('woff2');font-weight:600}
+@font-face{font-family:'Satoshi';src:url('fonts/Satoshi-Variable.woff2') format('woff2');font-weight:300 900}
+@font-face{font-family:'Open Sauce One';src:url('fonts/OpenSauceOne-SemiBold.ttf') format('truetype');font-weight:600}
+body{margin:0;background:#FAF9F5;color:#171512;font-family:ui-monospace,Menlo,monospace;padding:24px}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px 28px;align-items:end}
+.c{display:flex;flex-direction:column;gap:4px}
+.c .w{font-size:120px;line-height:1;letter-spacing:-.01em;white-space:nowrap}
+.c .w .i{position:relative}
+.c .w .i::after{content:"";position:absolute;left:50%;transform:translateX(-50%);top:var(--top,.2em);width:.16em;height:.16em;background:#0A44F5}
+.c .l{font-size:11px;color:#675F57}
+.ref{grid-column:1 / -1;display:flex;align-items:flex-end;gap:24px}
+.ref img{height:130px;width:auto}
+</style>
+</head>
+<body>
+<div class="grid">
+  <div class="ref"><img src="assets/ref-word-4x.png" alt=""><span class="l">the render's word, 4x. Rounded geometric grotesk, bold: straight-leg k, short ascenders, hooked t, i sits on the baseline with a square tittle</span></div>
+  <div class="c"><span class="w" style="font-family:'Outfit';font-weight:700;--top:.16em">k<span class="i">&#305;</span>nt</span><span class="l">Outfit 700</span></div>
+  <div class="c"><span class="w" style="font-family:'Outfit';font-weight:800;--top:.16em">k<span class="i">&#305;</span>nt</span><span class="l">Outfit 800</span></div>
+  <div class="c"><span class="w" style="font-family:'Satoshi';font-weight:800;--top:.2em">k<span class="i">&#305;</span>nt</span><span class="l">Satoshi 800</span></div>
+  <div class="c"><span class="w" style="font-family:'Cal Sans';font-weight:600;--top:.17em">k<span class="i">&#305;</span>nt</span><span class="l">Cal Sans</span></div>
+  <div class="c"><span class="w" style="font-family:'Manrope';font-weight:800;--top:.18em">k<span class="i">&#305;</span>nt</span><span class="l">Manrope 800</span></div>
+  <div class="c"><span class="w" style="font-family:'Sora';font-weight:700;--top:.18em">k<span class="i">&#305;</span>nt</span><span class="l">Sora 700</span></div>
+  <div class="c"><span class="w" style="font-family:'Urbanist';font-weight:800;--top:.16em">k<span class="i">&#305;</span>nt</span><span class="l">Urbanist 800</span></div>
+  <div class="c"><span class="w" style="font-family:'Plus Jakarta Sans';font-weight:800;--top:.18em">k<span class="i">&#305;</span>nt</span><span class="l">Plus Jakarta Sans 800</span></div>
+  <div class="c"><span class="w" style="font-family:'Figtree';font-weight:800;--top:.18em">k<span class="i">&#305;</span>nt</span><span class="l">Figtree 800</span></div>
+  <div class="c"><span class="w" style="font-family:'Lexend';font-weight:700;--top:.18em">k<span class="i">&#305;</span>nt</span><span class="l">Lexend 700</span></div>
+  <div class="c"><span class="w" style="font-family:'DM Sans';font-weight:800;--top:.18em">k<span class="i">&#305;</span>nt</span><span class="l">DM Sans 800</span></div>
+  <div class="c"><span class="w" style="font-family:'Poppins';font-weight:700;--top:.18em">k<span class="i">&#305;</span>nt</span><span class="l">Poppins 700</span></div>
+  <div class="c"><span class="w" style="font-family:'Nunito Sans';font-weight:900;--top:.18em">k<span class="i">&#305;</span>nt</span><span class="l">Nunito Sans 900</span></div>
+  <div class="c"><span class="w" style="font-family:'Red Hat Display';font-weight:800;--top:.18em">k<span class="i">&#305;</span>nt</span><span class="l">Red Hat Display 800</span></div>
+  <div class="c"><span class="w" style="font-family:'Albert Sans';font-weight:800;--top:.18em">k<span class="i">&#305;</span>nt</span><span class="l">Albert Sans 800</span></div>
+  <div class="c"><span class="w" style="font-family:'Onest';font-weight:800;--top:.18em">k<span class="i">&#305;</span>nt</span><span class="l">Onest 800</span></div>
+  <div class="c"><span class="w" style="font-family:'Geologica';font-weight:700;--top:.18em">k<span class="i">&#305;</span>nt</span><span class="l">Geologica 700</span></div>
+  <div class="c"><span class="w" style="font-family:'Golos Text';font-weight:800;--top:.18em">k<span class="i">&#305;</span>nt</span><span class="l">Golos Text 800</span></div>
+  <div class="c"><span class="w" style="font-family:'Wix Madefor Display';font-weight:800;--top:.18em">k<span class="i">&#305;</span>nt</span><span class="l">Wix Madefor Display 800</span></div>
+  <div class="c"><span class="w" style="font-family:'Open Sauce One';font-weight:600;--top:.2em">k<span class="i">&#305;</span>nt</span><span class="l">Open Sauce One 600</span></div>
+  <div class="c"><span class="w" style="font-family:'Bricolage Grotesque';font-weight:700;font-variation-settings:'opsz' 96;--top:.2em">k<span class="i">&#305;</span>nt</span><span class="l">Bricolage 700 (what I used)</span></div>
+</div>
+</body>
+</html>

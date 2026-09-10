@@ -8,7 +8,7 @@ PY="$ROOT/.venv/bin/python"
 KINT="$ROOT/.venv/bin/kint"
 WORK="$(mktemp -d)"
 PORT=$((20000 + RANDOM % 20000))
-anvil --chain-id 8453 --port "$PORT" --silent --block-time 1 >/dev/null 2>&1 &
+anvil --chain-id 8453 --port "$PORT" --silent --block-time 1 --prune-history >/dev/null 2>&1 &
 ANVIL_PID=$!
 trap 'kill $ANVIL_PID 2>/dev/null; rm -rf "$WORK"' EXIT
 export KINT_RPC_URL="http://127.0.0.1:$PORT" KINT_RPC_URL_2="http://localhost:$PORT" KINT_NO_KEYCHAIN=1 KINT_SESSION_PASSPHRASE=e2e

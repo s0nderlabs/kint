@@ -1,0 +1,552 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script>(function(){try{var t=localStorage.getItem('kint-theme');if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>kint brand sheet</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@125,600&family=Bricolage+Grotesque:opsz,wght@96,600&family=Doto:wght@700&family=EB+Garamond:wght@500&family=GFS+Didot&family=Martian+Mono:wght@500&family=Schibsted+Grotesk:wght@700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   b1 brand sheet: the kint wordmark presented in nine faces
+   on a blurred grainwave backdrop. One accent, drawn square.
+   ============================================================ */
+
+@font-face{font-family:"Satoshi";src:url("fonts/Satoshi-Variable.woff2") format("woff2");font-weight:300 900;font-style:normal;font-display:swap}
+@font-face{font-family:"Open Sauce One";src:url("fonts/OpenSauceOne-SemiBold.ttf") format("truetype");font-weight:600;font-style:normal;font-display:swap}
+
+/* ---- tokens: bare :root carries the COMPLETE light palette ---- */
+:root{
+  --page:#F7F6F2;
+  --card:#FFFFFF;
+  --ink:#1A1916;
+  --ink-2:#4F4C46;
+  --muted:#6B675F;
+  --hair:rgba(26,25,22,.12);
+  --hair-2:rgba(26,25,22,.22);
+  --accent:#0000FF;
+
+  /* the sheet that floats on the backdrop, and the backdrop scrim */
+  --sheet:rgba(247,246,242,.82);
+  --scrim:rgba(247,246,242,.35);
+
+  /* reversed lockup ground: always the opposite of the page */
+  --rev-bg:#1A1916;
+  --rev-ink:#F7F6F2;
+  --rev-accent:#4D7CFF;
+
+  /* backdrop fallback if the image cannot be read: deep green to sage */
+  --fall-1:#1E3A2B;
+  --fall-2:#8FA98C;
+
+  --grain:.06;
+
+  /* five type sizes, nothing under 12px */
+  --t-display:clamp(48px,10vw,96px);
+  --t-lockup:32px;
+  --t-mid:24px;
+  --t-body:15px;
+  --t-label:12px;
+
+  --col:1080px;
+  --ease-out-expo:cubic-bezier(0.16,1,0.3,1);
+
+  /* the nine faces */
+  --f-satoshi:"Satoshi","Helvetica Neue",Arial,sans-serif;
+  --f-didot:"GFS Didot","EB Garamond",Georgia,serif;
+  --f-bricolage:"Bricolage Grotesque","Satoshi",sans-serif;
+  --f-martian:"Martian Mono",ui-monospace,monospace;
+  --f-doto:"Doto","Martian Mono",monospace;
+  --f-sauce:"Open Sauce One","Satoshi",sans-serif;
+  --f-garamond:"EB Garamond",Georgia,serif;
+  --f-archivo:"Archivo","Satoshi",sans-serif;
+  --f-schibsted:"Schibsted Grotesk","Satoshi",sans-serif;
+}
+
+/* ---- dark, unstamped viewer (OS preference only): tokens only ---- */
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --page:#161513;
+    --card:#1E1D1A;
+    --ink:#ECEAE4;
+    --ink-2:#C9C6BE;
+    --muted:#948F86;
+    --hair:rgba(236,234,228,.14);
+    --hair-2:rgba(236,234,228,.26);
+    --accent:#4D7CFF;
+    --sheet:rgba(30,29,26,.90);
+    --scrim:rgba(22,21,19,.55);
+    --rev-bg:#ECEAE4;
+    --rev-ink:#161513;
+    --rev-accent:#0000FF;
+    --fall-1:#0F1F17;
+    --fall-2:#3E5240;
+  }
+}
+
+/* ---- dark, explicitly chosen: tokens only, wins over a light OS ---- */
+:root[data-theme="dark"]{
+  --page:#161513;
+  --card:#1E1D1A;
+  --ink:#ECEAE4;
+  --ink-2:#C9C6BE;
+  --muted:#948F86;
+  --hair:rgba(236,234,228,.14);
+  --hair-2:rgba(236,234,228,.26);
+  --accent:#4D7CFF;
+  --sheet:rgba(30,29,26,.90);
+  --scrim:rgba(22,21,19,.55);
+  --rev-bg:#ECEAE4;
+  --rev-ink:#161513;
+  --rev-accent:#0000FF;
+  --fall-1:#0F1F17;
+  --fall-2:#3E5240;
+}
+
+/* ---- base ---- */
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body.v-b1{
+  margin:0;
+  background:var(--page);
+  color:var(--ink);
+  font-family:var(--f-satoshi);
+  font-weight:400;
+  font-size:var(--t-body);
+  line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+  overflow-x:hidden;
+}
+
+/* the house grain, over everything, at the sheet weight named in the spec */
+body.v-b1::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  z-index:9999;
+  pointer-events:none;
+  opacity:var(--grain);
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='256' height='256' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size:256px 256px;
+}
+
+/* ---- the backdrop: grainwave, blurred, plus the CSS fallback beneath it ---- */
+.v-b1 .backdrop{
+  position:fixed;
+  inset:-70px;
+  z-index:-3;
+  background-image:url("assets/grainwave.png"),linear-gradient(163deg,var(--fall-1) 0%,var(--fall-2) 100%);
+  background-size:cover,cover;
+  background-position:center,center;
+  background-repeat:no-repeat,no-repeat;
+  filter:blur(28px) saturate(.9);
+}
+.v-b1 .scrim{position:fixed;inset:0;z-index:-2;background:var(--scrim);pointer-events:none}
+
+/* ---- the sheet ---- */
+.v-b1 .wrap{padding:clamp(20px,9vh,120px) clamp(14px,3vw,40px)}
+.v-b1 .sheet{
+  position:relative;
+  z-index:1;
+  max-width:var(--col);
+  margin:0 auto;
+  padding:clamp(20px,3.4vw,48px) clamp(18px,3.4vw,48px) clamp(24px,3vw,40px);
+  background:var(--sheet);
+  -webkit-backdrop-filter:blur(10px) saturate(1.05);
+  backdrop-filter:blur(10px) saturate(1.05);
+  border:1px solid var(--hair);
+  border-radius:16px;
+}
+
+/* ---- shared type roles ---- */
+.v-b1 .mono{
+  font-family:var(--f-martian);
+  font-weight:500;
+  font-size:var(--t-label);
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  line-height:1.5;
+}
+.v-b1 .dim{color:var(--muted)}
+
+.v-b1 a{color:var(--ink);text-decoration:none;border-bottom:1px solid var(--hair-2);transition:border-color .18s var(--ease-out-expo),color .18s var(--ease-out-expo)}
+.v-b1 a:hover{color:var(--ink);border-bottom-color:var(--ink)}
+.v-b1 a:focus-visible,.v-b1 button:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+
+/* ---- the wordmark trick: dotless i, the dot drawn as the accent square ---- */
+.v-b1 .wm{line-height:1;letter-spacing:-.012em;white-space:nowrap;display:inline-block}
+.v-b1 .wm .i{position:relative}
+.v-b1 .wm .i::after{
+  content:"";
+  position:absolute;
+  left:50%;
+  transform:translateX(-50%);
+  top:var(--dot-top,-0.02em);
+  width:.18em;
+  height:.18em;
+  background:var(--accent);
+}
+
+/* ---- top bar ---- */
+.v-b1 .top{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  padding-bottom:clamp(20px,2.6vw,32px);
+  border-bottom:1px solid var(--hair);
+}
+.v-b1 .top .wm{font-family:var(--f-satoshi);font-weight:700;font-size:var(--t-mid);--dot-top:0.253em}
+.v-b1 .toggle{
+  display:inline-flex;
+  align-items:center;
+  gap:9px;
+  font-family:var(--f-martian);
+  font-weight:500;
+  font-size:var(--t-label);
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--ink-2);
+  background:transparent;
+  border:1px solid var(--hair-2);
+  border-radius:999px;
+  padding:8px 15px;
+  cursor:pointer;
+  transition:color .18s var(--ease-out-expo),border-color .18s var(--ease-out-expo);
+}
+.v-b1 .toggle:hover{color:var(--ink);border-color:var(--ink-2)}
+.v-b1 .toggle .sq{width:9px;height:9px;background:var(--accent);display:block}
+
+/* ---- intro ---- */
+.v-b1 .intro{padding:clamp(28px,4.4vw,60px) 0 clamp(26px,3.4vw,46px)}
+.v-b1 .eyebrow{margin:0 0 clamp(16px,2vw,24px);color:var(--muted)}
+.v-b1 .tagline{
+  margin:0;
+  font-family:var(--f-satoshi);
+  font-weight:500;
+  font-size:var(--t-lockup);
+  line-height:1.18;
+  letter-spacing:-.02em;
+  max-width:18ch;
+}
+.v-b1 .tagline em{font-style:normal;color:var(--accent)}
+.v-b1 .lede{margin:clamp(14px,1.8vw,20px) 0 0;color:var(--ink-2);max-width:62ch}
+
+/* ---- section strips ---- */
+.v-b1 .strip{
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  gap:16px;
+  flex-wrap:wrap;
+  margin:0 0 clamp(14px,1.8vw,22px);
+  padding-bottom:10px;
+  border-bottom:1px solid var(--hair);
+  font-family:var(--f-martian);
+  font-weight:500;
+  font-size:var(--t-label);
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--ink-2);
+}
+.v-b1 .strip span:last-child{color:var(--muted);text-transform:none;letter-spacing:.04em}
+
+/* ---- the nine specimen rows ---- */
+.v-b1 .rows{list-style:none;margin:0;padding:0;border-top:1px solid var(--hair)}
+.v-b1 .row{
+  display:grid;
+  grid-template-columns:190px minmax(0,1fr) auto;
+  align-items:center;
+  gap:clamp(16px,3vw,40px);
+  padding:clamp(20px,2.6vw,34px) 0;
+  border-bottom:1px solid var(--hair);
+}
+.v-b1 .lab{
+  font-family:var(--f-martian);
+  font-weight:500;
+  font-size:var(--t-label);
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  line-height:1.7;
+  color:var(--ink-2);
+}
+.v-b1 .lab .n,.v-b1 .lab .wt{display:block;color:var(--muted)}
+.v-b1 .lab .fam{display:block;color:var(--ink)}
+
+.v-b1 .row .wm{
+  font-family:var(--face);
+  font-weight:var(--wt);
+  font-variation-settings:var(--vs,normal);
+}
+.v-b1 .big .wm{font-size:var(--t-display)}
+.v-b1 .mini{display:flex;align-items:center;gap:clamp(14px,2vw,24px)}
+.v-b1 .mini .wm{font-size:var(--t-mid)}
+.v-b1 .fav{display:block;width:20px;height:20px;flex:none}
+.v-b1 .fav-sq{fill:var(--accent)}
+.v-b1 .fav-k{fill:var(--page)}
+.v-b1 .fav text{font-family:var(--face);font-weight:var(--wt)}
+
+/* one row per face: family, weight, variation axes, and the tuned dot height */
+.v-b1 .r-satoshi   {--face:var(--f-satoshi);  --wt:700;--dot-top:0.253em}
+.v-b1 .r-didot     {--face:var(--f-didot);    --wt:400;--dot-top:0.243em}
+.v-b1 .r-bricolage {--face:var(--f-bricolage);--wt:600;--dot-top:0.202em;--vs:"opsz" 96}
+.v-b1 .r-martian   {--face:var(--f-martian);  --wt:500;--dot-top:0.135em}
+.v-b1 .r-doto      {--face:var(--f-doto);     --wt:700;--dot-top:0.207em}
+.v-b1 .r-sauce     {--face:var(--f-sauce);    --wt:600;--dot-top:0.207em}
+.v-b1 .r-garamond  {--face:var(--f-garamond); --wt:500;--dot-top:0.345em}
+.v-b1 .r-archivo   {--face:var(--f-archivo);  --wt:600;--dot-top:0.122em;--vs:"wdth" 125}
+.v-b1 .r-schibsted {--face:var(--f-schibsted);--wt:700;--dot-top:0.197em}
+.v-b1 .r-archivo .wm{font-stretch:125%}
+.v-b1 .r-martian .wm,.v-b1 .r-doto .wm{letter-spacing:0}
+
+/* ---- the mark block: the square alone, then the reversed lockups ---- */
+.v-b1 .marks{padding-top:clamp(34px,4.6vw,64px)}
+.v-b1 .sqs{display:flex;align-items:flex-end;gap:clamp(28px,4vw,56px);padding:clamp(10px,1.4vw,18px) 0 clamp(30px,4vw,54px)}
+.v-b1 .sq-fig{margin:0;display:flex;flex-direction:column;gap:14px}
+.v-b1 .sq-box{height:64px;display:flex;align-items:flex-end}
+.v-b1 .sq-fig .sq{background:var(--accent);display:block}
+.v-b1 .s16{width:16px;height:16px}
+.v-b1 .s32{width:32px;height:32px}
+.v-b1 .s64{width:64px;height:64px}
+.v-b1 .sq-fig figcaption{
+  font-family:var(--f-martian);
+  font-weight:500;
+  font-size:var(--t-label);
+  letter-spacing:.08em;
+  color:var(--muted);
+}
+
+.v-b1 .revs{display:grid;grid-template-columns:1fr 1fr;gap:clamp(18px,2.4vw,30px)}
+.v-b1 .rev{margin:0;display:flex;flex-direction:column;gap:14px}
+.v-b1 .tile{
+  background:var(--rev-bg);
+  color:var(--rev-ink);
+  border-radius:12px;
+  padding:clamp(30px,4vw,48px) 20px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.v-b1 .tile .wm{font-size:var(--t-lockup);font-family:var(--face);font-weight:var(--wt);font-variation-settings:var(--vs,normal)}
+.v-b1 .rev .wm .i::after{background:var(--rev-accent)}
+.v-b1 .rev figcaption{
+  font-family:var(--f-martian);
+  font-weight:500;
+  font-size:var(--t-label);
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  color:var(--muted);
+}
+
+/* ---- footer ---- */
+.v-b1 .foot{
+  margin-top:clamp(34px,4.6vw,64px);
+  padding-top:clamp(18px,2vw,26px);
+  border-top:1px solid var(--hair);
+  font-size:var(--t-label);
+  line-height:1.7;
+  color:var(--muted);
+}
+
+/* ---- 390 and other narrow viewports ---- */
+@media (max-width:820px){
+  .v-b1 .row{grid-template-columns:minmax(0,1fr);gap:16px;align-items:start}
+  .v-b1 .lab{line-height:1.6}
+  .v-b1 .revs{grid-template-columns:minmax(0,1fr)}
+  .v-b1 .tagline{max-width:none}
+}
+@media (max-width:420px){
+  .v-b1 .sqs{gap:24px}
+  .v-b1 .sheet{border-radius:12px}
+}
+@media (prefers-reduced-motion:reduce){
+  .v-b1 *{transition:none!important}
+}
+</style>
+</head>
+<body class="v-b1">
+<div class="backdrop" aria-hidden="true"></div>
+<div class="scrim" aria-hidden="true"></div>
+
+<div class="wrap">
+<main class="sheet">
+
+  <header class="top">
+    <span class="wm">k<span class="i">&#305;</span>nt</span>
+    <button class="toggle" type="button" id="themeToggle" aria-label="Toggle theme">
+      <span class="sq" aria-hidden="true"></span>theme
+    </button>
+  </header>
+
+  <section class="intro">
+    <p class="eyebrow mono">Brand sheet &middot; the wordmark in nine faces</p>
+    <h1 class="tagline">Sibyl Memory that <em>outlives</em> the laptop.</h1>
+    <p class="lede">The wordmark is lowercase, always. The dot of the i is drawn rather than typed: a square in the accent, set where the tittle would sit, so the mark keeps its own voice in any face it is set in.</p>
+  </section>
+
+  <section aria-labelledby="faces-h">
+    <h2 class="strip" id="faces-h"><span>The mark &middot; nine faces &middot; 96 px</span><span>dotless i is U+0131, the square is 0.18 em</span></h2>
+
+    <ul class="rows">
+
+      <li class="row r-satoshi">
+        <div class="lab"><span class="n">01</span><span class="fam">Satoshi</span><span class="wt">700</span></div>
+        <div class="big"><span class="wm">k<span class="i">&#305;</span>nt</span></div>
+        <div class="mini">
+          <span class="wm">k<span class="i">&#305;</span>nt</span>
+          <svg class="fav" viewBox="0 0 20 20" role="img" aria-label="kint favicon in Satoshi: the letter k knocked out of the accent square">
+            <rect class="fav-sq" width="20" height="20"/>
+            <text class="fav-k" x="10" y="15.2" font-size="14" text-anchor="middle">k</text>
+          </svg>
+        </div>
+      </li>
+
+      <li class="row r-didot">
+        <div class="lab"><span class="n">02</span><span class="fam">GFS Didot</span><span class="wt">400</span></div>
+        <div class="big"><span class="wm">k<span class="i">&#305;</span>nt</span></div>
+        <div class="mini">
+          <span class="wm">k<span class="i">&#305;</span>nt</span>
+          <svg class="fav" viewBox="0 0 20 20" role="img" aria-label="kint favicon in GFS Didot: the letter k knocked out of the accent square">
+            <rect class="fav-sq" width="20" height="20"/>
+            <text class="fav-k" x="10" y="15.2" font-size="14" text-anchor="middle">k</text>
+          </svg>
+        </div>
+      </li>
+
+      <li class="row r-bricolage">
+        <div class="lab"><span class="n">03</span><span class="fam">Bricolage Grotesque</span><span class="wt">600 &middot; opsz 96</span></div>
+        <div class="big"><span class="wm">k<span class="i">&#305;</span>nt</span></div>
+        <div class="mini">
+          <span class="wm">k<span class="i">&#305;</span>nt</span>
+          <svg class="fav" viewBox="0 0 20 20" role="img" aria-label="kint favicon in Bricolage Grotesque: the letter k knocked out of the accent square">
+            <rect class="fav-sq" width="20" height="20"/>
+            <text class="fav-k" x="10" y="15.2" font-size="14" text-anchor="middle">k</text>
+          </svg>
+        </div>
+      </li>
+
+      <li class="row r-martian">
+        <div class="lab"><span class="n">04</span><span class="fam">Martian Mono</span><span class="wt">500</span></div>
+        <div class="big"><span class="wm">k<span class="i">&#305;</span>nt</span></div>
+        <div class="mini">
+          <span class="wm">k<span class="i">&#305;</span>nt</span>
+          <svg class="fav" viewBox="0 0 20 20" role="img" aria-label="kint favicon in Martian Mono: the letter k knocked out of the accent square">
+            <rect class="fav-sq" width="20" height="20"/>
+            <text class="fav-k" x="10" y="15.2" font-size="14" text-anchor="middle">k</text>
+          </svg>
+        </div>
+      </li>
+
+      <li class="row r-doto">
+        <div class="lab"><span class="n">05</span><span class="fam">Doto</span><span class="wt">700 &middot; rond 0</span></div>
+        <div class="big"><span class="wm">k<span class="i">&#305;</span>nt</span></div>
+        <div class="mini">
+          <span class="wm">k<span class="i">&#305;</span>nt</span>
+          <svg class="fav" viewBox="0 0 20 20" role="img" aria-label="kint favicon in Doto: the letter k knocked out of the accent square">
+            <rect class="fav-sq" width="20" height="20"/>
+            <text class="fav-k" x="10" y="15.2" font-size="14" text-anchor="middle">k</text>
+          </svg>
+        </div>
+      </li>
+
+      <li class="row r-sauce">
+        <div class="lab"><span class="n">06</span><span class="fam">Open Sauce One</span><span class="wt">600</span></div>
+        <div class="big"><span class="wm">k<span class="i">&#305;</span>nt</span></div>
+        <div class="mini">
+          <span class="wm">k<span class="i">&#305;</span>nt</span>
+          <svg class="fav" viewBox="0 0 20 20" role="img" aria-label="kint favicon in Open Sauce One: the letter k knocked out of the accent square">
+            <rect class="fav-sq" width="20" height="20"/>
+            <text class="fav-k" x="10" y="15.2" font-size="14" text-anchor="middle">k</text>
+          </svg>
+        </div>
+      </li>
+
+      <li class="row r-garamond">
+        <div class="lab"><span class="n">07</span><span class="fam">EB Garamond</span><span class="wt">500</span></div>
+        <div class="big"><span class="wm">k<span class="i">&#305;</span>nt</span></div>
+        <div class="mini">
+          <span class="wm">k<span class="i">&#305;</span>nt</span>
+          <svg class="fav" viewBox="0 0 20 20" role="img" aria-label="kint favicon in EB Garamond: the letter k knocked out of the accent square">
+            <rect class="fav-sq" width="20" height="20"/>
+            <text class="fav-k" x="10" y="15.2" font-size="14" text-anchor="middle">k</text>
+          </svg>
+        </div>
+      </li>
+
+      <li class="row r-archivo">
+        <div class="lab"><span class="n">08</span><span class="fam">Archivo</span><span class="wt">600 &middot; wdth 125</span></div>
+        <div class="big"><span class="wm">k<span class="i">&#305;</span>nt</span></div>
+        <div class="mini">
+          <span class="wm">k<span class="i">&#305;</span>nt</span>
+          <svg class="fav" viewBox="0 0 20 20" role="img" aria-label="kint favicon in Archivo: the letter k knocked out of the accent square">
+            <rect class="fav-sq" width="20" height="20"/>
+            <text class="fav-k" x="10" y="15.2" font-size="14" text-anchor="middle">k</text>
+          </svg>
+        </div>
+      </li>
+
+      <li class="row r-schibsted">
+        <div class="lab"><span class="n">09</span><span class="fam">Schibsted Grotesk</span><span class="wt">700</span></div>
+        <div class="big"><span class="wm">k<span class="i">&#305;</span>nt</span></div>
+        <div class="mini">
+          <span class="wm">k<span class="i">&#305;</span>nt</span>
+          <svg class="fav" viewBox="0 0 20 20" role="img" aria-label="kint favicon in Schibsted Grotesk: the letter k knocked out of the accent square">
+            <rect class="fav-sq" width="20" height="20"/>
+            <text class="fav-k" x="10" y="15.2" font-size="14" text-anchor="middle">k</text>
+          </svg>
+        </div>
+      </li>
+
+    </ul>
+  </section>
+
+  <section class="marks" aria-labelledby="square-h">
+    <h2 class="strip" id="square-h"><span>The accent square</span><span>#0000FF light &middot; #4D7CFF dark</span></h2>
+    <p class="lede">One accent, three jobs: the dot of the wordmark, the primary action, and the one coloured word in the headline. Nowhere else.</p>
+
+    <div class="sqs">
+      <figure class="sq-fig"><div class="sq-box"><span class="sq s16"></span></div><figcaption>16 px</figcaption></figure>
+      <figure class="sq-fig"><div class="sq-box"><span class="sq s32"></span></div><figcaption>32 px</figcaption></figure>
+      <figure class="sq-fig"><div class="sq-box"><span class="sq s64"></span></div><figcaption>64 px</figcaption></figure>
+    </div>
+
+    <h2 class="strip"><span>Reversed &middot; the two strongest faces</span><span>the mark on the opposite ground</span></h2>
+    <div class="revs">
+      <figure class="rev r-satoshi">
+        <div class="tile"><span class="wm">k<span class="i">&#305;</span>nt</span></div>
+        <figcaption>Satoshi 700 &middot; reversed</figcaption>
+      </figure>
+      <figure class="rev r-bricolage">
+        <div class="tile"><span class="wm">k<span class="i">&#305;</span>nt</span></div>
+        <figcaption>Bricolage Grotesque 600 &middot; reversed</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <footer class="foot">
+    MIT &middot; Built for the Sibyl Labs Hackathon, September 2026 &middot; s0nderlabs &middot;
+    <a href="https://basescan.org/address/0xa22E03f7a4145Bf4909a83595C90a38E14d79600">on Base</a>
+  </footer>
+
+</main>
+</div>
+
+<script>
+(function(){
+  var root = document.documentElement;
+  var btn = document.getElementById('themeToggle');
+  if(!btn){return;}
+  btn.addEventListener('click', function(){
+    var cur = root.getAttribute('data-theme');
+    if(cur !== 'dark' && cur !== 'light'){
+      cur = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+    }
+    var next = (cur === 'dark') ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try{ localStorage.setItem('kint-theme', next); }catch(e){}
+  });
+})();
+</script>
+</body>
+</html>

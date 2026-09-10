@@ -1,9 +1,11 @@
 """The decision beat: verify what Sibyl's search returns against the chain, and refuse.
 
 memory_verify(query):
-  1. client.search(query)  (Sibyl's own ladder, four FTS5 indexes + the shadow fallback)
-     returns hits WITH a typed verdict from verdicts.py. No hit, or a non-OK
-     verdict, means there is nothing to key a decision on: refuse.
+  1. multi_record_search(client, query) (the exact call Sibyl's own memory_search
+     makes: its ladder, four FTS5 indexes, the shadow fallback and every precision
+     gate) returns hits WITH a typed verdict from verdicts.py. No hit, or a non-OK
+     verdict (abstained_on, negation_abstain, gated, empty_store), means there is
+     nothing to key a decision on: refuse.
   2. For every hit re-read the EXACT stored TEXT by the key the search returned,
      hash it (kint.canon.leaf) and compare with the leaf this machine last saw
      anchored (the mirror), with a merkle inclusion proof against the anchored
@@ -12,6 +14,9 @@ memory_verify(query):
      a typed reason naming the block that anchored the value it drifted from,
      and the block of the current head. The refusal is written back as a Sibyl
      entity (category kint_refusal) so the next fresh session sees it too.
+  3b. The chain head, when the caller could read it: a mirror that no longer
+     equals the head means another machine anchored something this one has not
+     pulled, and nothing is verified against a stale picture.
   4. Temporal: history(row) lists what the row held at every epoch that
      changed it, with a block-height upper bound ("no later than block N"),
      never a wall-clock "as of".
@@ -23,6 +28,7 @@ import time
 from dataclasses import dataclass, field, asdict
 from typing import Any
 
+from sibyl_memory_client.multi_record import multi_record_search
 from sibyl_memory_client.verdicts import VerdictCode
 
 from . import crypto
@@ -61,6 +67,7 @@ class VerifyResult:
     hits: list[dict[str, Any]] = field(default_factory=list)
     checks: list[RowCheck] = field(default_factory=list)
     refusal_entity: str | None = None
+    chain_head: dict[str, Any] | None = None
 
     def to_dict(self) -> dict[str, Any]:
         d = asdict(self)
@@ -164,8 +171,11 @@ def check_row(mirror: Mirror, space_hex: str, db_path, tenant: str, hit: dict[st
 
 
 def verify(client, *, query: str, limit: int, space_hex: str, db_path, tenant: str,
-           write_refusal: bool = True) -> VerifyResult:
-    results = client.search(query, limit=limit)
+           write_refusal: bool = True, chain_head: dict[str, Any] | None = None) -> VerifyResult:
+    """`chain_head` is {"seq", "digest", "block"} read by the caller (never from inside a Sibyl
+    write): when it does not equal the mirror, another machine anchored something this one has
+    not pulled and every answer here would be from a stale picture."""
+    results = multi_record_search(client, query, limit=limit)
     verdict = _verdict_dict(results.verdict)
     hits = [{"tier": h["tier"], "key": h["key"], "category": h.get("category"), "snippet": h.get("snippet"),
              "rank": h.get("rank"), "ts": h.get("ts")} for h in results]
@@ -183,10 +193,16 @@ def verify(client, *, query: str, limit: int, space_hex: str, db_path, tenant: s
         return VerifyResult(query=query, verdict=verdict, decision="refuse",
                             reason=f"this machine's picture of the memory is not the one the chain vouches for: {why}; pull again",
                             hits=hits)
+    if chain_head and (int(chain_head.get("seq", -1)), chain_head.get("digest")) != (mirror.seq, mirror.digest):
+        return VerifyResult(query=query, verdict=verdict, decision="refuse", hits=hits, chain_head=chain_head,
+                            reason=f"chain moved to seq {chain_head.get('seq')} at block {chain_head.get('block')}, "
+                                   f"pull first: this machine last saw seq {mirror.seq} "
+                                   f"({str(mirror.digest)[:12]}), so the row it would check may be superseded")
     checks = [check_row(mirror, space_hex, db_path, tenant, h) for h in hits]
     bad = [c for c in checks if c.status in ("drifted", "missing")]
     unanchored = [c for c in checks if c.status == "unanchored"]
-    res = VerifyResult(query=query, verdict=verdict, decision="proceed", reason="", hits=hits, checks=checks)
+    res = VerifyResult(query=query, verdict=verdict, decision="proceed", reason="", hits=hits, checks=checks,
+                       chain_head=chain_head)
     if bad:
         c = bad[0]
         res.decision = "refuse"

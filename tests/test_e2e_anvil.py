@@ -50,7 +50,7 @@ def anvil():
     if not shutil.which("anvil") or not ARTIFACT.exists():
         pytest.skip("anvil or the forge artifact is missing")
     port = _free_port()
-    proc = subprocess.Popen(["anvil", "--chain-id", "8453", "--port", str(port), "--silent", "--block-time", "1"],
+    proc = subprocess.Popen(["anvil", "--chain-id", "8453", "--port", str(port), "--silent", "--block-time", "1", "--prune-history"],
                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     url = f"http://127.0.0.1:{port}"
     w3 = Web3(Web3.HTTPProvider(url))

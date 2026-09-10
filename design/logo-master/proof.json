@@ -1,0 +1,11 @@
+{
+  "AE_fuzz2pct": 357,
+  "AE_fuzz8pct": 203,
+  "pixels": 1048576,
+  "iou_ink": 0.9655,
+  "iou_blue": 0.9891,
+  "xor_ink_px": 259,
+  "xor_blue_px": 329,
+  "src_ink_px": 7404,
+  "src_blue_px": 29899
+}

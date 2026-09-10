@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>kint posters</title>
+<style>
+@font-face{font-family:'Fragment Mono';src:url('fonts/FragmentMono-Regular.ttf') format('truetype');font-weight:400;font-display:swap}
+@font-face{font-family:'Satoshi';src:url('fonts/Satoshi-Variable.woff2') format('woff2');font-weight:300 900;font-display:swap}
+:root{--page:#F7F6F2;--ink:#1A1916;--muted:#6B665E;--hair:rgba(26,25,22,.12);--accent:#0000FF}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--page:#161513;--ink:#ECEAE4;--muted:#9A958B;--hair:rgba(236,234,228,.14);--accent:#4D7CFF}}
+:root[data-theme="dark"]{--page:#161513;--ink:#ECEAE4;--muted:#9A958B;--hair:rgba(236,234,228,.14);--accent:#4D7CFF}
+*{box-sizing:border-box}
+body{margin:0;background:var(--page);color:var(--ink);font-family:'Satoshi',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1400px;margin:0 auto;padding:40px 32px 80px}
+h1{font-size:28px;font-weight:600;margin:0 0 6px;letter-spacing:-.01em}
+.sub{font-family:'Fragment Mono',ui-monospace,monospace;font-size:12px;color:var(--muted);margin:0 0 36px;letter-spacing:.02em}
+figure{margin:0 0 56px}
+img{display:block;width:100%;height:auto;box-shadow:0 1px 2px rgba(0,0,0,.08),0 24px 60px -30px rgba(0,0,0,.35)}
+figcaption{display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap;padding:14px 2px 0;font-family:'Fragment Mono',ui-monospace,monospace;font-size:12px;color:var(--muted);letter-spacing:.02em}
+figcaption b{color:var(--ink);font-weight:400}
+figcaption .n{color:var(--accent)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:28px;margin-bottom:56px}
+.grid figure{margin:0}
+@media (max-width:900px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>kint posters</h1>
+  <p class="sub">GPT Image 2.5 Sunburst on fal &middot; quality xhigh &middot; 1920 x 1080 &middot; Sep 10 2026</p>
+  <p class="sub">the three variants he asked for, edits of 01 through the same model's edit endpoint (about 8 cents each): the squares are gone, the pinned leaves are cobalt</p>
+  <figure>
+    <img src="assets/poster-leaves-blue.png" alt="The Sibyl's leaves, pinned leaves in cobalt">
+    <figcaption><span><span class="n">01a</span> &nbsp;<b>leaves, blue</b> &middot; the pinned leaves turn cobalt, everything else untouched</span><span>openai/gpt-image-2.5/sunburst/edit &middot; xhigh</span></figcaption>
+  </figure>
+  <figure>
+    <img src="assets/poster-leaves-turning.png" alt="The Sibyl's leaves, turning blue as they reach the ledger">
+    <figcaption><span><span class="n">01b</span> &nbsp;<b>leaves, turning</b> &middot; the leaves tint toward cobalt as they cross the sky, fully blue once pinned</span><span>openai/gpt-image-2.5/sunburst/edit &middot; xhigh</span></figcaption>
+  </figure>
+  <figure>
+    <img src="assets/poster-leaves-night.png" alt="The Sibyl's leaves at night">
+    <figcaption><span><span class="n">01c</span> &nbsp;<b>leaves, night</b> &middot; the dark theme's poster: stars, a crescent, pale leaves, the pinned ones luminous</span><span>openai/gpt-image-2.5/sunburst/edit &middot; xhigh</span></figcaption>
+  </figure>
+
+  <p class="sub">the three concepts from the first round</p>
+
+  <figure>
+    <img src="assets/poster-leaves.png" alt="The Sibyl's leaves">
+    <figcaption><span><span class="n">01</span> &nbsp;<b>the Sibyl's leaves</b> &middot; her prophecies scatter, kint pins them into the ledger row by row</span><span>openai/gpt-image-2.5/sunburst &middot; xhigh &middot; about 7 cents</span></figcaption>
+  </figure>
+
+  <figure>
+    <img src="assets/poster-blueprint.png" alt="The blueprint">
+    <figcaption><span><span class="n">02</span> &nbsp;<b>the blueprint</b> &middot; rows, envelope, the staircase of blocks up to a block height, the second machine</span><span>openai/gpt-image-2.5/sunburst &middot; xhigh &middot; about 7 cents</span></figcaption>
+  </figure>
+
+  <figure>
+    <img src="assets/poster-stele.png" alt="The stele">
+    <figcaption><span><span class="n">03</span> &nbsp;<b>the stele</b> &middot; the inscribed stone lit by the laptop at its base, the key, the Sibyl reading</span><span>openai/gpt-image-2.5/sunburst &middot; xhigh &middot; about 7 cents</span></figcaption>
+  </figure>
+
+  <p class="sub">for reference: the two earlier renders on GPT Image 2 (high, 16:9)</p>
+  <div class="grid">
+    <figure>
+      <img src="assets/poster-kint.png" alt="The sand plain">
+      <figcaption><span><b>the sand plain</b> &middot; the L3b hero until now</span><span>fal-ai/gpt-image-2 &middot; high</span></figcaption>
+    </figure>
+    <figure>
+      <img src="assets/grainwave.png" alt="Grainwave">
+      <figcaption><span><b>grainwave</b> &middot; the mood test</span><span>fal-ai/gpt-image-2 &middot; high</span></figcaption>
+    </figure>
+  </div>
+</div>
+</body>
+</html>

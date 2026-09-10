@@ -1,0 +1,732 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script>(function(){try{var t=localStorage.getItem('kint-theme');if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>kint, the memory as a table</title>
+<style>
+/* ---------- faces ---------- */
+@font-face{
+  font-family:"Satoshi";
+  src:url("fonts/Satoshi-Variable.woff2") format("woff2");
+  font-weight:300 900;font-style:normal;font-display:swap;
+}
+@font-face{
+  font-family:"Fragment Mono";
+  src:url("fonts/FragmentMono-Regular.ttf") format("truetype");
+  font-weight:400;font-style:normal;font-display:swap;
+}
+
+/* ---------- tokens: complete LIGHT palette on bare :root ---------- */
+:root{
+  --page:#F7F6F2;
+  --card:#FFFFFF;
+  --sunk:#F0EEE8;
+  --ink:#1A1916;
+  --ink-2:#4F4C46;
+  --muted:#6F6B63;
+  --hair:rgba(26,25,22,.12);
+  --hair-2:rgba(26,25,22,.20);
+  --dim:rgba(26,25,22,.05);
+  --accent:#0000FF;
+  --accent-ink:#FFFFFF;
+  --accent-soft:rgba(0,0,255,.10);
+  --ok:#199473;
+  --ok-strong:#0F6B52;
+  --ok-tint:rgba(25,148,115,.12);
+  --bad:#B3404A;
+  --bad-strong:#9A2F38;
+  --bad-tint:rgba(179,64,74,.12);
+  --mut-tint:rgba(26,25,22,.07);
+  --sans:"Satoshi","Helvetica Neue",Arial,sans-serif;
+  --mono:"Fragment Mono",ui-monospace,Menlo,monospace;
+  --s1:12px;
+  --s2:14px;
+  --s3:16px;
+  --s4:20px;
+  --s5:clamp(26px,3.2vw,30px);
+  --ease-out-expo:cubic-bezier(0.16,1,0.3,1);
+  --col:1180px;
+  color-scheme:light;
+}
+/* ---------- tokens only: dark, unstamped viewer ---------- */
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --page:#161513;
+    --card:#1E1D1A;
+    --sunk:#191815;
+    --ink:#ECEAE4;
+    --ink-2:#C9C6BE;
+    --muted:#8F8B82;
+    --hair:rgba(236,234,228,.14);
+    --hair-2:rgba(236,234,228,.24);
+    --dim:rgba(0,0,0,.22);
+    --accent:#4D7CFF;
+    --accent-ink:#131316;
+    --accent-soft:rgba(77,124,255,.16);
+    --ok:#3AD1A6;
+    --ok-strong:#3AD1A6;
+    --ok-tint:rgba(58,209,166,.14);
+    --bad:#EE8295;
+    --bad-strong:#EE8295;
+    --bad-tint:rgba(238,130,149,.14);
+    --mut-tint:rgba(236,234,228,.09);
+    color-scheme:dark;
+  }
+}
+/* ---------- tokens only: dark, explicit choice ---------- */
+:root[data-theme="dark"]{
+  --page:#161513;
+  --card:#1E1D1A;
+  --sunk:#191815;
+  --ink:#ECEAE4;
+  --ink-2:#C9C6BE;
+  --muted:#8F8B82;
+  --hair:rgba(236,234,228,.14);
+  --hair-2:rgba(236,234,228,.24);
+  --dim:rgba(0,0,0,.22);
+  --accent:#4D7CFF;
+  --accent-ink:#131316;
+  --accent-soft:rgba(77,124,255,.16);
+  --ok:#3AD1A6;
+  --ok-strong:#3AD1A6;
+  --ok-tint:rgba(58,209,166,.14);
+  --bad:#EE8295;
+  --bad-strong:#EE8295;
+  --bad-tint:rgba(238,130,149,.14);
+  --mut-tint:rgba(236,234,228,.09);
+  color-scheme:dark;
+}
+
+/* ---------- base ---------- */
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--page);color:var(--ink)}
+body.v-a1{font-family:var(--sans);font-weight:400;font-size:var(--s3);line-height:1.5;
+  -webkit-font-smoothing:antialiased;overflow-x:hidden}
+.v-a1 ::selection{background:var(--accent-soft)}
+.v-a1 h1,.v-a1 h2,.v-a1 h3,.v-a1 p,.v-a1 ul,.v-a1 ol{margin:0}
+.v-a1 ul{list-style:none;padding:0}
+.v-a1 a{color:inherit;text-decoration:none}
+.v-a1 :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:2px}
+
+/* the house grain */
+.v-a1::before{
+  content:"";position:fixed;inset:0;z-index:9999;pointer-events:none;opacity:.03;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='256' height='256'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/></filter><rect width='256' height='256' filter='url(%23n)'/></svg>");
+  background-size:256px 256px;
+}
+
+/* ---------- the wordmark ---------- */
+.v-a1 .wm{font-family:var(--sans);font-weight:700;font-size:var(--s3);line-height:1;
+  letter-spacing:-.02em;color:var(--ink);display:inline-block}
+.v-a1 .wm .i{position:relative}
+.v-a1 .wm .i::after{content:"";position:absolute;left:50%;transform:translateX(-50%);
+  top:0.253em;width:.18em;height:.18em;background:var(--accent)}
+
+/* ---------- top bar ---------- */
+.v-a1 .topbar{
+  position:sticky;top:0;z-index:60;height:48px;display:flex;align-items:center;gap:0;
+  padding:0 16px;background:var(--card);border-bottom:1px solid var(--hair);
+}
+.v-a1 .brand{display:flex;align-items:center;height:48px;padding-right:14px;flex:0 0 auto}
+.v-a1 .brand:hover .wm{color:var(--accent)}
+.v-a1 .facts{display:flex;align-items:stretch;min-width:0;flex:1 1 auto;overflow-x:auto;
+  scrollbar-width:none;height:48px}
+.v-a1 .facts::-webkit-scrollbar{display:none}
+.v-a1 .cell{display:flex;align-items:center;gap:6px;white-space:nowrap;padding:0 14px;
+  border-left:1px solid var(--hair);font-family:var(--mono);font-size:var(--s1);
+  font-weight:400;color:var(--ink-2)}
+.v-a1 .cell .k{color:var(--muted)}
+.v-a1 .cell a{border-bottom:1px solid var(--hair-2)}
+.v-a1 .cell a:hover{color:var(--accent);border-bottom-color:var(--accent)}
+.v-a1 .barend{display:flex;align-items:center;gap:8px;padding-left:14px;flex:0 0 auto;
+  border-left:1px solid var(--hair);height:48px}
+.v-a1 .tgl{width:30px;height:30px;border-radius:999px;border:1px solid var(--hair-2);
+  background:transparent;color:var(--ink-2);font-size:var(--s2);line-height:1;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:color .18s var(--ease-out-expo),border-color .18s var(--ease-out-expo)}
+.v-a1 .tgl:hover{color:var(--accent);border-color:var(--accent)}
+
+/* ---------- verdict pills: 22px, one glyph plus one word ---------- */
+.v-a1 .pill{display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 9px;
+  border-radius:999px;font-family:var(--mono);font-size:var(--s1);font-weight:400;
+  line-height:1;white-space:nowrap}
+.v-a1 .pill .g{font-size:var(--s1);line-height:1}
+.v-a1 .pill-ok{background:var(--ok-tint);color:var(--ok-strong)}
+.v-a1 .pill-bad{background:var(--bad-tint);color:var(--bad-strong)}
+.v-a1 .pill-mut{background:var(--mut-tint);color:var(--muted)}
+.v-a1 .pill-line{background:transparent;color:var(--ink-2);border:1px solid var(--hair-2)}
+.v-a1 .pill-line .g{color:var(--ink-2)}
+
+/* ---------- screen frame ---------- */
+.v-a1 .screen{min-height:100svh;display:flex;flex-direction:column}
+.v-a1 .strip{position:relative;z-index:20;display:flex;align-items:center;gap:12px;height:30px;
+  padding:0 16px;background:var(--sunk);border-bottom:1px solid var(--hair);
+  font-family:var(--mono);font-size:var(--s1);font-weight:400;color:var(--muted);
+  letter-spacing:.12em;overflow:hidden}
+.v-a1 .strip span{white-space:nowrap}
+.v-a1 .strip .dash{flex:1 1 auto;height:1px;background:var(--hair);min-width:12px}
+.v-a1 .stage{flex:1 1 auto;display:flex;flex-direction:column;padding:40px 16px 64px}
+.v-a1 .wrap{width:100%;max-width:var(--col);margin:0 auto}
+.v-a1 .wrap-660{max-width:660px}
+.v-a1 .wrap-440{max-width:440px}
+
+/* section head */
+.v-a1 .shead{display:flex;align-items:baseline;justify-content:space-between;gap:16px;
+  flex-wrap:wrap;margin-bottom:18px}
+.v-a1 h2{font-size:var(--s4);font-weight:500;letter-spacing:-.01em;line-height:1.2}
+.v-a1 .meta{font-family:var(--mono);font-size:var(--s1);font-weight:400;color:var(--muted)}
+.v-a1 .lab{font-family:var(--mono);font-size:var(--s1);font-weight:400;color:var(--muted);
+  letter-spacing:.1em;text-transform:uppercase}
+
+/* ---------- screen 1: the connect card ---------- */
+.v-a1 .center{flex:1 1 auto;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:14px}
+.v-a1 .card{background:var(--card);border:1px solid var(--hair);border-radius:14px;
+  padding:24px;width:100%}
+.v-a1 .card-top{display:flex;align-items:center;justify-content:space-between;gap:12px;
+  margin-bottom:14px}
+.v-a1 h1{font-size:var(--s5);font-weight:500;letter-spacing:-.02em;line-height:1.15;
+  margin-bottom:18px}
+.v-a1 .field{margin-bottom:12px}
+.v-a1 .field label{display:block;font-family:var(--mono);font-size:var(--s1);font-weight:400;
+  color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:5px}
+.v-a1 input{width:100%;height:38px;padding:0 10px;background:var(--page);color:var(--ink);
+  border:1px solid var(--hair);border-radius:8px;font-family:var(--mono);font-size:var(--s2);
+  font-weight:400;line-height:1}
+.v-a1 input:hover{border-color:var(--hair-2)}
+.v-a1 input::placeholder{color:var(--muted)}
+.v-a1 .field .help{font-family:var(--mono);font-size:var(--s1);font-weight:400;
+  color:var(--muted);margin-top:5px}
+.v-a1 .rule{height:1px;background:var(--hair);margin:18px 0}
+
+/* the two unlock paths as two equal buttons */
+.v-a1 .paths{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.v-a1 .btn{display:flex;align-items:center;justify-content:center;height:42px;padding:0 14px;
+  border-radius:999px;font-family:var(--sans);font-size:var(--s2);font-weight:500;
+  line-height:1;cursor:pointer;border:1px solid transparent;text-align:center;
+  transition:transform .18s var(--ease-out-expo),background-color .18s var(--ease-out-expo),
+  border-color .18s var(--ease-out-expo),color .18s var(--ease-out-expo)}
+.v-a1 .btn-primary{background:var(--accent);color:var(--accent-ink)}
+.v-a1 .btn-primary:hover{transform:translateY(-1px)}
+.v-a1 .btn-line{background:var(--card);color:var(--ink);border-color:var(--hair-2)}
+.v-a1 .btn-line:hover{border-color:var(--ink);transform:translateY(-1px)}
+.v-a1 .paths .capt{margin-top:6px;font-family:var(--mono);font-size:var(--s1);font-weight:400;
+  color:var(--muted);letter-spacing:.08em;text-transform:uppercase;text-align:center}
+.v-a1 .note{border-left:1px solid var(--hair-2);padding-left:12px;margin-top:16px;
+  font-size:var(--s2);font-weight:400;color:var(--ink-2);line-height:1.55}
+.v-a1 .undercard{font-family:var(--mono);font-size:var(--s1);font-weight:400;color:var(--muted);
+  text-align:center;max-width:440px}
+
+/* ---------- screen 2: the cold start ---------- */
+.v-a1 .progress{font-family:var(--mono);font-size:var(--s2);font-weight:400;color:var(--ink-2);
+  padding-bottom:14px;border-bottom:1px solid var(--hair)}
+.v-a1 .epochs{margin:0}
+.v-a1 .epoch{display:flex;gap:12px;padding:16px 0;border-bottom:1px solid var(--hair)}
+.v-a1 .sq{flex:0 0 auto;width:8px;height:8px;background:var(--accent);margin-top:7px}
+.v-a1 .epoch .line{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px;min-width:0}
+.v-a1 .epoch .name{font-family:var(--mono);font-size:var(--s2);font-weight:400;color:var(--ink)}
+.v-a1 .epoch .bit{font-family:var(--mono);font-size:var(--s2);font-weight:400;color:var(--ink-2)}
+.v-a1 .epoch .bit.q{color:var(--muted)}
+.v-a1 .sep{color:var(--muted)}
+.v-a1 .finish{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:18px;
+  padding:14px 16px;background:var(--sunk);border:1px solid var(--hair);border-radius:12px;
+  font-family:var(--mono);font-size:var(--s2);font-weight:400;color:var(--ink)}
+.v-a1 .fade{opacity:0;transform:translateY(6px);animation:a1rise .7s var(--ease-out-expo) forwards}
+.v-a1 .d1{animation-delay:.12s}
+.v-a1 .d2{animation-delay:.30s}
+.v-a1 .d3{animation-delay:.48s}
+@keyframes a1rise{to{opacity:1;transform:none}}
+@media (prefers-reduced-motion: reduce){
+  .v-a1 .fade{animation:none;opacity:1;transform:none}
+  .v-a1 .btn:hover{transform:none}
+}
+
+/* ---------- screen 3: tabs, facets, the table ---------- */
+.v-a1 .tabs{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px;margin-bottom:10px}
+.v-a1 .tab{display:inline-flex;align-items:baseline;gap:6px;padding:6px 10px;background:none;
+  border:0;border-bottom:2px solid transparent;font-family:var(--sans);font-size:var(--s2);
+  font-weight:500;color:var(--muted);cursor:pointer;line-height:1.3}
+.v-a1 .tab .n{font-family:var(--mono);font-size:var(--s1);font-weight:400}
+.v-a1 .tab:hover{color:var(--ink)}
+.v-a1 .tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--ink)}
+.v-a1 .facet{font-size:var(--s1);font-weight:400;color:var(--muted);margin-bottom:14px;
+  font-family:var(--mono)}
+.v-a1 .facet a{color:var(--ink-2);border-bottom:1px dotted var(--hair-2)}
+.v-a1 .facet a:hover{color:var(--accent);border-bottom-color:var(--accent)}
+
+.v-a1 .tablewrap{overflow-x:auto;border-top:1px solid var(--hair-2)}
+.v-a1 table{border-collapse:collapse;width:100%;min-width:940px}
+.v-a1 th{text-align:left;padding:8px 10px;font-family:var(--mono);font-size:var(--s1);
+  font-weight:400;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;
+  border-bottom:1px solid var(--hair);white-space:nowrap;background:var(--page)}
+.v-a1 td{height:36px;padding:6px 10px;border-bottom:1px solid var(--hair);
+  font-size:var(--s2);font-weight:400;color:var(--ink);vertical-align:middle}
+.v-a1 tbody tr:hover td{background:var(--sunk)}
+.v-a1 .c-mono{font-family:var(--mono);font-size:var(--s2);font-weight:400;white-space:nowrap}
+.v-a1 .c-tier{color:var(--muted);width:78px}
+.v-a1 .c-key{width:200px}
+.v-a1 .c-key a{border-bottom:1px solid transparent}
+.v-a1 .c-key a:hover{color:var(--accent);border-bottom-color:var(--accent)}
+.v-a1 .c-cat{color:var(--ink-2);width:112px}
+.v-a1 .c-status{width:114px}
+.v-a1 .c-block{width:170px;text-align:right;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.v-a1 .c-body span{display:block;max-width:46ch;overflow:hidden;text-overflow:ellipsis;
+  white-space:nowrap;color:var(--ink-2)}
+.v-a1 .nil{color:var(--muted)}
+.v-a1 tr.sel td{background:var(--sunk)}
+.v-a1 tr.sel td:first-child{box-shadow:inset 2px 0 0 var(--ink)}
+
+/* the gone group */
+.v-a1 .gone{margin-top:22px;border:1px solid var(--hair);border-radius:12px;overflow:hidden}
+.v-a1 .gone-head{display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:9px 14px;background:var(--sunk);border-bottom:1px solid var(--hair);
+  font-family:var(--mono);font-size:var(--s1);font-weight:400;color:var(--muted);
+  letter-spacing:.1em;text-transform:uppercase}
+.v-a1 .gone-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:11px 14px;
+  font-size:var(--s2);font-weight:400}
+.v-a1 .gone-row .strike{text-decoration:line-through;color:var(--muted)}
+.v-a1 .gone-row .k{font-family:var(--mono);font-size:var(--s2);font-weight:400}
+.v-a1 .footline{margin-top:18px;font-family:var(--mono);font-size:var(--s1);font-weight:400;
+  color:var(--muted)}
+
+/* verdicts and error lines */
+.v-a1 .states{margin-top:34px;display:grid;grid-template-columns:1fr 1fr;gap:22px;
+  border-top:1px solid var(--hair);padding-top:20px}
+.v-a1 .legend li{display:flex;align-items:baseline;gap:10px;padding:7px 0;
+  font-size:var(--s2);font-weight:400;color:var(--ink-2)}
+.v-a1 .banner{margin-top:12px;display:flex;gap:10px;padding:11px 13px;background:var(--bad-tint);
+  border-radius:10px;font-size:var(--s2);font-weight:400;color:var(--bad-strong);line-height:1.5}
+.v-a1 .errs li{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--hair);
+  font-family:var(--mono);font-size:var(--s1);font-weight:400;color:var(--ink-2)}
+.v-a1 .errs li .x{color:var(--bad-strong)}
+.v-a1 .errs li .w{color:var(--muted)}
+
+/* ---------- screen 4: the drawer ---------- */
+.v-a1 .split{display:grid;grid-template-columns:minmax(0,1fr) 420px;gap:0;align-items:start;
+  border:1px solid var(--hair);border-radius:14px;overflow:hidden;background:var(--card)}
+.v-a1 .behind{position:relative;background:var(--page);padding:16px 0 16px 6px}
+.v-a1 .behind::after{content:"";position:absolute;inset:0;background:var(--dim);
+  pointer-events:none}
+.v-a1 .behind .tablewrap{border-top:0}
+.v-a1 .behind table{min-width:640px}
+.v-a1 .behind .padx{padding:0 10px}
+.v-a1 .drawer{border-left:1px solid var(--hair);background:var(--card);padding:20px;
+  min-height:520px}
+.v-a1 .drawer-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.v-a1 .drawer h3{font-size:var(--s4);font-weight:500;letter-spacing:-.01em;line-height:1.25}
+.v-a1 .drawer h3 .slash{color:var(--muted);font-weight:400}
+.v-a1 .x-btn{width:26px;height:26px;flex:0 0 auto;border-radius:999px;border:1px solid var(--hair);
+  background:transparent;color:var(--muted);cursor:pointer;font-size:var(--s2);line-height:1;
+  display:flex;align-items:center;justify-content:center}
+.v-a1 .x-btn:hover{color:var(--ink);border-color:var(--hair-2)}
+.v-a1 .rail{margin:18px 0 22px;border-top:1px solid var(--hair)}
+.v-a1 .rail div{display:flex;gap:12px;align-items:baseline;padding:7px 0;
+  border-bottom:1px solid var(--hair)}
+.v-a1 .rail dt{flex:0 0 120px;font-family:var(--mono);font-size:var(--s1);font-weight:400;
+  color:var(--muted)}
+.v-a1 .rail dd{margin:0;min-width:0;font-family:var(--mono);font-size:var(--s2);font-weight:400;
+  color:var(--ink);overflow-wrap:anywhere}
+.v-a1 .ver{padding:14px 0 16px;border-top:1px solid var(--hair)}
+.v-a1 .ver:first-of-type{border-top:0}
+.v-a1 .ver .head{font-family:var(--mono);font-size:var(--s1);font-weight:400;color:var(--ink-2);
+  display:flex;flex-wrap:wrap;gap:6px;align-items:baseline}
+.v-a1 .ver .head .cur{color:var(--muted)}
+.v-a1 .ver .text{margin:9px 0;font-size:var(--s2);font-weight:400;color:var(--ink);
+  line-height:1.55}
+.v-a1 .ver .prov{font-family:var(--mono);font-size:var(--s1);font-weight:400;color:var(--muted)}
+.v-a1 .ver.old .text{color:var(--ink-2)}
+.v-a1 .diff{color:var(--accent)}
+.v-a1 .links{display:flex;flex-wrap:wrap;gap:16px;padding-top:14px;border-top:1px solid var(--hair)}
+.v-a1 .links a{font-size:var(--s2);font-weight:500;color:var(--ink-2);
+  border-bottom:1px dotted var(--hair-2)}
+.v-a1 .links a:hover{color:var(--accent);border-bottom-color:var(--accent)}
+.v-a1 .caption{margin-top:14px;font-family:var(--mono);font-size:var(--s1);font-weight:400;
+  color:var(--muted);line-height:1.6}
+
+/* ---------- narrow ---------- */
+@media (max-width:900px){
+  .v-a1 .split{grid-template-columns:minmax(0,1fr)}
+  .v-a1 .drawer{border-left:0;border-top:1px solid var(--hair);min-height:0}
+  .v-a1 .states{grid-template-columns:1fr;gap:26px}
+}
+@media (max-width:560px){
+  .v-a1 .stage{padding:26px 14px 48px}
+  .v-a1 .paths{grid-template-columns:1fr}
+  .v-a1 .rail dt{flex:0 0 104px}
+  .v-a1 .strip{letter-spacing:.08em;padding:0 14px}
+  .v-a1 .strip span:last-child{display:none}
+  .v-a1 .topbar{padding:0 12px}
+  .v-a1 .cell{padding:0 10px}
+  .v-a1 .barend{padding-left:10px;gap:6px}
+}
+</style>
+</head>
+<body class="v-a1">
+
+<header class="topbar">
+  <a class="brand" href="#s1" title="kint"><span class="wm">k<span class="i">ı</span>nt</span></a>
+  <div class="facts">
+    <span class="cell"><span class="k">owner</span><a
+      href="https://basescan.org/address/0xC635e6Eb223aE14143E23cEEa9440bC773dc87Ec"
+      title="0xC635e6Eb223aE14143E23cEEa9440bC773dc87Ec">0xC635…87Ec</a></span>
+    <span class="cell"><span class="k">tenant</span>kint-demo</span>
+    <span class="cell"><span class="k">head seq</span>2</span>
+    <span class="cell"><span class="k">block</span>51,081,880</span>
+  </div>
+  <div class="barend">
+    <span class="pill pill-line"><span class="g" aria-hidden="true">◆</span>Unlocked</span>
+    <button class="tgl" id="themeToggle" type="button" aria-label="Toggle theme"><span
+      aria-hidden="true">◐</span></button>
+  </div>
+</header>
+
+<!-- ============ screen 1 ============ -->
+<section class="screen" id="s1">
+  <div class="strip"><span>screen 1 · connect</span><span class="dash"></span><span>kint-demo</span></div>
+  <div class="stage">
+    <div class="center">
+      <div class="wrap wrap-440">
+        <div class="card">
+          <div class="card-top">
+            <span class="lab">the vault</span>
+            <span class="pill pill-mut"><span class="g" aria-hidden="true">○</span>Locked</span>
+          </div>
+          <h1>Connect and unlock</h1>
+
+          <div class="field">
+            <label for="owner">Owner address</label>
+            <input id="owner" type="text" readonly
+              value="0xC635e6Eb223aE14143E23cEEa9440bC773dc87Ec">
+          </div>
+          <div class="field">
+            <label for="tenant">Tenant</label>
+            <input id="tenant" type="text" readonly value="kint-demo">
+          </div>
+
+          <div class="rule"></div>
+
+          <div class="paths">
+            <div>
+              <button class="btn btn-primary" type="button">Sign with the wallet</button>
+              <p class="capt">EOA owners</p>
+            </div>
+            <div>
+              <button class="btn btn-line" type="button">Type the passphrase</button>
+              <p class="capt">Base Account owners</p>
+            </div>
+          </div>
+
+          <p class="note">One frozen message. Signing it reveals your memory encryption key.
+            Only sign it in a kint page you opened yourself.</p>
+
+          <div class="field" style="margin-top:16px">
+            <label for="pass">Passphrase</label>
+            <input id="pass" type="password" placeholder="••••••••••••" value="">
+            <p class="help">Never leaves this page.</p>
+          </div>
+        </div>
+        <p class="undercard" style="margin:14px auto 0">Nothing decrypted leaves the browser.
+          Reads never send a transaction.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ screen 2 ============ -->
+<section class="screen" id="s2">
+  <div class="strip"><span>screen 2 · cold start</span><span class="dash"></span><span>2 epochs</span></div>
+  <div class="stage">
+    <div class="wrap wrap-660" style="margin-top:6vh">
+      <div class="shead">
+        <h2>The cold start</h2>
+        <span class="meta">tenant kint-demo · 2 epochs · 4 KB each</span>
+      </div>
+
+      <p class="progress">walking epoch 2 of 2 <span class="sep">·</span> block 51,081,880
+        <span class="sep">·</span> 15 rows</p>
+
+      <ul class="epochs">
+        <li class="epoch fade d1">
+          <span class="sq" aria-hidden="true"></span>
+          <span class="line">
+            <span class="name">epoch 1</span>
+            <span class="bit"><span class="sep">·</span> block 51,081,867</span>
+            <span class="bit"><span class="sep">·</span> 14 rows</span>
+            <span class="bit q"><span class="sep">·</span> tx 0xbe9bb859…bbe4455</span>
+            <span class="bit"><span class="sep">·</span> opened</span>
+          </span>
+        </li>
+        <li class="epoch fade d2">
+          <span class="sq" aria-hidden="true"></span>
+          <span class="line">
+            <span class="name">epoch 2</span>
+            <span class="bit"><span class="sep">·</span> block 51,081,880</span>
+            <span class="bit"><span class="sep">·</span> +2 rows, 1 deleted</span>
+            <span class="bit q"><span class="sep">·</span> tx 0x369907fb…9a729</span>
+            <span class="bit"><span class="sep">·</span> opened</span>
+          </span>
+        </li>
+      </ul>
+
+      <div class="finish fade d3">
+        <span class="pill pill-ok"><span class="g" aria-hidden="true">✓</span>verified</span>
+        <span>restored 15 rows <span class="sep">·</span> rows_root 390336ff71dbcb85 matches the
+          chain <span class="sep">·</span> in 1.2 s</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ screen 3 ============ -->
+<section class="screen" id="s3">
+  <div class="strip"><span>screen 3 · the memory</span><span class="dash"></span><span>15 rows · 2 epochs</span></div>
+  <div class="stage">
+    <div class="wrap">
+      <div class="shead">
+        <h2>The memory</h2>
+        <span class="meta">rows_root 390336ff71dbcb85 · head seq 2 · block 51,081,880</span>
+      </div>
+
+      <div class="tabs" role="tablist" aria-label="Sibyl tiers">
+        <button class="tab" type="button" role="tab" aria-selected="true">entities <span class="n">7</span></button>
+        <button class="tab" type="button" role="tab" aria-selected="false">state <span class="n">2</span></button>
+        <button class="tab" type="button" role="tab" aria-selected="false">reference <span class="n">2</span></button>
+        <button class="tab" type="button" role="tab" aria-selected="false">journal <span class="n">4</span></button>
+      </div>
+
+      <p class="facet">Suggested facets: <a href="#s3">category</a>, <a href="#s3">block</a>,
+        <a href="#s3">verdict</a></p>
+
+      <div class="tablewrap">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">tier</th><th scope="col">key</th><th scope="col">category</th>
+              <th scope="col">status</th><th scope="col">body</th>
+              <th scope="col" style="text-align:right">no later than block</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td class="c-mono c-tier">entity</td><td class="c-mono c-key"><a href="#s4">release-gate</a></td>
+              <td class="c-mono c-cat">rules</td><td class="c-status"><span class="pill pill-ok"><span class="g" aria-hidden="true">✓</span>verified</span></td>
+              <td class="c-body"><span title="never ship on a Friday; every release needs a green deadlift test, a second reviewer, AND a passing kint verify">never ship on a Friday; every release needs a green deadlift test, a second reviewer, AND a passing kint verify</span></td>
+              <td class="c-mono c-block">51,081,880</td></tr>
+            <tr><td class="c-mono c-tier">entity</td><td class="c-mono c-key"><a href="#s4">destructive-commands</a></td>
+              <td class="c-mono c-cat">rules</td><td class="c-status"><span class="pill pill-ok"><span class="g" aria-hidden="true">✓</span>verified</span></td>
+              <td class="c-body"><span title="never rm -rf a shared path; ask what processes anchor there first">never rm -rf a shared path; ask what processes anchor there first</span></td>
+              <td class="c-mono c-block">51,081,867</td></tr>
+            <tr><td class="c-mono c-tier">entity</td><td class="c-mono c-key"><a href="#s4">elpabl0</a></td>
+              <td class="c-mono c-cat">people</td><td class="c-status"><span class="pill pill-ok"><span class="g" aria-hidden="true">✓</span>verified</span></td>
+              <td class="c-body"><span title="role founder · tz WIB · prefers short answers, no walls of text">role founder · tz WIB · prefers short answers, no walls of text</span></td>
+              <td class="c-mono c-block">51,081,867</td></tr>
+            <tr><td class="c-mono c-tier">entity</td><td class="c-mono c-key"><a href="#s4">reviewer-a</a></td>
+              <td class="c-mono c-cat">people</td><td class="c-status"><span class="pill pill-ok"><span class="g" aria-hidden="true">✓</span>verified</span></td>
+              <td class="c-body"><span title="role second reviewer · reachable attn">role second reviewer · reachable attn</span></td>
+              <td class="c-mono c-block">51,081,867</td></tr>
+            <tr><td class="c-mono c-tier">entity</td><td class="c-mono c-key"><a href="#s4">reviewer-b</a></td>
+              <td class="c-mono c-cat">people</td><td class="c-status"><span class="pill pill-ok"><span class="g" aria-hidden="true">✓</span>verified</span></td>
+              <td class="c-body"><span title="role second reviewer · reachable attn">role second reviewer · reachable attn</span></td>
+              <td class="c-mono c-block">51,081,880</td></tr>
+            <tr><td class="c-mono c-tier">entity</td><td class="c-mono c-key"><a href="#s4">kint</a></td>
+              <td class="c-mono c-cat">projects</td><td class="c-status"><span class="pill pill-ok"><span class="g" aria-hidden="true">✓</span>verified</span></td>
+              <td class="c-body"><span title="Sibyl Memory that outlives the laptop · chain Base · status hackathon build">Sibyl Memory that outlives the laptop · chain Base · status hackathon build</span></td>
+              <td class="c-mono c-block">51,081,867</td></tr>
+            <tr><td class="c-mono c-tier">entity</td><td class="c-mono c-key"><a href="#s4">deploy-window</a></td>
+              <td class="c-mono c-cat">facts</td><td class="c-status"><span class="pill pill-ok"><span class="g" aria-hidden="true">✓</span>verified</span></td>
+              <td class="c-body"><span title="Tue to Thu, 09:00 to 17:00 WIB · why: support coverage">Tue to Thu, 09:00 to 17:00 WIB · why: support coverage</span></td>
+              <td class="c-mono c-block">51,081,867</td></tr>
+            <tr><td class="c-mono c-tier">state</td><td class="c-mono c-key"><a href="#s4">priorities</a></td>
+              <td class="c-mono c-cat nil">·</td><td class="c-status"><span class="pill pill-ok"><span class="g" aria-hidden="true">✓</span>verified</span></td>
+              <td class="c-body"><span title="top: kint submission, sigil audit · updated 2026-09-09">top: kint submission, sigil audit · updated 2026-09-09</span></td>
+              <td class="c-mono c-block">51,081,867</td></tr>
+            <tr><td class="c-mono c-tier">state</td><td class="c-mono c-key"><a href="#s4">session</a></td>
+              <td class="c-mono c-cat nil">·</td><td class="c-status"><span class="pill pill-ok"><span class="g" aria-hidden="true">✓</span>verified</span></td>
+              <td class="c-body"><span title="last_task: wire the harnesses to kint-server">last_task: wire the harnesses to kint-server</span></td>
+              <td class="c-mono c-block">51,081,867</td></tr>
+            <tr><td class="c-mono c-tier">reference</td><td class="c-mono c-key"><a href="#s4">runbook-release</a></td>
+              <td class="c-mono c-cat nil">·</td><td class="c-status"><span class="pill pill-ok"><span class="g" aria-hidden="true">✓</span>verified</span></td>
+              <td class="c-body"><span title="# Release runbook · 1. Green tests. 2. Second reviewer signs off. 3. Never on a Friday. 4. Tag, seal, announce."># Release runbook · 1. Green tests. 2. Second reviewer signs off. 3. Never on a Friday. 4. Tag, seal, announce.</span></td>
+              <td class="c-mono c-block">51,081,867</td></tr>
+            <tr><td class="c-mono c-tier">reference</td><td class="c-mono c-key"><a href="#s4">glossary</a></td>
+              <td class="c-mono c-cat nil">·</td><td class="c-status"><span class="pill pill-ok"><span class="g" aria-hidden="true">✓</span>verified</span></td>
+              <td class="c-body"><span title="epoch: one anchored change set. space: keccak of the tenant id. leaf: hash of a stored row.">epoch: one anchored change set. space: keccak of the tenant id. leaf: hash of a stored row.</span></td>
+              <td class="c-mono c-block">51,081,867</td></tr>
+            <tr><td class="c-mono c-tier">journal</td><td class="c-mono c-key"><a href="#s4">2026-05-01 09:00</a></td>
+              <td class="c-mono c-cat nil">·</td><td class="c-status"><span class="pill pill-ok"><span class="g" aria-hidden="true">✓</span>verified</span></td>
+              <td class="c-body"><span title="decision: adopted the Friday release rule after the May 19 incident">decision: adopted the Friday release rule after the May 19 incident</span></td>
+              <td class="c-mono c-block">51,081,867</td></tr>
+            <tr><td class="c-mono c-tier">journal</td><td class="c-mono c-key"><a href="#s4">2026-08-28 15:30</a></td>
+              <td class="c-mono c-cat nil">·</td><td class="c-status"><span class="pill pill-ok"><span class="g" aria-hidden="true">✓</span>verified</span></td>
+              <td class="c-body"><span title="refusal: ship the hotfix tonight? why: Friday · next: Monday 09:00 WIB">refusal: ship the hotfix tonight? why: Friday · next: Monday 09:00 WIB</span></td>
+              <td class="c-mono c-block">51,081,867</td></tr>
+            <tr><td class="c-mono c-tier">journal</td><td class="c-mono c-key"><a href="#s4">2026-09-09 18:25</a></td>
+              <td class="c-mono c-cat nil">·</td><td class="c-status"><span class="pill pill-ok"><span class="g" aria-hidden="true">✓</span>verified</span></td>
+              <td class="c-body"><span title="observation: kura send --wallet is ignored; switch the default wallet first">observation: kura send --wallet is ignored; switch the default wallet first</span></td>
+              <td class="c-mono c-block">51,081,880</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="gone">
+        <div class="gone-head"><span>gone · deleted in epoch 2</span><span>1 row</span></div>
+        <div class="gone-row">
+          <span class="pill pill-mut"><span class="g" aria-hidden="true">−</span>gone</span>
+          <span class="k">entity</span>
+          <span class="k">projects / sigil</span>
+          <span class="strike">compliance layer for the agentic economy · status paused</span>
+          <span class="meta">gone at block 51,081,880</span>
+        </div>
+      </div>
+
+      <p class="footline">verified 15 of 15 rows against block 51,081,880 in 1.2 s
+        <span class="sep">·</span> 2 epochs <span class="sep">·</span> 4 KB each</p>
+
+      <div class="states">
+        <div>
+          <p class="lab" style="margin-bottom:6px">verdicts</p>
+          <ul class="legend">
+            <li><span class="pill pill-ok"><span class="g" aria-hidden="true">✓</span>verified</span>
+              <span>stored text matches the leaf anchored on Base</span></li>
+            <li><span class="pill pill-bad"><span class="g" aria-hidden="true">✕</span>refused</span>
+              <span>stored text does not match the leaf anchored at epoch 2, block 51,081,880</span></li>
+            <li><span class="pill pill-mut"><span class="g" aria-hidden="true">○</span>closed</span>
+              <span>an epoch sealed under a retired key</span></li>
+          </ul>
+          <p class="banner"><span aria-hidden="true">✕</span><span>epoch 3 claims to be a snapshot
+            its plaintext does not back up; the history was read the long way round.</span></p>
+        </div>
+        <div>
+          <p class="lab" style="margin-bottom:6px">empty and error states</p>
+          <ul class="errs">
+            <li><span class="x" aria-hidden="true">✕</span><span><span class="w">wrong
+              passphrase:</span> refused by the key tag before any decrypt</span></li>
+            <li><span class="x" aria-hidden="true">✕</span><span><span class="w">chain
+              unreadable:</span> two RPC operators disagree on the head; refusing to restore</span></li>
+            <li><span class="x" aria-hidden="true">✕</span><span><span class="w">fork:</span>
+              another machine wrote epoch 3 first; this machine's 2 unanchored rows are refused</span></li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============ screen 4 ============ -->
+<section class="screen" id="s4">
+  <div class="strip"><span>screen 4 · history</span><span class="dash"></span><span>rules / release-gate</span></div>
+  <div class="stage">
+    <div class="wrap">
+      <div class="shead">
+        <h2>One row's history</h2>
+        <span class="meta">entity rules / release-gate · 2 versions</span>
+      </div>
+
+      <div class="split">
+        <div class="behind">
+          <p class="lab padx" style="margin-bottom:10px">the memory · 15 rows</p>
+          <div class="tablewrap">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">key</th><th scope="col">category</th><th scope="col">status</th>
+                  <th scope="col" style="text-align:right">no later than block</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="sel"><td class="c-mono c-key">release-gate</td><td class="c-mono c-cat">rules</td>
+                  <td class="c-status"><span class="pill pill-ok"><span class="g" aria-hidden="true">✓</span>verified</span></td>
+                  <td class="c-mono c-block">51,081,880</td></tr>
+                <tr><td class="c-mono c-key">destructive-commands</td><td class="c-mono c-cat">rules</td>
+                  <td class="c-status"><span class="pill pill-ok"><span class="g" aria-hidden="true">✓</span>verified</span></td>
+                  <td class="c-mono c-block">51,081,867</td></tr>
+                <tr><td class="c-mono c-key">elpabl0</td><td class="c-mono c-cat">people</td>
+                  <td class="c-status"><span class="pill pill-ok"><span class="g" aria-hidden="true">✓</span>verified</span></td>
+                  <td class="c-mono c-block">51,081,867</td></tr>
+                <tr><td class="c-mono c-key">reviewer-b</td><td class="c-mono c-cat">people</td>
+                  <td class="c-status"><span class="pill pill-ok"><span class="g" aria-hidden="true">✓</span>verified</span></td>
+                  <td class="c-mono c-block">51,081,880</td></tr>
+                <tr><td class="c-mono c-key">kint</td><td class="c-mono c-cat">projects</td>
+                  <td class="c-status"><span class="pill pill-ok"><span class="g" aria-hidden="true">✓</span>verified</span></td>
+                  <td class="c-mono c-block">51,081,867</td></tr>
+                <tr><td class="c-mono c-key">deploy-window</td><td class="c-mono c-cat">facts</td>
+                  <td class="c-status"><span class="pill pill-ok"><span class="g" aria-hidden="true">✓</span>verified</span></td>
+                  <td class="c-mono c-block">51,081,867</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <aside class="drawer" aria-label="Row history">
+          <div class="drawer-top">
+            <div>
+              <p class="lab" style="margin-bottom:6px">row</p>
+              <h3>rules <span class="slash">/</span> release-gate</h3>
+              <p class="meta" style="margin-top:6px">2 versions</p>
+            </div>
+            <button class="x-btn" type="button" aria-label="Close the history drawer"><span
+              aria-hidden="true">✕</span></button>
+          </div>
+
+          <dl class="rail">
+            <div><dt>tier:</dt><dd>entity</dd></div>
+            <div><dt>category:</dt><dd>rules</dd></div>
+            <div><dt>key:</dt><dd>release-gate</dd></div>
+            <div><dt>status:</dt><dd><span class="pill pill-ok"><span class="g" aria-hidden="true">✓</span>verified</span></dd></div>
+            <div><dt>epoch:</dt><dd>2</dd></div>
+            <div><dt>no later than:</dt><dd>block 51,081,880</dd></div>
+            <div><dt>leaf:</dt><dd>4ac605528bbb00e7</dd></div>
+            <div><dt>rows_root:</dt><dd>390336ff71dbcb85</dd></div>
+            <div><dt>tenant:</dt><dd>kint-demo</dd></div>
+          </dl>
+
+          <div class="ver">
+            <p class="head"><span>epoch 2</span><span class="sep">·</span><span>block &lt;= 51,081,880</span>
+              <span class="sep">·</span><span>leaf 4ac605528bbb00e7</span><span class="cur">(current)</span></p>
+            <p class="text">never ship on a Friday; every release needs a green deadlift test,
+              a second reviewer, <span class="diff">AND a passing kint verify</span></p>
+            <p class="prov">since 2026-09-09 <span class="sep">·</span> source: kint hackathon
+              build, supersedes the May rule</p>
+          </div>
+          <div class="ver old">
+            <p class="head"><span>epoch 1</span><span class="sep">·</span><span>block &lt;= 51,081,867</span>
+              <span class="sep">·</span><span>leaf f406bb0919d23360</span></p>
+            <p class="text">never ship on a Friday; every release needs a green deadlift test
+              <span class="diff">and</span> a second reviewer</p>
+            <p class="prov">since 2026-05-01 <span class="sep">·</span> source: postmortem of the
+              May 19 incident</p>
+          </div>
+
+          <div class="links">
+            <a href="https://basescan.org/address/0xa22E03f7a4145Bf4909a83595C90a38E14d79600">tx on basescan</a>
+            <a href="#s3">open the memory at this block</a>
+          </div>
+          <p class="caption">A row's block height is an upper bound: it existed no later than
+            that block.</p>
+        </aside>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+(function(){
+  var b=document.getElementById('themeToggle');
+  if(!b){return;}
+  b.addEventListener('click',function(){
+    var r=document.documentElement;
+    var cur=r.getAttribute('data-theme');
+    if(cur!=='dark'&&cur!=='light'){
+      cur=(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';
+    }
+    var next=(cur==='dark')?'light':'dark';
+    r.setAttribute('data-theme',next);
+    try{localStorage.setItem('kint-theme',next);}catch(e){}
+  });
+})();
+</script>
+</body>
+</html>

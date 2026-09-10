@@ -1,0 +1,44 @@
+/* kint tokens. Paper and ink, one cobalt accent. Three viewer states: bare :root is the light palette,
+   the prefers-color-scheme block redefines only tokens (guarded so an explicit light choice beats a dark OS),
+   and [data-theme="dark"] redefines them again so the toggle wins both ways. Every color goes through a token. */
+:root{
+  --page:#F4F1EA;--page-2:#EBE7DC;--well:#ECE8DD;--ink:#171512;--ink-2:#403B34;--muted:#675F57;--hair:rgba(23,21,18,.13);
+  --accent:#1F3FD6;--accent-lite:#A6B8FF;--kint-accent:#1F3FD6;
+  --on-sky:#171512;--on-sky-2:rgba(23,21,18,.80);--hl:#1F3FD6;--pill-bg:#171512;--pill-ink:#F4F1EA;--rule:rgba(23,21,18,.30);--sq:#1F3FD6;
+  --tint-1:#EEE9DE;--tint-2:#E5DFD0;--tint-3:#DCD4C2;--surf:#FBFAF6;--surf-hi:rgba(255,255,255,.7);--row-now:rgba(23,21,18,.035);--chip:rgba(23,21,18,.06);
+  --sh-contact:0 1px 2px rgba(23,21,18,.08);--sh-ambient:0 16px 36px -10px rgba(23,21,18,.18);
+  --t1:.8125rem;--t2:1rem;--t3:clamp(1.2rem,1.7vw,1.4rem);--t4:clamp(1.8rem,3vw,2.6rem);--t5:clamp(2.5rem,5vw,4.5rem);
+  --section-py:clamp(88px,10vh,150px);--narrow:880px;
+  --mono:var(--font-mono),ui-monospace,Menlo,monospace;--display:var(--font-display),system-ui,sans-serif;
+  --ease:cubic-bezier(0.16,1,0.3,1);--wide:1180px;--edge:max(24px,calc((100vw - var(--wide))/2));
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --page:#12110F;--page-2:#0D0C0A;--well:#1B1916;--ink:#ECEAE4;--ink-2:#C9C6BE;--muted:#9A958B;--hair:rgba(236,234,228,.14);
+    --accent:#7A93FF;--accent-lite:#AEC0FF;--kint-accent:#7A93FF;
+    --on-sky:#F4F1EA;--on-sky-2:rgba(244,241,234,.84);--hl:#AEC0FF;--pill-bg:#F4F1EA;--pill-ink:#141A3D;--rule:rgba(244,241,234,.32);--sq:#AEC0FF;
+    --tint-1:#1C1914;--tint-2:#25211B;--tint-3:#2E2A21;--surf:#1F1D1A;--surf-hi:rgba(255,255,255,.06);--row-now:rgba(255,255,255,.04);--chip:rgba(255,255,255,.07);
+    --sh-contact:0 1px 2px rgba(0,0,0,.4);--sh-ambient:0 16px 36px -10px rgba(0,0,0,.5);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --page:#12110F;--page-2:#0D0C0A;--well:#1B1916;--ink:#ECEAE4;--ink-2:#C9C6BE;--muted:#9A958B;--hair:rgba(236,234,228,.14);
+  --accent:#7A93FF;--accent-lite:#AEC0FF;--kint-accent:#7A93FF;
+  --on-sky:#F4F1EA;--on-sky-2:rgba(244,241,234,.84);--hl:#AEC0FF;--pill-bg:#F4F1EA;--pill-ink:#141A3D;--rule:rgba(244,241,234,.32);--sq:#AEC0FF;
+  --tint-1:#1C1914;--tint-2:#25211B;--tint-3:#2E2A21;--surf:#1F1D1A;--surf-hi:rgba(255,255,255,.06);--row-now:rgba(255,255,255,.04);--chip:rgba(255,255,255,.07);
+  --sh-contact:0 1px 2px rgba(0,0,0,.4);--sh-ambient:0 16px 36px -10px rgba(0,0,0,.5);
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scroll-behavior:auto}
+body{margin:0;background:var(--page);color:var(--ink);font-family:var(--display);font-size:var(--t2);line-height:1.5;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+body::before{content:"";position:fixed;inset:0;z-index:9999;pointer-events:none;opacity:.03;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+::selection{background:var(--ink);color:var(--page)}
+.mono{font-family:var(--mono);font-size:var(--t1);letter-spacing:.02em}
+a{color:inherit}
+button{font:inherit;color:inherit}
+/* the Base square: a real brand mark, never recoloured; it sits before the word Base */
+.base{display:inline-block;width:.66em;height:.66em;background:#0000FF;vertical-align:-.01em;margin-right:.3em}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}

@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>kint design studio</title>
+<style>
+/* kint design bake-off STUDIO: one page, every variant, mix and match.
+   Chrome = one floating chip bottom-left (the lsa MOCK CONTROLS pattern). Keys: 1 to 9 and
+   a to e switch variants, n the navbars, t cycles theme, v cycles viewport, p cycles the poster on variant 4, r resets overrides. The hash
+   carries the whole mix (#l1&t=dark&w=390&d=Satoshi&b=Archivo&m=Martian+Mono&x=cobalt) so a
+   combination can be pasted back. Overrides are injected INTO the variant iframe (same origin).
+   No em dash in this file. */
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: #121110; }
+#stage { position: absolute; inset: 0; display: flex; justify-content: center; align-items: stretch; }
+iframe { display: block; width: 100%; height: 100%; border: 0; background: #F7F6F2; transition: width .25s cubic-bezier(.16,1,.3,1); }
+#stage.w1024 iframe { width: 1024px; box-shadow: 0 0 0 1px rgba(255,255,255,.08); }
+#stage.w390 iframe { width: 390px; box-shadow: 0 0 0 1px rgba(255,255,255,.08); }
+.dk { position: fixed; left: 16px; bottom: 16px; z-index: 90; font-family: ui-monospace, Menlo, monospace; }
+.dk-btn { height: 34px; padding: 0 14px; border-radius: 17px; background: #1A1916; color: #fff; font-size: 11px; letter-spacing: .08em; border: 0; cursor: pointer; box-shadow: 0 4px 16px rgba(0,0,0,.35); font-family: inherit; }
+.dk-panel { display: none; position: absolute; left: 0; bottom: 44px; width: 372px; max-height: calc(100vh - 80px); overflow: auto; background: #fff; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,.28), inset 0 0 0 1px rgba(0,0,0,.08); padding: 14px; color: #1A1916; }
+.dk.open .dk-panel { display: block; }
+.dk h4 { margin: 10px 0 6px; font-size: 10px; letter-spacing: .12em; color: #7A766E; font-weight: 400; }
+.dk h4:first-child { margin-top: 0; }
+.dk .row { display: flex; flex-wrap: wrap; gap: 5px; }
+.dk button.opt { font-family: inherit; font-size: 11px; padding: 5px 9px; border-radius: 8px; border: 0; background: #EEECE6; color: #1A1916; cursor: pointer; }
+.dk button.opt.on { background: #0000FF; color: #fff; }
+.dk select { font-family: inherit; font-size: 11px; padding: 5px 8px; border-radius: 8px; border: 0; background: #EEECE6; color: #1A1916; width: 100%; }
+.dk .mix { margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(0,0,0,.08); font-size: 10px; color: #7A766E; word-break: break-all; }
+.dk .mix b { color: #1A1916; font-weight: 500; }
+</style>
+</head>
+<body>
+<div id="stage"><iframe id="frame" src="" title="kint design variant"></iframe></div>
+
+<div class="dk" id="dk">
+  <div class="dk-panel">
+    <h4>LANDING · KEYS 1 TO 9</h4><div class="row" id="landing"></div>
+    <h4>APP · A TO D · BRAND · E · NAVBARS · N</h4><div class="row" id="app"></div>
+    <h4>THEME · KEY T</h4><div class="row" id="theme"></div>
+    <h4>VIEWPORT · KEY V</h4><div class="row" id="vp"></div>
+    <h4>DISPLAY FACE (h1, h2, h3, wordmark)</h4><select id="fd"></select>
+    <h4>BODY FACE (everything that is not display or mono)</h4><select id="fb"></select>
+    <h4>MONO FACE (code, hashes, eyebrows, labels)</h4><select id="fm"></select>
+    <h4>ACCENT</h4><div class="row" id="accent"></div>
+    <h4>POSTER (variants 3 and 4; rings = 3 drawn) · KEY P</h4><div class="row" id="poster"></div>
+    <div class="mix" id="mix"></div>
+  </div>
+  <button class="dk-btn" onclick="document.getElementById('dk').classList.toggle('open')">MOCK CONTROLS</button>
+</div>
+
+<script>
+(function(){
+  var V = [
+    { k:'1', key:'l1',  label:'1 Ledger',       group:'landing' },
+    { k:'2', key:'l2',  label:'2 Inscription',  group:'landing' },
+    { k:'3', key:'l3',  label:'3 Poster gen',   group:'landing' },
+    { k:'4', key:'l3b', label:'4 Poster image', group:'landing' },
+    { k:'5', key:'l4',  label:'5 Terminal',     group:'landing' },
+    { k:'6', key:'l5',  label:'6 Pixel',        group:'landing' },
+    { k:'7', key:'l6',  label:'7 Base native',  group:'landing' },
+    { k:'8', key:'l7',  label:'8 Archive',      group:'landing' },
+    { k:'9', key:'l8',  label:'9 Split',        group:'landing' },
+    { k:'a', key:'a1',  label:'a Table',        group:'app' },
+    { k:'b', key:'a2',  label:'b Timeline',     group:'app' },
+    { k:'c', key:'a3',  label:'c Console',      group:'app' },
+    { k:'d', key:'a4',  label:'d Sheet',        group:'app' },
+    { k:'e', key:'b1',  label:'e Brand sheet',  group:'app' },
+    { k:'n', key:'nav', label:'n Navbars',      group:'app' },
+  ];
+  var THEMES = ['system', 'light', 'dark'];
+  var VPS = [['desktop', ''], ['1024', 'w1024'], ['390', 'w390']];
+  /* Faces: [name, source]. local = @font-face on fonts/, gf = Google Fonts. */
+  var FACES = [
+    ['Satoshi','local'], ['Instrument Sans','local'], ['Open Sauce One','local'], ['Fragment Mono','local'], ['Geist Mono','local'], ['Geist Pixel','local'],
+    ['GFS Didot','gf'], ['Martian Mono','gf'], ['Bricolage Grotesque','gf'], ['Doto','gf'], ['Schibsted Grotesk','gf'], ['DM Mono','gf'],
+    ['EB Garamond','gf'], ['Courier Prime','gf'], ['Archivo','gf'], ['Cormorant Garamond','gf'],
+    ['Hanken Grotesk','gf'], ['Host Grotesk','gf'], ['Syne','gf'], ['Space Grotesk','gf'], ['Cardo','gf'], ['Bodoni Moda','gf'], ['Xanh Mono','gf'], ['Azeret Mono','gf'],
+  ];
+  var GF = 'https://fonts.googleapis.com/css2?family=GFS+Didot&family=Martian+Mono:wght@300..800&family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=Doto:wght@100..900&family=Schibsted+Grotesk:ital,wght@0,400..900;1,400..900&family=DM+Mono:wght@300;400;500&family=EB+Garamond:ital,wght@0,400..800;1,400..800&family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Archivo:ital,wdth,wght@0,62..125,100..900;1,62..125,100..900&family=Cormorant+Garamond:ital,wght@0,300..700;1,300..700&family=Hanken+Grotesk:wght@300..800&family=Host+Grotesk:wght@300..800&family=Syne:wght@400..800&family=Space+Grotesk:wght@300..700&family=Cardo:ital,wght@0,400;0,700;1,400&family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&family=Xanh+Mono:ital@0;1&family=Azeret+Mono:wght@300..800&display=swap';
+  var LOCAL = "@font-face{font-family:'Satoshi';src:url('fonts/Satoshi-Variable.woff2') format('woff2');font-weight:300 900;font-display:swap}" +
+    "@font-face{font-family:'Instrument Sans';src:url('fonts/instrument-sans-var.ttf') format('truetype');font-weight:400 700;font-display:swap}" +
+    "@font-face{font-family:'Open Sauce One';src:url('fonts/OpenSauceOne-Regular.ttf') format('truetype');font-weight:400;font-display:swap}" +
+    "@font-face{font-family:'Open Sauce One';src:url('fonts/OpenSauceOne-Medium.ttf') format('truetype');font-weight:500;font-display:swap}" +
+    "@font-face{font-family:'Open Sauce One';src:url('fonts/OpenSauceOne-SemiBold.ttf') format('truetype');font-weight:600;font-display:swap}" +
+    "@font-face{font-family:'Fragment Mono';src:url('fonts/FragmentMono-Regular.ttf') format('truetype');font-weight:400;font-display:swap}" +
+    "@font-face{font-family:'Geist Mono';src:url('fonts/geist-mono-var.ttf') format('truetype');font-weight:100 900;font-display:swap}" +
+    "@font-face{font-family:'Geist Pixel';src:url('fonts/GeistPixel-Square.woff2') format('woff2');font-weight:400;font-display:swap}";
+  var ACCENTS = [
+    ['off', null, null], ['base blue', '#0000FF', '#4D7CFF'], ['cobalt', '#1F3FD6', '#7A93FF'], ['terracotta', '#E07A5F', '#F08C74'],
+    ['tigerlily', '#E2583E', '#F27A62'], ['oxblood', '#9E2B25', '#E06A62'], ['teal', '#4A7C6F', '#5A9A8A'], ['ink', 'var(--ink)', 'var(--ink)'],
+  ];
+  var MONO_SEL = 'code, pre, kbd, samp, [class*="mono"], [class*="eyebrow"], [class*="label"], [class*="fact"], [class*="hash"], [class*="strip"] *, [class*="transcript"] *';
+  var DISPLAY_SEL = 'h1, h2, h3, .wm, [class*="display"], [class*="headline"], [class*="title"]';
+
+  var S = { key: 'l1', t: 'system', w: 'desktop', d: '', b: '', m: '', x: 'off', p: 'leaves-blue' };
+  var POSTERS = ['leaves-blue', 'leaves-turning', 'leaves', 'leaves-night', 'blueprint', 'stele', 'sand', 'rings'];
+  var frame = document.getElementById('frame'), stage = document.getElementById('stage');
+
+  function parseHash(){
+    var h = location.hash.slice(1); if (!h) return;
+    var parts = h.split('&'); S.key = parts.shift() || S.key;
+    parts.forEach(function(p){ var kv = p.split('='); if (kv.length === 2 && kv[0] in S) S[kv[0]] = decodeURIComponent(kv[1].replace(/\+/g, ' ')); });
+  }
+  function writeHash(){
+    var h = S.key; ['t','w','d','b','m','x','p'].forEach(function(k){ var v = S[k]; var def = {t:'system', w:'desktop', d:'', b:'', m:'', x:'off', p:'leaves-blue'}[k]; if (v && v !== def) h += '&' + k + '=' + encodeURIComponent(v).replace(/%20/g, '+'); });
+    if (location.hash.slice(1) !== h) history.replaceState(null, '', '#' + h);
+  }
+  function doc(){ try { return frame.contentDocument; } catch (e) { return null; } }
+  function ensureFonts(){
+    var d = doc(); if (!d || !d.head) return;
+    if (!d.getElementById('deck-gf')) { var l = d.createElement('link'); l.id = 'deck-gf'; l.rel = 'stylesheet'; l.href = GF; d.head.appendChild(l); }
+    if (!d.getElementById('deck-local')) { var s = d.createElement('style'); s.id = 'deck-local'; s.textContent = LOCAL; d.head.appendChild(s); }
+  }
+  function applyTheme(){
+    var d = doc(); if (!d) return;
+    if (S.t === 'system') d.documentElement.removeAttribute('data-theme'); else d.documentElement.setAttribute('data-theme', S.t);
+    applyAccent();
+  }
+  function effectiveDark(){
+    var d = doc(); if (!d) return false;
+    var t = d.documentElement.getAttribute('data-theme');
+    if (t) return t === 'dark';
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  }
+  function applyAccent(){
+    var d = doc(); if (!d) return;
+    var a = ACCENTS.find(function(x){ return x[0] === S.x; }) || ACCENTS[0];
+    if (!a[1]) { d.documentElement.style.removeProperty('--accent'); return; }
+    d.documentElement.style.setProperty('--accent', effectiveDark() ? a[2] : a[1]);
+  }
+  function applyFonts(){
+    var d = doc(); if (!d || !d.head) return;
+    var css = '';
+    if (S.d) css += DISPLAY_SEL + '{font-family:"' + S.d + '",sans-serif !important}';
+    if (S.b) css += 'body, body *:not(code):not(pre):not(kbd):not(samp):not(h1):not(h2):not(h3):not(.wm):not([class*="mono"]):not([class*="eyebrow"]):not([class*="label"]):not([class*="display"]):not([class*="headline"]):not([class*="title"]){font-family:"' + S.b + '",sans-serif !important}';
+    if (S.m) css += MONO_SEL + '{font-family:"' + S.m + '",monospace !important}';
+    var el = d.getElementById('deck-override');
+    if (!css) { if (el) el.remove(); return; }
+    if (!el) { el = d.createElement('style'); el.id = 'deck-override'; d.head.appendChild(el); }
+    el.textContent = css;
+  }
+  function applyPoster(){ var d = doc(); if (!d) return; try { if (frame.contentWindow && frame.contentWindow.kintPosterMode) frame.contentWindow.kintPosterMode(S.p); } catch (e) {} }
+  function applyAll(){ ensureFonts(); applyTheme(); applyFonts(); applyPoster(); paint(); writeHash(); }
+  function paint(){
+    V.forEach(function(v){ v.btn.classList.toggle('on', v.key === S.key); });
+    THEMES.forEach(function(t, i){ tBtns[i].classList.toggle('on', t === S.t); });
+    VPS.forEach(function(v, i){ vBtns[i].classList.toggle('on', v[0] === S.w); });
+    ACCENTS.forEach(function(a, i){ aBtns[i].classList.toggle('on', a[0] === S.x); });
+    POSTERS.forEach(function(p, i){ pBtns[i].classList.toggle('on', p === S.p); });
+    stage.className = (VPS.find(function(v){ return v[0] === S.w; }) || VPS[0])[1];
+    fd.value = S.d; fb.value = S.b; fm.value = S.m;
+    var v = V.find(function(x){ return x.key === S.key; });
+    document.getElementById('mix').innerHTML = '<b>' + (v ? v.label.slice(2) : S.key) + '</b> · ' + S.t + ' · ' + S.w +
+      (S.d ? ' · display <b>' + S.d + '</b>' : '') + (S.b ? ' · body <b>' + S.b + '</b>' : '') + (S.m ? ' · mono <b>' + S.m + '</b>' : '') + (S.x !== 'off' ? ' · accent <b>' + S.x + '</b>' : '') + ((S.key === 'l3b' || S.key === 'l3') ? ' · poster <b>' + S.p + '</b>' : '') +
+      '<br>' + location.hash;
+  }
+  function go(key){ if (S.key !== key) { S.key = key; frame.src = key + '.html'; } paint(); writeHash(); }
+
+  /* build controls */
+  V.forEach(function(v){ var b = document.createElement('button'); b.className = 'opt'; b.textContent = v.label; b.onclick = function(){ go(v.key); }; document.getElementById(v.group).appendChild(b); v.btn = b; });
+  var tBtns = THEMES.map(function(t){ var b = document.createElement('button'); b.className = 'opt'; b.textContent = t; b.onclick = function(){ S.t = t; applyAll(); }; document.getElementById('theme').appendChild(b); return b; });
+  var vBtns = VPS.map(function(v){ var b = document.createElement('button'); b.className = 'opt'; b.textContent = v[0]; b.onclick = function(){ S.w = v[0]; applyAll(); }; document.getElementById('vp').appendChild(b); return b; });
+  var aBtns = ACCENTS.map(function(a){ var b = document.createElement('button'); b.className = 'opt'; b.textContent = a[0]; b.onclick = function(){ S.x = a[0]; applyAll(); }; document.getElementById('accent').appendChild(b); return b; });
+  var pBtns = POSTERS.map(function(p){ var b = document.createElement('button'); b.className = 'opt'; b.textContent = p; b.onclick = function(){ S.p = p; applyAll(); }; document.getElementById('poster').appendChild(b); return b; });
+  var fd = document.getElementById('fd'), fb = document.getElementById('fb'), fm = document.getElementById('fm');
+  [fd, fb, fm].forEach(function(sel){
+    var o = document.createElement('option'); o.value = ''; o.textContent = 'variant default'; sel.appendChild(o);
+    FACES.forEach(function(f){ var op = document.createElement('option'); op.value = f[0]; op.textContent = f[0] + (f[1] === 'local' ? '  (local)' : ''); sel.appendChild(op); });
+  });
+  fd.onchange = function(){ S.d = fd.value; applyAll(); };
+  fb.onchange = function(){ S.b = fb.value; applyAll(); };
+  fm.onchange = function(){ S.m = fm.value; applyAll(); };
+
+  document.addEventListener('keydown', function(e){
+    if (e.target && /select|input|textarea/i.test(e.target.tagName)) return;
+    var k = e.key.toLowerCase(); var v = V.find(function(x){ return x.k === k; });
+    if (v) return go(v.key);
+    if (k === 't') { S.t = THEMES[(THEMES.indexOf(S.t) + 1) % THEMES.length]; applyAll(); }
+    if (k === 'v') { var i = VPS.findIndex(function(x){ return x[0] === S.w; }); S.w = VPS[(i + 1) % VPS.length][0]; applyAll(); }
+    if (k === 'p') { S.p = POSTERS[(POSTERS.indexOf(S.p) + 1) % POSTERS.length]; applyAll(); }
+    if (k === 'r') { S.d = S.b = S.m = ''; S.x = 'off'; S.t = 'system'; S.w = 'desktop'; S.p = 'leaves-blue'; applyAll(); }
+  });
+  frame.addEventListener('load', applyAll);
+  addEventListener('hashchange', function(){ parseHash(); if (frame.src.indexOf(S.key + '.html') < 0) frame.src = S.key + '.html'; else applyAll(); });
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyAccent);
+
+  parseHash(); frame.src = S.key + '.html'; paint();
+})();
+</script>
+</body>
+</html>

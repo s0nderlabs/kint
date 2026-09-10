@@ -1,6 +1,6 @@
 {
   "name": "@s0nderlabs/kint-core",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
   "description": "Browser-side decrypt path for kint: key derivation, envelope, canonical leaves and the EpochAnchor reads.",

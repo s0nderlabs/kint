@@ -1,0 +1,24 @@
+tenant kint-demo  space bd2a3b5b8f3fb4c8  store /Users/alkautsar/.sibyl-memory/memory.db
+owner 0xC635e6Eb223aE14143E23cEEa9440bC773dc87Ec  data key cached
+last anchored on this machine: seq 2 block 51081880 rows 15
+unanchored: 0 changed, 0 deleted
+chain head: seq 2 digest 7df5378a8c4fa866 block 51081880 (in step)  contract 0xa22E03f7a4145Bf4909a83595C90a38E14d79600
+session key 0xd2085B94849B2D98333100Fc0005ff96803e943e balance 0.000392956921569696 ETH authorized True
+cap accounting (the same 5 MiB free cap Sibyl enforces):
+  sibyl stores      300.0 KB
+  kint state        40.5 KB   (mirror, epoch cache, keys; volunteered)
+  enforced total    340.5 KB of 5.00 MB
+$ kint verify "release rule"
+query: release rule
+sibyl verdict: ok  hits: 3
+  verified   journal e3374829b6b51c73a111d81fe5a0ecfd209ab6662bc4918d57130ed4eed9ddaf: stored text matches the leaf anchored on Base
+  verified   entity rules/release-gate: stored text matches the leaf anchored on Base
+  verified   reference runbook-release: stored text matches the leaf anchored on Base
+DECISION: PROCEED: journal e3374829b6b51c73a111d81fe5a0ecfd209ab6662bc4918d57130ed4eed9ddaf verified against rows_root 390336ff71dbcb85 anchored at epoch 2, block 51081880
+$ kint history release-gate
+usage: kint history [-h] [--category CATEGORY] [--block BLOCK]
+                    {entity,state,reference} key
+kint history: error: argument tier: invalid choice: 'release-gate' (choose from entity, state, reference)
+$ kint history entity release-gate --category rules
+epoch 1 block <= 51081867 leaf f406bb0919d23360: {"rule":"never ship on a Friday; every release needs a green deadlift test and a second reviewer","since":"2026-05-01","owner":"elpabl0","source":"postmortem of the May 19 incident"}
+epoch 2 block <= 51081880 leaf 4ac605528bbb00e7: {"rule":"never ship on a Friday; every release needs a green deadlift test, a second reviewer, AND a passing kint verify","since":"2026-09-09","owner":"elpabl0","source":"kint hackathon build, supersedes the May rule"}

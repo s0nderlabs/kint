@@ -1,0 +1,819 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script>(function(){try{var t=localStorage.getItem('kint-theme');if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>kint, Sibyl Memory that outlives the laptop</title>
+<link href="https://fonts.googleapis.com/css2?family=GFS+Didot&family=Martian+Mono:wght@300..800&display=swap" rel="stylesheet">
+<style>
+/* ---------- local face: Instrument Sans ---------- */
+@font-face{
+  font-family:"Instrument Sans";
+  src:url("fonts/instrument-sans-var.ttf") format("truetype");
+  font-weight:400 700;
+  font-style:normal;
+  font-display:swap;
+}
+
+/* ---------- tokens: complete LIGHT palette on bare :root ---------- */
+:root{
+  --page:#F3EEE3;
+  --card:#FBF8F1;
+  --plate:#F8F3E9;
+  --ink:#14110D;
+  --ink-2:#463F35;
+  --muted:#6E6455;
+  --hair:rgba(20,17,13,.14);
+  --hair-2:rgba(20,17,13,.28);
+  --blueprint:rgba(20,17,13,.20);
+  --accent:#E07A5F;
+  --accent-soft:rgba(224,122,95,.16);
+  --on-accent:#14110D;
+  --ok:#1F7355;
+  --bad:#A33A38;
+  --focus:#E07A5F;
+  --grain:.030;
+
+  --t1:clamp(3rem,6.5vw,5.6rem);
+  --t2:clamp(1.6rem,3.2vw,2.4rem);
+  --t3:1.25rem;
+  --t4:1.0625rem;
+  --t5:.8125rem;
+
+  --sans:"Instrument Sans","Helvetica Neue",Arial,sans-serif;
+  --didot:"GFS Didot",Georgia,"Times New Roman",serif;
+  --mono:"Martian Mono",ui-monospace,Menlo,Consolas,monospace;
+
+  --wide:1180px;
+  --prose:820px;
+  --pad:clamp(72px,9vh,144px);
+  --ease-out-expo:cubic-bezier(0.16,1,0.3,1);
+}
+
+/* ---------- same tokens, dark, for the unstamped system state ---------- */
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --page:#171410;
+    --card:#1F1B16;
+    --plate:#221E18;
+    --ink:#EFE9DD;
+    --ink-2:#CFC7B8;
+    --muted:#9A8F7E;
+    --hair:rgba(239,233,221,.14);
+    --hair-2:rgba(239,233,221,.30);
+    --blueprint:rgba(239,233,221,.22);
+    --accent:#F08C74;
+    --accent-soft:rgba(240,140,116,.18);
+    --on-accent:#171410;
+    --ok:#3AD1A6;
+    --bad:#EE8295;
+    --focus:#F08C74;
+    --grain:.038;
+  }
+}
+
+/* ---------- same tokens again, so an explicit choice wins ---------- */
+:root[data-theme="dark"]{
+  --page:#171410;
+  --card:#1F1B16;
+  --plate:#221E18;
+  --ink:#EFE9DD;
+  --ink-2:#CFC7B8;
+  --muted:#9A8F7E;
+  --hair:rgba(239,233,221,.14);
+  --hair-2:rgba(239,233,221,.30);
+  --blueprint:rgba(239,233,221,.22);
+  --accent:#F08C74;
+  --accent-soft:rgba(240,140,116,.18);
+  --on-accent:#171410;
+  --ok:#3AD1A6;
+  --bad:#EE8295;
+  --focus:#F08C74;
+  --grain:.038;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;
+  background:var(--page);
+  color:var(--ink);
+  font-family:var(--sans);
+  font-weight:400;
+  font-size:var(--t4);
+  line-height:1.65;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+  overflow-x:hidden;
+}
+
+/* the house grain */
+.v-l2::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  z-index:9999;
+  pointer-events:none;
+  opacity:var(--grain);
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='256' height='256' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size:256px 256px;
+}
+
+.v-l2 ::selection{background:var(--accent-soft);color:var(--ink)}
+
+.v-l2 a{color:inherit;text-decoration:none}
+.v-l2 :focus-visible{
+  outline:2px solid var(--focus);
+  outline-offset:3px;
+  border-radius:2px;
+}
+
+.v-l2 .wrap{
+  width:100%;
+  max-width:var(--wide);
+  margin:0 auto;
+  padding:0 clamp(20px,4vw,48px);
+}
+.v-l2 .prose{max-width:var(--prose)}
+.v-l2 .measure{max-width:62ch}
+
+/* ---------- the wordmark, dotless i plus a drawn accent square ---------- */
+.v-l2 .wm{
+  font-family:var(--sans);
+  font-weight:600;
+  font-size:var(--t3);
+  letter-spacing:-.015em;
+  line-height:1;
+  display:inline-block;
+  color:var(--ink);
+}
+.v-l2 .wm .i{position:relative}
+.v-l2 .wm .i::after{
+  content:"";
+  position:absolute;
+  left:50%;
+  transform:translateX(-50%);
+  top:0.215em;
+  width:.18em;
+  height:.18em;
+  background:var(--accent);
+}
+
+/* ---------- mono, for coordinates only ---------- */
+.v-l2 .mono{
+  font-family:var(--mono);
+  font-weight:400;
+  font-size:var(--t5);
+  letter-spacing:.01em;
+  font-feature-settings:"liga" 0;
+}
+.v-l2 .lab{
+  font-family:var(--mono);
+  font-weight:400;
+  font-size:var(--t5);
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  color:var(--muted);
+  line-height:1.6;
+}
+.v-l2 .brace{color:var(--muted);white-space:nowrap}
+
+/* ---------- nav ---------- */
+.v-l2 .nav{
+  border-bottom:1px solid var(--hair);
+  position:sticky;
+  top:0;
+  z-index:60;
+  background:var(--page);
+  background:color-mix(in srgb, var(--page) 88%, transparent);
+  backdrop-filter:blur(8px);
+}
+.v-l2 .nav-in{
+  display:flex;
+  align-items:center;
+  gap:24px;
+  height:66px;
+}
+.v-l2 .nav-links{
+  margin-left:auto;
+  display:flex;
+  align-items:center;
+  gap:22px;
+}
+.v-l2 .nav-links a{
+  font-family:var(--mono);
+  font-weight:400;
+  font-size:var(--t5);
+  letter-spacing:.10em;
+  text-transform:uppercase;
+  color:var(--muted);
+  padding:6px 0;
+  border-bottom:1px solid transparent;
+  transition:color .18s var(--ease-out-expo), border-color .18s var(--ease-out-expo);
+}
+.v-l2 .nav-links a:hover{color:var(--ink);border-bottom-color:var(--hair-2)}
+
+.v-l2 .toggle{
+  appearance:none;
+  border:1px solid var(--hair-2);
+  background:transparent;
+  color:var(--muted);
+  width:34px;
+  height:34px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  border-radius:999px;
+  transition:color .18s var(--ease-out-expo), border-color .18s var(--ease-out-expo), background .18s var(--ease-out-expo);
+}
+.v-l2 .toggle:hover{color:var(--ink);border-color:var(--ink);background:var(--accent-soft)}
+.v-l2 .toggle svg{display:block;width:15px;height:15px}
+.v-l2 .toggle .sun{display:none}
+.v-l2 .toggle .moon{display:block}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]) .v-l2 .toggle .sun{display:block}
+  :root:not([data-theme="light"]) .v-l2 .toggle .moon{display:none}
+}
+:root[data-theme="dark"] .v-l2 .toggle .sun{display:block}
+:root[data-theme="dark"] .v-l2 .toggle .moon{display:none}
+
+/* ---------- hero ---------- */
+.v-l2 .hero{
+  padding:clamp(48px,7vh,96px) 0 clamp(40px,6vh,72px);
+}
+.v-l2 .hero-grid{
+  display:grid;
+  grid-template-columns:minmax(0,1.02fr) minmax(0,.98fr);
+  gap:clamp(32px,5vw,72px);
+  align-items:center;
+}
+.v-l2 .eyebrow{
+  display:flex;
+  align-items:baseline;
+  gap:12px;
+  flex-wrap:wrap;
+  margin:0 0 clamp(20px,3vh,34px);
+  padding-bottom:14px;
+  border-bottom:1px solid var(--hair);
+}
+.v-l2 h1{
+  font-family:var(--didot);
+  font-weight:400;
+  font-size:var(--t1);
+  line-height:1.02;
+  letter-spacing:-.005em;
+  margin:0;
+  color:var(--ink);
+  text-wrap:balance;
+}
+.v-l2 h1 .hot{color:var(--accent)}
+.v-l2 .lede{
+  font-size:var(--t3);
+  line-height:1.5;
+  color:var(--ink-2);
+  margin:clamp(22px,3vh,32px) 0 0;
+  max-width:38ch;
+}
+
+/* ---------- actions ---------- */
+.v-l2 .actions{
+  display:flex;
+  align-items:center;
+  gap:22px;
+  flex-wrap:wrap;
+  margin-top:clamp(26px,3.5vh,38px);
+}
+.v-l2 .btn{
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+  background:var(--accent);
+  color:var(--on-accent);
+  font-family:var(--sans);
+  font-weight:600;
+  font-size:var(--t4);
+  line-height:1;
+  padding:15px 26px;
+  border-radius:999px;
+  border:1px solid var(--accent);
+  transition:transform .2s var(--ease-out-expo), filter .2s var(--ease-out-expo);
+}
+.v-l2 .btn:hover{transform:translateY(-1px);filter:saturate(1.08) brightness(1.04)}
+.v-l2 .btn .sq{width:8px;height:8px;background:var(--on-accent);display:block}
+.v-l2 .txtlink{
+  font-family:var(--sans);
+  font-weight:500;
+  font-size:var(--t4);
+  color:var(--ink);
+  border-bottom:1px solid var(--hair-2);
+  padding-bottom:2px;
+  transition:border-color .18s var(--ease-out-expo), color .18s var(--ease-out-expo);
+}
+.v-l2 .txtlink:hover{border-bottom-color:var(--accent)}
+.v-l2 .install{
+  margin-top:clamp(22px,3vh,30px);
+  color:var(--muted);
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.v-l2 .install .cmd{color:var(--ink-2)}
+
+/* ---------- the engraved figure ---------- */
+.v-l2 .figure{
+  position:relative;
+  width:100%;
+  max-width:520px;
+  margin-left:auto;
+  aspect-ratio:460 / 520;
+}
+.v-l2 .figure svg{display:block;width:100%;height:100%;overflow:visible}
+.v-l2 .fig-blue{stroke:var(--blueprint);stroke-width:1;fill:none;vector-effect:non-scaling-stroke}
+.v-l2 .fig-rule{stroke:var(--hair);stroke-width:1;fill:none;vector-effect:non-scaling-stroke}
+.v-l2 .fig-line{stroke:var(--ink);stroke-width:1;fill:none;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}
+.v-l2 .fig-dot{fill:var(--ink)}
+.v-l2 .fig-lead{
+  stroke:var(--ink-2);
+  stroke-width:1.2;
+  fill:none;
+  stroke-dasharray:340;
+  stroke-dashoffset:340;
+  animation:l2draw 1.1s var(--ease-out-expo) forwards;
+}
+.v-l2 .fig-lead.d2{animation-delay:.12s}
+.v-l2 .fig-lead.d3{animation-delay:.24s}
+.v-l2 .fig-lead.d4{animation-delay:.36s}
+.v-l2 .fig-tick{fill:var(--ink-2);opacity:0;animation:l2fade .5s var(--ease-out-expo) .9s forwards}
+@keyframes l2draw{to{stroke-dashoffset:0}}
+@keyframes l2fade{to{opacity:1}}
+@media (prefers-reduced-motion: reduce){
+  .v-l2 .fig-lead{animation:none;stroke-dashoffset:0}
+  .v-l2 .fig-tick{animation:none;opacity:1}
+}
+/* annotations sit in HTML so they never scale below 12px */
+.v-l2 .ann{
+  position:absolute;
+  font-family:var(--mono);
+  font-weight:400;
+  font-size:var(--t5);
+  line-height:1.2;
+  color:var(--ink-2);
+  white-space:nowrap;
+  letter-spacing:.01em;
+}
+.v-l2 .ann.a1{left:0;top:6.5%}
+.v-l2 .ann.a2{left:0;top:60.5%}
+.v-l2 .ann.a3{right:0;top:10%;text-align:right}
+.v-l2 .ann.a4{right:0;top:81%;text-align:right}
+
+/* ---------- proof strip: a ruled ledger line ---------- */
+.v-l2 .proof{
+  border-top:1px solid var(--hair-2);
+  border-bottom:1px solid var(--hair-2);
+  background:var(--card);
+}
+.v-l2 .proof-scroll{overflow-x:auto;overscroll-behavior-x:contain}
+.v-l2 .proof-row{
+  display:flex;
+  align-items:stretch;
+  width:max-content;
+  min-width:100%;
+}
+.v-l2 .cell{
+  flex:1 0 auto;
+  padding:16px clamp(14px,1.6vw,22px);
+  border-right:1px solid var(--hair);
+  display:flex;
+  flex-direction:column;
+  gap:7px;
+  white-space:nowrap;
+}
+.v-l2 .cell:last-child{border-right:0}
+.v-l2 .cell .k{
+  font-family:var(--mono);
+  font-weight:400;
+  font-size:var(--t5);
+  letter-spacing:.10em;
+  text-transform:uppercase;
+  color:var(--muted);
+}
+.v-l2 .cell .v{
+  font-family:var(--mono);
+  font-weight:400;
+  font-size:var(--t5);
+  color:var(--ink);
+  letter-spacing:.005em;
+}
+.v-l2 a.cell{transition:background .18s var(--ease-out-expo)}
+.v-l2 a.cell:hover{background:var(--accent-soft)}
+
+/* ---------- section openers ---------- */
+.v-l2 section{padding:var(--pad) 0}
+.v-l2 .opener{
+  display:flex;
+  align-items:baseline;
+  gap:12px;
+  padding-bottom:14px;
+  border-bottom:1px solid var(--hair);
+  margin-bottom:clamp(30px,4.5vh,54px);
+}
+.v-l2 h2{
+  font-family:var(--didot);
+  font-weight:400;
+  font-size:var(--t2);
+  line-height:1.12;
+  letter-spacing:0;
+  margin:0;
+  color:var(--ink);
+  max-width:20ch;
+}
+.v-l2 p{margin:0 0 1.1em}
+.v-l2 p:last-child{margin-bottom:0}
+
+/* ---------- the three actors ---------- */
+.v-l2 .actors{display:grid;gap:0}
+.v-l2 .actor{
+  display:grid;
+  grid-template-columns:96px minmax(0,1fr);
+  gap:clamp(20px,3vw,44px);
+  padding:clamp(26px,3.4vh,38px) 0;
+  border-top:1px solid var(--hair);
+}
+.v-l2 .actor:first-child{border-top:0;padding-top:0}
+.v-l2 .actor h3{
+  font-family:var(--didot);
+  font-weight:400;
+  font-size:var(--t3);
+  line-height:1.25;
+  margin:0 0 10px;
+  color:var(--ink);
+}
+.v-l2 .actor p{color:var(--ink-2);max-width:62ch}
+.v-l2 .actor .num{padding-top:3px}
+
+/* ---------- the beat: the transcript ---------- */
+.v-l2 .beat-grid{
+  display:grid;
+  grid-template-columns:minmax(0,1fr);
+  gap:clamp(22px,3vh,30px);
+}
+.v-l2 .term{
+  background:var(--card);
+  border:1px solid var(--hair-2);
+  border-radius:2px;
+  padding:clamp(18px,2.4vw,30px);
+  overflow-x:auto;
+  overscroll-behavior-x:contain;
+}
+.v-l2 .term pre{
+  margin:0;
+  font-family:var(--mono);
+  font-weight:400;
+  font-size:var(--t5);
+  line-height:1.85;
+  color:var(--ink-2);
+  white-space:pre;
+  letter-spacing:0;
+  min-width:min-content;
+}
+.v-l2 .term .p{color:var(--muted)}
+.v-l2 .term .c{color:var(--ink)}
+.v-l2 .term .ok{color:var(--ok)}
+.v-l2 .term .no{color:var(--bad)}
+.v-l2 .caption{
+  color:var(--muted);
+  font-size:var(--t4);
+  max-width:62ch;
+}
+
+/* ---------- the inscription plate ---------- */
+.v-l2 .plate{
+  background:var(--plate);
+  border-top:1px solid var(--hair-2);
+  border-bottom:1px solid var(--hair-2);
+  box-shadow:inset 0 4px 0 -3px var(--hair-2), inset 0 -4px 0 -3px var(--hair-2);
+  padding:clamp(38px,6vh,72px) clamp(22px,4vw,64px);
+}
+.v-l2 .plate-in{max-width:70ch;margin:0 auto}
+.v-l2 .plate h2{
+  max-width:24ch;
+  margin-bottom:clamp(18px,2.6vh,26px);
+}
+.v-l2 .plate p{color:var(--ink-2)}
+.v-l2 .plate .lab{margin-bottom:16px;display:block}
+
+/* ---------- honest limits ---------- */
+.v-l2 .limits{border-top:1px solid var(--hair)}
+.v-l2 .limit{
+  display:grid;
+  grid-template-columns:96px minmax(0,1fr);
+  gap:clamp(20px,3vw,44px);
+  padding:clamp(22px,3vh,30px) 0;
+  border-bottom:1px solid var(--hair);
+}
+.v-l2 .limit p{color:var(--ink-2);max-width:62ch}
+.v-l2 .limit .num{padding-top:3px}
+
+/* ---------- footer ---------- */
+.v-l2 footer{
+  border-top:1px solid var(--hair-2);
+  padding:clamp(30px,4vh,46px) 0 clamp(38px,5vh,60px);
+}
+.v-l2 .foot-in{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:20px;
+  flex-wrap:wrap;
+}
+.v-l2 .foot-in .mono{color:var(--muted)}
+
+/* ---------- responsive ---------- */
+@media (max-width: 940px){
+  .v-l2 .hero-grid{grid-template-columns:minmax(0,1fr);gap:clamp(38px,6vh,56px)}
+  .v-l2 .figure{margin:0 auto;max-width:440px}
+  .v-l2 .lede{max-width:56ch}
+}
+@media (max-width: 640px){
+  :root{--t3:1.125rem;--t4:1rem}
+  .v-l2 .nav-in{height:60px;gap:14px}
+  .v-l2 .nav-links{gap:14px}
+  .v-l2 .actor,.v-l2 .limit{grid-template-columns:minmax(0,1fr);gap:10px}
+  .v-l2 .actor .num,.v-l2 .limit .num{padding-top:0}
+  .v-l2 .figure{max-width:100%}
+  .v-l2 .ann.a1{top:4%}
+  .v-l2 .ann.a2{top:61%}
+  .v-l2 .ann.a3{top:8%}
+  .v-l2 .ann.a4{top:83%}
+  .v-l2 .actions{gap:16px}
+  .v-l2 .btn{padding:14px 22px}
+  .v-l2 .foot-in{flex-direction:column;align-items:flex-start;gap:14px}
+}
+</style>
+</head>
+<body class="v-l2">
+
+<header class="nav">
+  <div class="wrap nav-in">
+    <a href="#top" aria-label="kint, home"><span class="wm">k<span class="i">&#305;</span>nt</span></a>
+    <nav class="nav-links" aria-label="Primary">
+      <a href="#app">App</a>
+      <a href="#github">GitHub</a>
+      <button class="toggle" type="button" id="themeToggle" aria-label="Toggle theme">
+        <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/></svg>
+        <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.6v2.2M12 19.2v2.2M2.6 12h2.2M19.2 12h2.2M5.4 5.4l1.6 1.6M17 17l1.6 1.6M18.6 5.4L17 7M7 17l-1.6 1.6"/></svg>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+
+  <section class="hero">
+    <div class="wrap hero-grid">
+
+      <div class="hero-copy">
+        <p class="eyebrow">
+          <span class="lab brace">{ 01 }</span>
+          <span class="lab">Built on Sibyl Memory, under it. Live on Base mainnet.</span>
+        </p>
+
+        <h1>Sibyl Memory that <span class="hot">outlives</span> the laptop.</h1>
+
+        <p class="lede">Wipe the machine, connect the wallet, and the agent comes back knowing what it knew, and proves it was not tampered with.</p>
+
+        <div class="actions">
+          <a class="btn" href="#app"><span class="sq" aria-hidden="true"></span>Open the app</a>
+          <a class="txtlink" href="#readme">Read the README</a>
+        </div>
+
+        <p class="install mono"><span class="brace">$</span><span class="cmd">uv tool install kint</span></p>
+      </div>
+
+      <div class="figure">
+        <svg viewBox="0 0 460 520" role="img" aria-labelledby="figTitle figDesc" preserveAspectRatio="xMidYMid meet">
+          <title id="figTitle">The oracle plate</title>
+          <desc id="figDesc">A line drawing of a classical profile head inside a thin circle, overlaid with a blueprint grid and a golden ratio rectangle. Four annotations point at it: row, leaf f406bb09, rows_root 390336ff, and block 51,081,880.</desc>
+
+          <!-- blueprint rules -->
+          <g class="fig-rule">
+            <path d="M20 120H440"/>
+            <path d="M20 190H440"/>
+            <path d="M20 260H440"/>
+            <path d="M20 330H440"/>
+            <path d="M20 400H440"/>
+            <path d="M230 24V476"/>
+          </g>
+
+          <!-- the golden ratio rectangle and its square -->
+          <g class="fig-blue">
+            <path d="M100 140H372V308H100Z"/>
+            <path d="M268 140V308"/>
+            <path d="M268 140A168 168 0 0 0 100 308"/>
+            <circle cx="232" cy="250" r="182"/>
+          </g>
+
+          <!-- the engraved head -->
+          <g class="fig-line">
+            <path d="M254 84C194 84 152 128 150 188C149 204 148 212 144 220L120 264C114 274 118 282 130 284L144 288C136 296 136 304 145 310L140 320C138 332 148 344 164 348L212 360C224 364 230 372 232 386L236 448"/>
+            <path d="M254 84C316 88 352 138 352 196C352 246 330 286 306 310C296 320 292 332 292 348L292 448"/>
+            <path d="M166 158C206 124 268 114 322 132"/>
+            <path d="M170 172C210 138 270 128 328 146"/>
+            <path d="M328 142C356 152 368 182 354 206"/>
+            <path d="M158 210C172 200 192 200 206 208"/>
+            <path d="M160 226C172 218 190 218 202 228"/>
+            <path d="M126 268C130 272 134 273 138 272"/>
+            <path d="M132 302L150 300"/>
+            <path d="M246 250C258 240 272 248 268 264C265 276 254 276 248 270"/>
+          </g>
+          <circle class="fig-dot" cx="178" cy="226" r="4.2"/>
+
+          <!-- annotation leaders, drawn in once -->
+          <g>
+            <polyline class="fig-lead" points="14,60 14,150 168,220"/>
+            <polyline class="fig-lead d2" points="14,306 14,282 116,266"/>
+            <polyline class="fig-lead d3" points="446,78 446,150 356,192"/>
+            <polyline class="fig-lead d4" points="446,414 446,396 300,386"/>
+            <circle class="fig-tick" cx="172" cy="222" r="3"/>
+            <circle class="fig-tick" cx="119" cy="265" r="3"/>
+            <circle class="fig-tick" cx="353" cy="194" r="3"/>
+            <circle class="fig-tick" cx="296" cy="386" r="3"/>
+          </g>
+        </svg>
+
+        <span class="ann a1" aria-hidden="true">row</span>
+        <span class="ann a2" aria-hidden="true">leaf f406bb09</span>
+        <span class="ann a3" aria-hidden="true">rows_root 390336ff</span>
+        <span class="ann a4" aria-hidden="true">block 51,081,880</span>
+      </div>
+
+    </div>
+  </section>
+
+  <section class="proof" style="padding:0" aria-label="Live facts on Base mainnet">
+    <div class="proof-scroll">
+      <div class="wrap" style="padding-left:0;padding-right:0">
+        <div class="proof-row" style="border-bottom:1px solid var(--hair)">
+          <a class="cell" style="flex:1 1 auto;border-right:0"
+             href="https://basescan.org/address/0xa22E03f7a4145Bf4909a83595C90a38E14d79600">
+            <span class="k">{ 01 }</span>
+            <span class="v">EpochAnchor 0xa22E03f7a4145Bf4909a83595C90a38E14d79600</span>
+          </a>
+        </div>
+        <div class="proof-row">
+          <div class="cell"><span class="k">{ 02 }</span><span class="v">head seq 2</span></div>
+          <div class="cell"><span class="k">{ 03 }</span><span class="v">block 51,081,880</span></div>
+          <div class="cell"><span class="k">{ 04 }</span><span class="v">digest 7df5378a8c4fa866</span></div>
+          <div class="cell"><span class="k">{ 05 }</span><span class="v">15 rows</span></div>
+          <div class="cell"><span class="k">{ 06 }</span><span class="v">4 KB bucket</span></div>
+          <div class="cell"><span class="k">{ 07 }</span><span class="v">Base mainnet</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="actors">
+    <div class="wrap">
+      <div class="opener">
+        <span class="lab brace">{ 02 }</span>
+        <span class="lab">The three actors</span>
+      </div>
+
+      <div class="actors">
+        <article class="actor">
+          <span class="lab num brace">{ 01 }</span>
+          <div>
+            <h3>The wallet owns.</h3>
+            <p>One frozen message, signed once per machine, derives the key. Nothing decrypted ever leaves the machine.</p>
+          </div>
+        </article>
+
+        <article class="actor">
+          <span class="lab num brace">{ 02 }</span>
+          <div>
+            <h3>The passphrase or the signature unlocks.</h3>
+            <p>A Base Account owner types a passphrase. An EOA owner signs. Either opens the same vault, and a recovery code covers the day both are gone.</p>
+          </div>
+        </article>
+
+        <article class="actor">
+          <span class="lab num brace">{ 03 }</span>
+          <div>
+            <h3>kint does the rest.</h3>
+            <p>Every change is packed, padded, encrypted and written to Base as calldata under a small contract. On any machine you connect, kint pulls, verifies every epoch against the chain, and replays the rows through Sibyl's own write methods.</p>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section id="beat" style="padding-top:0">
+    <div class="wrap">
+      <div class="opener">
+        <span class="lab brace">{ 03 }</span>
+        <span class="lab">The beat</span>
+      </div>
+
+      <div class="beat-grid">
+        <div class="term">
+<pre><span class="p">$</span> <span class="c">kint status</span>
+tenant kint-demo  space bd2a3b5b8f3fb4c8  store ~/.sibyl-memory/memory.db
+owner 0xC635e6Eb223aE14143E23cEEa9440bC773dc87Ec  data key cached
+last anchored on this machine: seq 2 block 51081880 rows 15
+chain head: seq 2 digest 7df5378a8c4fa866 block 51081880 (in step)
+
+<span class="p">$</span> <span class="c">kint verify "release rule"</span>
+sibyl verdict: ok  hits: 3
+  <span class="ok">verified</span>   entity rules/release-gate: stored text matches the leaf anchored on Base
+  <span class="ok">verified</span>   reference runbook-release: stored text matches the leaf anchored on Base
+<span class="c">DECISION: PROCEED:</span> verified against rows_root 390336ff71dbcb85 anchored at epoch 2, block 51081880
+
+<span class="p">$</span> <span class="c">sqlite3 ~/.sibyl-memory/memory.db "update entities set body = replace(body, 'never', 'always') where name = 'release-gate'"</span>
+<span class="p">$</span> <span class="c">kint verify "release rule"</span>
+  <span class="no">REFUSED</span>    entity rules/release-gate: stored text does not match the leaf anchored at epoch 2, block 51081880
+<span class="c">DECISION: REFUSE:</span> refusal written back as entity kint_refusal/release-gate
+
+<span class="p">$</span> <span class="c">kint history entity release-gate --category rules</span>
+epoch 1 block &lt;= 51081867 leaf f406bb0919d23360: {"rule":"never ship on a Friday; every release needs a green deadlift test and a second reviewer", ...}
+epoch 2 block &lt;= 51081880 leaf 4ac605528bbb00e7: {"rule":"never ship on a Friday; every release needs a green deadlift test, a second reviewer, AND a passing kint verify", ...}</pre>
+        </div>
+
+        <p class="caption">A row's block height is an upper bound: it existed no later than that block.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="box" style="padding-top:0">
+    <div class="wrap">
+      <div class="opener">
+        <span class="lab brace">{ 04 }</span>
+        <span class="lab">What Sibyl does</span>
+      </div>
+
+      <div class="plate">
+        <div class="plate-in">
+          <h2>Delete the Sibyl Memory layer and what breaks.</h2>
+          <p>The decision beat reaches the row through Sibyl's memory_search (four FTS5 indexes plus the shadow fallback) and keys on the typed verdict from verdicts.py. Without Sibyl there is no ranked candidate and no verdict to key on: the epoch is a decrypted blob with no query surface, so a fresh session neither refuses nor proceeds. Base holds the ciphertext; Sibyl is what turns it back into an answerable store. Their eight tools ship unmodified; kint adds six.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="limits" style="padding-top:0">
+    <div class="wrap">
+      <div class="opener">
+        <span class="lab brace">{ 05 }</span>
+        <span class="lab">Honest limits</span>
+      </div>
+
+      <div class="limits">
+        <div class="limit">
+          <span class="lab num brace">{ 01 }</span>
+          <p>One wallet owns one memory; many machines may write under it, one at a time. Two machines writing at once is a fork: kint refuses and tells you.</p>
+        </div>
+        <div class="limit">
+          <span class="lab num brace">{ 02 }</span>
+          <p>Base holds ciphertext, but the row count and the size bucket are public.</p>
+        </div>
+        <div class="limit">
+          <span class="lab num brace">{ 03 }</span>
+          <p>A phished derive signature is a permanent key. The EIP-712 message says so in the one field every wallet renders. kint never accepts that signature as a login and never sends it anywhere.</p>
+        </div>
+        <div class="limit">
+          <span class="lab num brace">{ 04 }</span>
+          <p>A cold start stops at the newest snapshot epoch, so restore cost is bounded by the size of the memory, not its history.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap foot-in">
+    <span class="wm">k<span class="i">&#305;</span>nt</span>
+    <span class="mono">MIT &middot; Built for the Sibyl Labs Hackathon, September 2026 &middot; s0nderlabs &middot; on Base</span>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var btn = document.getElementById('themeToggle');
+  if(!btn) return;
+  btn.addEventListener('click', function(){
+    var root = document.documentElement;
+    var cur = root.getAttribute('data-theme');
+    if(cur !== 'dark' && cur !== 'light'){
+      cur = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+    }
+    var next = cur === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try{ localStorage.setItem('kint-theme', next); }catch(e){}
+  });
+})();
+</script>
+
+</body>
+</html>

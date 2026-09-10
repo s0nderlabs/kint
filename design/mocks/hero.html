@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>kint hero lab</title>
+<style>
+/* kint HERO LAB studio: hero-view.html in a stage, one MOCK CONTROLS chip (the lsa pattern).
+   Keys: 1 to 9 layouts, i cycles image, s flips sky, t cycles theme, v cycles viewport, g grain, r resets.
+   The hash carries the mix (#over&i=leaves-blue&s=paper&t=dark&w=390) so it can be pasted back.
+   No em dash in this file. */
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: #121110; }
+#stage { position: absolute; inset: 0; display: flex; justify-content: center; align-items: stretch; }
+iframe { display: block; width: 100%; height: 100%; border: 0; background: #F4F1EA; transition: width .25s cubic-bezier(.16,1,.3,1); }
+#stage.w1024 iframe { width: 1024px; box-shadow: 0 0 0 1px rgba(255,255,255,.08); }
+#stage.w390 iframe { width: 390px; box-shadow: 0 0 0 1px rgba(255,255,255,.08); }
+.dk { position: fixed; left: 16px; bottom: 16px; z-index: 90; font-family: ui-monospace, Menlo, monospace; }
+.dk-btn { height: 34px; padding: 0 14px; border-radius: 17px; background: #1A1916; color: #fff; font-size: 11px; letter-spacing: .08em; border: 0; cursor: pointer; box-shadow: 0 4px 16px rgba(0,0,0,.35); font-family: inherit; }
+.dk-panel { display: none; position: absolute; left: 0; bottom: 44px; width: 372px; max-height: calc(100vh - 80px); overflow: auto; background: #fff; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,.28), inset 0 0 0 1px rgba(0,0,0,.08); padding: 14px; color: #1A1916; }
+.dk.open .dk-panel { display: block; }
+.dk h4 { margin: 10px 0 6px; font-size: 10px; letter-spacing: .12em; color: #7A766E; font-weight: 400; }
+.dk h4:first-child { margin-top: 0; }
+.dk .row { display: flex; flex-wrap: wrap; gap: 5px; }
+.dk button.opt { font-family: inherit; font-size: 11px; padding: 5px 9px; border-radius: 8px; border: 0; background: #EEECE6; color: #1A1916; cursor: pointer; }
+.dk button.opt.on { background: #0000FF; color: #fff; }
+.dk .mix { margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(0,0,0,.08); font-size: 10px; color: #7A766E; word-break: break-all; line-height: 1.5; }
+.dk .mix b { color: #1A1916; font-weight: 500; }
+.dk .note { font-size: 10px; color: #7A766E; line-height: 1.5; margin: 4px 0 0; }
+</style>
+</head>
+<body>
+<div id="stage"><iframe id="frame" src="" title="kint hero variant"></iframe></div>
+<div class="dk" id="dk">
+  <div class="dk-panel">
+    <h4>LAYOUT · KEYS 1 TO 9, 0, U</h4><div class="row" id="layout"></div>
+    <p class="note" id="lnote"></p>
+    <h4>IMAGE · KEY I</h4><div class="row" id="img"></div>
+    <h4>SKY · KEY S (none = the image is the hero, the theme swaps day for night)</h4><div class="row" id="sky"></div>
+    <h4>THEME · KEY T</h4><div class="row" id="theme"></div>
+    <h4>VIEWPORT · KEY V</h4><div class="row" id="vp"></div>
+    <h4>SANDPAPER · KEY G</h4><div class="row" id="grain"></div>
+    <div class="mix" id="mix"></div>
+  </div>
+  <button class="dk-btn" onclick="document.getElementById('dk').classList.toggle('open')">MOCK CONTROLS</button>
+</div>
+<script>
+(function(){
+  var LAYOUTS = [
+    ['over', '1 over', 'the stack centred in the sky, the image full bleed behind it, its own sky dissolving into ours'],
+    ['stack', '2 stack', 'the stack in the sky, the image below, no overlap, one sky through the dissolve'],
+    ['split-l', '3 split, text left', 'text left, image right, the image fading into the sky at its inner edge'],
+    ['split-r', '4 split, image left', 'image left, text right'],
+    ['corner', '5 corner', 'text top left, the image anchored bottom right, dissolving on two axes'],
+    ['card', '6 card', 'the stack centred, the image as one framed print with the page\'s only shadow'],
+    ['film', '7 film', 'the headline larger, the image as a letterbox strip of the leaves in flight'],
+    ['arch', '8 arch', 'the image inside an arch (the cave mouth), flush to the foot of the hero'],
+    ['scrim', '9 scrim', 'variant 4\'s own layout: text left over the full bleed image, behind a smoothstep scrim'],
+    ['crown', '0 crown', 'his idea: the image crowns the top and fades away downward, the stack centred a little below the middle'],
+    ['under', 'u under', 'the whole image stays, the stack sits under the flight of the leaves, no pool of sky behind the type'],
+  ];
+  var IMGS = ['soft', 'ink', 'hero', 'leaves-blue', 'leaves-turning', 'leaves', 'leaves-night', 'sand', 'blueprint', 'stele'];
+  var SKIES = ['none', 'paper', 'cobalt'];
+  var THEMES = ['system', 'light', 'dark'];
+  var VPS = [['desktop', ''], ['1024', 'w1024'], ['390', 'w390']];
+  var GRAINS = ['on', 'off'];
+  var S = { l: 'under', i: 'soft', s: 'none', t: 'system', w: 'desktop', g: 'on' };
+  var DEF = { l: 'under', i: 'soft', s: 'none', t: 'system', w: 'desktop', g: 'on' };
+  var frame = document.getElementById('frame'), stage = document.getElementById('stage');
+
+  function parseHash(){
+    var h = location.hash.slice(1); if (!h) return;
+    var parts = h.split('&'); var first = parts.shift();
+    if (LAYOUTS.some(function(x){ return x[0] === first; })) S.l = first;
+    parts.forEach(function(p){ var kv = p.split('='); if (kv.length === 2 && kv[0] in S) S[kv[0]] = kv[1]; });
+  }
+  function writeHash(){
+    var h = S.l; ['i','s','t','w','g'].forEach(function(k){ if (S[k] !== DEF[k]) h += '&' + k + '=' + S[k]; });
+    if (location.hash.slice(1) !== h) history.replaceState(null, '', '#' + h);
+  }
+  function apply(){
+    try { if (frame.contentWindow && frame.contentWindow.kintHero) frame.contentWindow.kintHero({ layout: S.l, img: S.i, sky: S.s, theme: S.t, grain: S.g }); } catch (e) {}
+    paint(); writeHash();
+  }
+  function paint(){
+    lBtns.forEach(function(b, i){ b.classList.toggle('on', LAYOUTS[i][0] === S.l); });
+    iBtns.forEach(function(b, i){ b.classList.toggle('on', IMGS[i] === S.i); });
+    sBtns.forEach(function(b, i){ b.classList.toggle('on', SKIES[i] === S.s); });
+    tBtns.forEach(function(b, i){ b.classList.toggle('on', THEMES[i] === S.t); });
+    vBtns.forEach(function(b, i){ b.classList.toggle('on', VPS[i][0] === S.w); });
+    gBtns.forEach(function(b, i){ b.classList.toggle('on', GRAINS[i] === S.g); });
+    stage.className = (VPS.find(function(v){ return v[0] === S.w; }) || VPS[0])[1];
+    var L = LAYOUTS.find(function(x){ return x[0] === S.l; });
+    document.getElementById('lnote').textContent = L ? L[2] : '';
+    document.getElementById('mix').innerHTML = '<b>' + (L ? L[1].slice(2) : S.l) + '</b> · image <b>' + S.i + '</b> · sky <b>' + S.s + '</b> · ' + S.t + ' · ' + S.w + ' · grain ' + S.g + '<br>' + location.hash;
+  }
+  function mk(id, list, get, set){
+    return list.map(function(item){ var b = document.createElement('button'); b.className = 'opt'; b.textContent = get(item); b.onclick = function(){ set(item); apply(); }; document.getElementById(id).appendChild(b); return b; });
+  }
+  var lBtns = mk('layout', LAYOUTS, function(x){ return x[1]; }, function(x){ S.l = x[0]; });
+  var iBtns = mk('img', IMGS, function(x){ return x; }, function(x){ S.i = x; });
+  var sBtns = mk('sky', SKIES, function(x){ return x; }, function(x){ S.s = x; });
+  var tBtns = mk('theme', THEMES, function(x){ return x; }, function(x){ S.t = x; });
+  var vBtns = mk('vp', VPS, function(x){ return x[0]; }, function(x){ S.w = x[0]; });
+  var gBtns = mk('grain', GRAINS, function(x){ return x; }, function(x){ S.g = x; });
+
+  document.addEventListener('keydown', function(e){
+    if (e.target && /select|input|textarea/i.test(e.target.tagName)) return;
+    var k = e.key.toLowerCase(), n = parseInt(k, 10);
+    if (n >= 1 && n <= 9) { S.l = LAYOUTS[n - 1][0]; return apply(); }
+    if (k === '0') { S.l = 'crown'; return apply(); }
+    if (k === 'u') { S.l = 'under'; return apply(); }
+    if (k === 'i') { S.i = IMGS[(IMGS.indexOf(S.i) + 1) % IMGS.length]; apply(); }
+    if (k === 's') { S.s = SKIES[(SKIES.indexOf(S.s) + 1) % SKIES.length]; apply(); }
+    if (k === 't') { S.t = THEMES[(THEMES.indexOf(S.t) + 1) % THEMES.length]; apply(); }
+    if (k === 'v') { var i = VPS.findIndex(function(x){ return x[0] === S.w; }); S.w = VPS[(i + 1) % VPS.length][0]; apply(); }
+    if (k === 'g') { S.g = GRAINS[(GRAINS.indexOf(S.g) + 1) % GRAINS.length]; apply(); }
+    if (k === 'r') { S = { l: 'under', i: 'soft', s: 'none', t: 'system', w: 'desktop', g: 'on' }; apply(); }
+  });
+  frame.addEventListener('load', apply);
+  addEventListener('hashchange', function(){ parseHash(); apply(); });
+  parseHash(); frame.src = 'hero-view.html'; paint();
+})();
+</script>
+</body>
+</html>

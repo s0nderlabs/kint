@@ -9,30 +9,30 @@ Regenerate this table with `scripts/gen_judge.py`.
 | Sibyl's server is imported untouched and its eight tools are kept | `src/kint/server.py` | 4 | then six `@mcp.tool()` additions below it |
 | Their tools use the one client kint builds (cap volunteered) | `src/kint/store.py` | 80 | seeds `sibyl_memory_mcp.server._client_cache` |
 | Cap volunteering through Sibyl's public hook | `src/kint/store.py` | 53 | `CapGate(db_size_fn = aggregate_db_size + kint footprint)` |
-| Decision beat goes through Sibyl's search and its typed verdict | `src/kint/verify.py` | 156 | Sibyl `search` at client.py:1372 returns `SearchResults` with `.verdict` |
-| No hit or a non-OK verdict refuses | `src/kint/verify.py` | 160 |  |
-| Exact stored TEXT is re-read by the key the search returned | `src/kint/export.py` | 67 | Sibyl's `dumps()` is `sort_keys=False` (storage.py:97); nothing is re-serialised |
-| Leaf and merkle inclusion proof against the anchored rows_root | `src/kint/canon.py` | 76 | proof at canon.py:105, checked in verify.py:142 |
-| A drifted row is refused naming the anchored block and the head block | `src/kint/verify.py` | 147 |  |
-| An unanchored top hit is never credited as verified | `src/kint/verify.py` | 188 | tests/test_review_fixes.py |
-| The refusal is written back as a Sibyl entity | `src/kint/verify.py` | 199 | category `kint_refusal`, status `refused` |
-| Temporal read: every anchored version with a block-height upper bound | `src/kint/verify.py` | 97 | `at_block` at verify.py:114 |
+| Decision beat goes through Sibyl's search and its typed verdict | `src/kint/verify.py` | 178 | Sibyl `multi_record_search` at multi_record.py:444, the gated call their `memory_search` makes; returns `SearchResults` with `.verdict` |
+| No hit or a non-OK verdict refuses | `src/kint/verify.py` | 182 |  |
+| Exact stored TEXT is re-read by the key the search returned | `src/kint/export.py` | 70 | Sibyl's `dumps()` is `sort_keys=False` (storage.py:97); nothing is re-serialised |
+| Leaf and merkle inclusion proof against the anchored rows_root | `src/kint/canon.py` | 77 | proof at canon.py:106, checked in verify.py:161 |
+| A drifted row is refused naming the anchored block and the head block | `src/kint/verify.py` | 166 |  |
+| An unanchored top hit is never credited as verified | `src/kint/verify.py` | 216 | tests/test_review_fixes.py |
+| The refusal is written back as a Sibyl entity | `src/kint/verify.py` | 227 | category `kint_refusal`, status `refused` |
+| Temporal read: every anchored version with a block-height upper bound | `src/kint/verify.py` | 108 | `at_block` at verify.py:133 |
 | Restore replays through the SDK's write methods, not raw SQL | `src/kint/restore.py` | 35 | set_entity client.py:887, set_state :986, write_event :1019, set_reference :1092 |
-| Every replayed row is re-read and its leaf compared, in the pull path | `src/kint/pull.py` | 188 | the check itself at restore.py:78 |
-| Export is raw SQL in rowid order (documented) | `src/kint/export.py` | 27 | identical journal events keep distinct ordinals |
-| Nothing touches the chain inside a Sibyl write transaction | `src/kint/push.py` | 110 | push reads the store read-only after the writes returned; the cap gate in store.py is local-only |
-| Freshness before anything: watermark, two DIFFERENT RPCs on a cold start | `src/kint/pull.py` | 67 | same-endpoint guard at pull.py:73 |
-| Fork refusal over unanchored local changes | `src/kint/pull.py` | 147 |  |
-| Epoch integrity: keccak(ct) == event digest, prev continuity, AEAD with a binding AAD | `src/kint/pull.py` | 254 | AAD at crypto.py:359 |
-| A gap stops the pull at the last applied epoch; the next pull retries | `src/kint/pull.py` | 185 |  |
-| An incomplete mirror refuses to push and to verify | `src/kint/epoch.py` | 60 | push.py:107, verify.py:168 |
-| Key derivation: recover must equal the owner, low-S normalise, HKDF over r||s | `src/kint/crypto.py` | 206 | committed vector in tests/test_crypto.py |
-| Random DEK wrapped under a list of KEKs; tag-match, never trial-decrypt | `src/kint/crypto.py` | 280 |  |
-| Pad to a size bucket before encrypting; publish only the bucket | `src/kint/crypto.py` | 333 | monotone ratchet at crypto.py:328 |
+| Every replayed row is re-read and its leaf compared, in the pull path | `src/kint/pull.py` | 285 | the check itself at restore.py:78 |
+| Export is raw SQL in rowid order (documented) | `src/kint/export.py` | 30 | identical journal events keep distinct ordinals |
+| Nothing touches the chain inside a Sibyl write transaction | `src/kint/push.py` | 137 | push reads the store read-only after the writes returned; the cap gate in store.py is local-only |
+| Freshness before anything: watermark, two DIFFERENT RPCs on a cold start | `src/kint/pull.py` | 84 | same-endpoint guard at pull.py:90 |
+| Fork refusal over unanchored local changes | `src/kint/pull.py` | 170 |  |
+| Epoch integrity: keccak(ct) == event digest, prev continuity, AEAD with a binding AAD | `src/kint/pull.py` | 495 | AAD at crypto.py:360 |
+| A gap stops the pull at the last applied epoch; the next pull retries | `src/kint/pull.py` | 262 |  |
+| An incomplete mirror refuses to push and to verify | `src/kint/epoch.py` | 62 | push.py:132, verify.py:190 |
+| Key derivation: recover must equal the owner, low-S normalise, HKDF over r||s | `src/kint/crypto.py` | 207 | committed vector in tests/test_crypto.py |
+| Random DEK wrapped under a list of KEKs; tag-match, never trial-decrypt | `src/kint/crypto.py` | 281 |  |
+| Pad to a size bucket before encrypting; publish only the bucket | `src/kint/crypto.py` | 334 | monotone ratchet at crypto.py:329 |
 | Epochs are split by MEASURED compressed size; an oversize row is refused by name | `src/kint/push.py` | 64 |  |
-| Recovery code as the second path to the data key, bound to the vault before it is cached | `src/kint/connect.py` | 167 | code format at crypto.py:295 |
-| The derive signature never travels on argv | `src/kint/connect.py` | 45 |  |
-| Keyed RPC URLs are never printed | `src/kint/chain.py` | 91 |  |
+| Recovery code as the second path to the data key, bound to the vault before it is cached | `src/kint/connect.py` | 260 | code format at crypto.py:296 |
+| The derive signature never travels on argv | `src/kint/connect.py` | 68 |  |
+| Keyed RPC URLs are redacted wherever kint prints one | `src/kint/chain.py` | 144 | exception text raised inside web3 can still carry the URL (known gap) |
 | Session key can only append; the contract enforces it | `contracts/src/EpochAnchor.sol` | 132 | push at EpochAnchor.sol:140 |
 | Revocation cancels an unspent signed authorization (audit fix) | `contracts/src/EpochAnchor.sol` | 78 | test_RevokeInvalidatesUnspentAuthorization |
 | All kint state lives outside the five paths Sibyl's cap walk sizes | `src/kint/paths.py` | 15 | aggregate_db_size at _capcheck.py:270 |
@@ -47,7 +47,7 @@ Regenerate this table with `scripts/gen_judge.py`.
 
 ## Deletion test
 
-Remove the `client.search(...)` call in `src/kint/verify.py` and there is no ranked candidate and no verdict: the decision cannot be made. Remove `sibyl_memory_mcp.build_server()` from `src/kint/server.py` and no harness can read or write memory at all. Remove the four SDK write calls in `src/kint/restore.py` and a restored machine has an encrypted blob and an empty store.
+Remove the `multi_record_search(...)` call in `src/kint/verify.py` and there is no ranked candidate and no verdict: the decision cannot be made. Remove `sibyl_memory_mcp.build_server()` from `src/kint/server.py` and no harness can read or write memory at all. Remove the four SDK write calls in `src/kint/restore.py` and a restored machine has an encrypted blob and an empty store.
 
 ## Executed on Base mainnet
 

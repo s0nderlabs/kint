@@ -1,0 +1,901 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script>(function(){try{var t=localStorage.getItem('kint-theme');if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>kint</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="vendor/lenis.min.js"></script>
+<script src="vendor/gsap.min.js"></script>
+<script src="vendor/ScrollTrigger.min.js"></script>
+<style>
+/* kint SCROLL BEAT, Sep 10 2026, rebuilt 18:xx. The chosen hero (layout under, no sky, day/night by theme) with
+   the BOTTOM leaf lifted out of the image onto its own layer. As the reader scrolls, that leaf lifts off, grows
+   and lands centred in the section below as the cobalt logo leaf. Three stages on one scrubbed progress:
+     0.00 to 0.30  the raster leaf flies and grows (still the picture, up to about 2.6x)
+     0.30 to 0.40  handoff: the raster crossfades into a potrace trace of the SAME silhouette, so the swap is unseen
+     0.40 to 0.85  the vector grows on, crisp; its fill drifts from the leaf's own sand to cobalt (0.55 to 0.80)
+     0.85 to 1.00  the outline morphs into the logo leaf while the leaf settles into the slot; the rib fades in last
+   Transform, opacity, fill and path only. Reduced motion shows it already landed. */
+@font-face{font-family:'Geist Mono';src:url('fonts/geist-mono-var.ttf') format('truetype');font-weight:100 900;font-display:swap}
+:root{
+  --page:#F4F1EA;--page-2:#EBE7DC;--well:#ECE8DD;--ink:#171512;--ink-2:#403B34;--muted:#675F57;--hair:rgba(23,21,18,.13);
+  --accent:#1F3FD6;--accent-lite:#A6B8FF;--kint-accent:#1F3FD6;
+  --on-sky:#171512;--on-sky-2:rgba(23,21,18,.80);--hl:#1F3FD6;--pill-bg:#171512;--pill-ink:#F4F1EA;--rule:rgba(23,21,18,.30);--sq:#1F3FD6;
+  --t1:.8125rem;--t2:1rem;--t3:clamp(1.2rem,1.7vw,1.4rem);--t4:clamp(1.8rem,3vw,2.6rem);--t5:clamp(2.5rem,5vw,4.5rem);
+  --section-py:clamp(88px,10vh,150px);--narrow:880px;
+  --mono:'Geist Mono',ui-monospace,Menlo,monospace;--display:'Bricolage Grotesque',system-ui,sans-serif;
+  --ease:cubic-bezier(0.16,1,0.3,1);--wide:1180px;--edge:max(24px,calc((100vw - var(--wide))/2));
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --page:#12110F;--page-2:#0D0C0A;--well:#1B1916;--ink:#ECEAE4;--ink-2:#C9C6BE;--muted:#9A958B;--hair:rgba(236,234,228,.14);
+    --accent:#7A93FF;--accent-lite:#AEC0FF;--kint-accent:#7A93FF;
+    --on-sky:#F4F1EA;--on-sky-2:rgba(244,241,234,.84);--hl:#AEC0FF;--pill-bg:#F4F1EA;--pill-ink:#141A3D;--rule:rgba(244,241,234,.32);--sq:#AEC0FF;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --page:#12110F;--page-2:#0D0C0A;--well:#1B1916;--ink:#ECEAE4;--ink-2:#C9C6BE;--muted:#9A958B;--hair:rgba(236,234,228,.14);
+  --accent:#7A93FF;--accent-lite:#AEC0FF;--kint-accent:#7A93FF;
+  --on-sky:#F4F1EA;--on-sky-2:rgba(244,241,234,.84);--hl:#AEC0FF;--pill-bg:#F4F1EA;--pill-ink:#141A3D;--rule:rgba(244,241,234,.32);--sq:#AEC0FF;
+  color-scheme:dark;
+}
+/* the two scenes and the two cutouts: the theme picks one of each */
+.day,.flyer img.day,.hero .scene.day{display:block}
+.night,.flyer img.night,.hero .scene.night{display:none}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]) .day,:root:not([data-theme="light"]) .flyer img.day,:root:not([data-theme="light"]) .hero .scene.day{display:none}
+  :root:not([data-theme="light"]) .night,:root:not([data-theme="light"]) .flyer img.night,:root:not([data-theme="light"]) .hero .scene.night{display:block}
+}
+:root[data-theme="dark"] .day,:root[data-theme="dark"] .flyer img.day,:root[data-theme="dark"] .hero .scene.day{display:none}
+:root[data-theme="dark"] .night,:root[data-theme="dark"] .flyer img.night,:root[data-theme="dark"] .hero .scene.night{display:block}
+
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scroll-behavior:auto}
+html.lenis,html.lenis body{height:auto}.lenis.lenis-smooth{scroll-behavior:auto!important}.lenis.lenis-stopped{overflow:hidden}
+body{margin:0;background:var(--page);color:var(--ink);font-family:var(--display);font-size:var(--t2);line-height:1.5;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+body::before{content:"";position:fixed;inset:0;z-index:9999;pointer-events:none;opacity:.03;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+::selection{background:var(--ink);color:var(--page)}
+.mono{font-family:var(--mono);font-size:var(--t1);letter-spacing:.02em}
+a{color:inherit}
+
+/* ---- the hero: the image IS the hero, edge to edge ---- */
+.hero{position:relative;overflow:hidden;min-height:100svh;display:flex;flex-direction:column;color:var(--on-sky);background:#EBE0D0}
+:root[data-theme="dark"] .hero{background:#171F2B}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .hero{background:#171F2B}}
+.hero .scene{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center center;z-index:1}
+.hero .grain{position:absolute;inset:0;z-index:3;pointer-events:none;background-image:var(--grain-tile);background-size:128px 128px;mix-blend-mode:overlay;opacity:.55}
+.nav{position:relative;z-index:4;display:flex;align-items:center;gap:22px;padding:22px 32px 0}  /* full bleed: the mark sits on the cave rock at every width, so it stays paper */
+.nav .wm{display:inline-flex;align-items:center;margin-right:auto;color:#F4F1EA;text-decoration:none}
+.nav .wm svg{display:block;height:25px;width:auto}
+.foot .fwm{display:block;height:22px;width:auto;color:var(--ink)}
+.nav a.link{color:var(--on-sky);text-decoration:none;font-size:var(--t2);font-weight:500;line-height:30px;opacity:.82;display:inline-block;border-bottom:1px solid transparent;transition:opacity .18s var(--ease),border-color .18s var(--ease)}
+.toggle{-webkit-appearance:none;appearance:none;border:0;background:transparent;padding:0;margin:0;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;color:var(--on-sky);opacity:.82;cursor:pointer;border-radius:999px}
+.toggle svg{display:block}
+.stack{position:relative;z-index:4;flex:1;display:flex;flex-direction:column;align-items:center;text-align:center;justify-content:flex-start;padding:54svh 24px clamp(40px,6vh,72px)}
+h1{margin:0;color:var(--on-sky);font-size:var(--t5);font-weight:500;font-variation-settings:'opsz' 96;line-height:1.02;letter-spacing:-.035em;max-width:14ch;text-wrap:balance}
+h1 em{font-style:normal;color:var(--hl)}
+.lede{margin:clamp(18px,2.6vh,28px) 0 0;color:var(--on-sky-2);font-size:var(--t3);font-weight:400;line-height:1.5;max-width:46ch;text-wrap:pretty}
+.cta{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:clamp(16px,2.2vw,26px);margin-top:clamp(22px,3.2vh,36px)}
+.pill{display:inline-block;background:var(--pill-bg);color:var(--pill-ink);font-size:var(--t2);font-weight:600;line-height:1;text-decoration:none;padding:15px 26px;border-radius:999px;transition:transform .18s var(--ease)}
+.readme{color:var(--on-sky);font-size:var(--t2);font-weight:500;text-decoration:none;display:inline-block;border-bottom:1px solid var(--rule);padding-bottom:3px;opacity:.9}
+.install{margin:clamp(16px,2.2vh,24px) 0 0;font-family:var(--mono);font-size:var(--t1);color:var(--on-sky);opacity:.9;letter-spacing:.04em}
+@media (hover:hover) and (pointer:fine){.nav a.link:hover{opacity:1;border-bottom-color:var(--rule)}.toggle:hover{opacity:1}.pill:hover{transform:translateY(-1px)}.readme:hover{opacity:1;border-bottom-color:var(--on-sky)}}
+.pill:active,.readme:active,.toggle:active,.nav a.link:active{transform:scale(.97)}
+
+/* ---- the ground under the lede, cta and install in the light scene (the landscape sits behind them) ---- */
+:root{--haze:rgba(244,241,234,.58);--halo:rgba(244,241,234,.92)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--haze:rgba(18,17,15,.42);--halo:rgba(18,17,15,.8)}}
+:root[data-theme="dark"]{--haze:rgba(18,17,15,.42);--halo:rgba(18,17,15,.8)}
+.hero .haze{position:absolute;left:0;right:0;top:56%;height:40%;z-index:2;pointer-events:none;display:none;
+  background:linear-gradient(to bottom,transparent 0%,var(--haze) 26%,var(--haze) 80%,transparent 100%)}
+body[data-text="haze"] .hero .haze{display:block}
+body[data-text="fade"] .hero .scene{-webkit-mask-image:linear-gradient(to bottom,#000 0%,#000 46%,rgba(0,0,0,.26) 100%);mask-image:linear-gradient(to bottom,#000 0%,#000 46%,rgba(0,0,0,.26) 100%)}
+body[data-text="ink"] .lede{color:var(--on-sky);font-weight:500;text-shadow:0 0 1px var(--halo),0 0 10px var(--halo),0 0 22px var(--halo)}
+body[data-text="ink"] .readme,body[data-text="ink"] .install{opacity:1;text-shadow:0 0 1px var(--halo),0 0 10px var(--halo),0 0 20px var(--halo)}
+@media (max-width:760px){.hero .haze{display:none!important}body[data-text="fade"] .hero .scene{-webkit-mask-image:none;mask-image:none}}
+
+/* ---- the travelling leaf: one element, positioned in page space by JS, transform only ---- */
+.flyer{position:absolute;left:0;top:0;z-index:20;pointer-events:none;will-change:transform;transform-origin:50% 50%}
+.flyer img{position:absolute;left:0;top:0;width:100%;height:100%;display:block}
+.flyer .fgrain{position:absolute;inset:0;pointer-events:none;background-image:var(--grain-tile);background-size:128px 128px;mix-blend-mode:overlay;opacity:.55;
+  -webkit-mask-image:var(--leaf-mask);-webkit-mask-size:100% 100%;mask-image:var(--leaf-mask);mask-size:100% 100%}
+.flyer .morph{position:absolute;inset:0;width:100%;height:100%;display:block;overflow:visible}
+.flyer .ras{opacity:1}
+#samp{position:absolute;width:0;height:0;overflow:hidden;visibility:hidden}
+
+/* ---- the spotlight: the leaf lands here, large, centred, the only thing in the section ---- */
+.spot{position:relative;background:var(--page);min-height:100svh;display:flex;align-items:center;justify-content:center}
+.spot-inner{width:min(var(--wide),100% - 48px);margin-inline:auto;display:flex;flex-direction:column;align-items:center;gap:clamp(22px,3.2vh,36px);padding:clamp(40px,6vh,72px) 0}
+.stage{width:min(40vh,380px);height:min(40vh,380px);display:flex;align-items:center;justify-content:center}
+.spot-line{margin:0;max-width:44ch;text-align:center;color:var(--ink-2);font-size:var(--t4);line-height:1.5;text-wrap:pretty;opacity:0;transform:translateY(8px);transition:opacity .5s var(--ease),transform .5s var(--ease)}
+body.landed .spot-line{opacity:1;transform:none}
+.spot-more{width:100%;display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:24px;margin-top:clamp(8px,2vh,20px);opacity:0;transform:translateY(10px);transition:opacity .6s var(--ease) .18s,transform .6s var(--ease) .18s}
+body.landed .spot-more{opacity:1;transform:none}
+.spot-what{grid-column:span 6;margin:0;color:var(--ink-2);line-height:1.55;text-wrap:pretty;max-width:52ch}
+.spot-moves{grid-column:7 / span 6;margin:0;display:grid;gap:0}
+.spot-moves div{display:grid;grid-template-columns:96px minmax(0,1fr);gap:16px;padding:12px 0;box-shadow:inset 0 1px 0 var(--hair)}
+.spot-moves div:first-child{box-shadow:none;padding-top:0}
+.spot-moves dt{font-weight:500;letter-spacing:-.01em;color:var(--ink)}
+.spot-moves dd{margin:0;color:var(--ink-2);line-height:1.5;text-wrap:pretty}
+/* the slot: where the leaf lands */
+.slot{width:100%;height:100%;position:relative}
+.slot .vec{position:absolute;inset:0;color:var(--kint-accent);opacity:0}
+.slot .vec svg{width:100%;height:100%;display:block;overflow:visible}  /* the leaf extends 8 percent past its box by the morph handoff design; never clip it */
+body.landed .slot .vec{opacity:1}
+
+/* ---- sections: one width, one rhythm, hairlines as inset shadows, nothing carded that does not earn it,
+   no label above a heading, mono only where it is the record itself ---- */
+.section{padding:var(--section-py) 0}
+.section>.wrap{width:min(var(--wide),100% - 48px);margin-inline:auto}
+.section+.section{box-shadow:inset 0 1px 0 var(--hair)}
+/* the deck: each lower section is a full-height card that rides over the last; the covered one settles back and dims.
+   Only when the body is .stacked (desktop, motion allowed, the toggle on); otherwise plain flow. */
+body.stacked .deck .section{position:sticky;top:0;min-height:100svh;display:flex;flex-direction:column;justify-content:center;padding:clamp(48px,6vh,88px) 0;background:var(--page);will-change:transform;transform-origin:50% 22%}
+body.stacked .deck .section+.section{box-shadow:none}
+body.stacked .deck .rv{transition:none;opacity:1;transform:none}
+body.stacked .deck .section::after{content:"";position:absolute;inset:0;z-index:2;background:var(--page);opacity:var(--dim,0);pointer-events:none}
+body.stacked .tile{min-height:min(600px,62svh)}
+.sh{margin:0;font-size:var(--t4);font-weight:500;font-variation-settings:'opsz' 96;letter-spacing:-.025em;line-height:1.08;max-width:22ch;text-wrap:balance}
+.sub{margin:18px 0 0;max-width:58ch;color:var(--ink-2);font-size:var(--t3);line-height:1.5;text-wrap:pretty}
+.two{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:clamp(32px,5vw,72px);align-items:start;margin-top:clamp(36px,5vh,56px)}
+.two p{margin:0 0 16px;max-width:58ch;color:var(--ink-2);line-height:1.55;text-wrap:pretty}
+.two p:last-child{margin-bottom:0}
+.tty{margin:0;font-family:var(--mono);font-size:var(--t1);line-height:1.7;letter-spacing:.01em;color:var(--ink);white-space:pre-wrap;overflow-wrap:anywhere;
+  padding:18px 20px;border-radius:10px;background:var(--well);box-shadow:inset 0 0 0 1px var(--hair)}
+.tty .c{color:var(--muted)}
+.tty .ok,.tty .r{color:var(--accent)}
+.tty .r{font-weight:600}
+.tty .d{color:var(--muted)}
+/* ---- tiles: a tinted field, index + title + go, one paragraph, then a product surface that runs past the
+   bottom edge and is cut by it (the curtain). Three tints of one warm temperature; the cobalt one is the accent. ---- */
+/* fields: an ORDINAL ramp of the paper hue (one hue, monotone lightness: OKLCH L .935 / .905 / .872, chroma rising a touch), computed and checked with the dataviz method; cobalt is reserved for the verified state and the mark, refusal and the unanchored marker are ink */
+:root{--tint-1:#EEE9DE;--tint-2:#E5DFD0;--tint-3:#DCD4C2;--surf:#FBFAF6;--surf-hi:rgba(255,255,255,.7);--row-now:rgba(23,21,18,.035);--chip:rgba(23,21,18,.06);
+  --sh-contact:0 1px 2px rgba(23,21,18,.08);--sh-ambient:0 16px 36px -10px rgba(23,21,18,.18)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--tint-1:#1C1914;--tint-2:#25211B;--tint-3:#2E2A21;--surf:#1F1D1A;--surf-hi:rgba(255,255,255,.06);--row-now:rgba(255,255,255,.04);--chip:rgba(255,255,255,.07);--sh-contact:0 1px 2px rgba(0,0,0,.4);--sh-ambient:0 16px 36px -10px rgba(0,0,0,.5)}}
+:root[data-theme="dark"]{--tint-1:#1C1914;--tint-2:#25211B;--tint-3:#2E2A21;--surf:#1F1D1A;--surf-hi:rgba(255,255,255,.06);--row-now:rgba(255,255,255,.04);--chip:rgba(255,255,255,.07);--sh-contact:0 1px 2px rgba(0,0,0,.4);--sh-ambient:0 16px 36px -10px rgba(0,0,0,.5)}
+/* the bento: every block below the hero is a cell on ONE twelve-column grid, gap 24, one material (tinted field,
+   inset hairline, radius 24), spans that change from row to row so the page has rhythm, edges that always meet */
+.bento{list-style:none;margin:clamp(32px,4.5vh,48px) 0 0;padding:0;display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:24px}
+.bx{position:relative;overflow:hidden;border-radius:24px;padding:28px;background:var(--field);box-shadow:inset 0 0 0 1px var(--hair);min-width:0}
+.bx.t1{--field:var(--tint-1)}.bx.t2{--field:var(--tint-2)}.bx.t3{--field:var(--tint-3)}
+.c3{grid-column:span 3}.c4{grid-column:span 4}.c5{grid-column:span 5}.c6{grid-column:span 6}.c7{grid-column:span 7}.c8{grid-column:span 8}.c12{grid-column:span 12}
+.bx p{margin:0 0 14px;color:var(--ink-2);line-height:1.5;letter-spacing:-.005em;text-wrap:pretty}
+.bx p:last-child{margin-bottom:0}
+.tile{padding-bottom:0;display:flex;flex-direction:column;min-height:600px}
+.tile .head{display:flex;align-items:flex-start;gap:14px}
+.tile .ix{font-family:var(--mono);font-size:var(--t1);letter-spacing:.08em;color:var(--muted);padding-top:6px;font-variant-numeric:tabular-nums}
+.tile h3{flex:1;margin:0;font-size:var(--t3);font-weight:500;font-variation-settings:'opsz' 24;letter-spacing:-.02em;line-height:1.15;max-width:18ch;min-height:2.3em;text-wrap:balance}
+.go{flex:none;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:var(--surf);color:var(--ink);text-decoration:none;box-shadow:inset 0 1px 0 var(--surf-hi),inset 0 0 0 1px var(--hair),var(--sh-contact);transition:transform .35s var(--ease)}
+.go svg{width:16px;height:16px;display:block;transition:transform .35s var(--ease)}
+@media (hover:hover) and (pointer:fine){.go:hover svg{transform:translateX(2px)}}
+.go:active{transform:scale(.96)}
+.tile>p{margin:16px 0 0;min-height:9em;max-width:32em}
+.tile .stage{position:relative;flex:1;min-height:340px;margin:24px -28px 0;width:calc(100% + 56px)}  /* explicit: stretch with negative margins is not reliable in every engine */
+.tile .lift{position:absolute;left:28px;right:28px;top:0;bottom:-40px;opacity:0;transform:translateY(28px);transition:opacity .55s var(--ease) var(--d,0s),transform .6s var(--ease) var(--d,0s)}
+.tile.in .lift{opacity:1;transform:none}
+.tile .surf .row,.tile .surf .st{opacity:0;transform:translateY(6px);transition:opacity .4s var(--ease) calc(.35s + var(--i,0)*45ms),transform .5s var(--ease) calc(.35s + var(--i,0)*45ms)}
+.tile.in .surf .row,.tile.in .surf .st{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){.tile .lift,.tile .surf .row,.tile .surf .st{opacity:1;transform:none;transition:none}}
+/* the Base square: their mark, their blue, cap height, wherever the network is named */
+.base{display:inline-block;width:.66em;height:.66em;background:#0000FF;vertical-align:-.01em;margin-right:.3em;border-radius:0}
+.rc{flex:1;display:flex;flex-direction:column;gap:clamp(18px,2.4vh,26px);min-width:0}
+.rc .k{display:block;font-family:var(--mono);font-size:var(--t1);letter-spacing:.06em;color:var(--muted);margin-bottom:6px}
+.rc .addr{font-family:var(--mono);font-size:var(--t1);letter-spacing:.01em;color:var(--ink);text-decoration:none;box-shadow:inset 0 -1px 0 var(--hair);overflow-wrap:anywhere}
+.rc code{font-family:var(--mono);font-size:.9em;color:var(--ink)}
+.rc-hero .big{display:block;font-size:var(--t4);line-height:1;letter-spacing:-.03em;font-weight:500;font-variation-settings:'opsz' 96;font-variant-numeric:tabular-nums;color:var(--ink)}
+.rc-hero .under{display:block;margin-top:10px;color:var(--ink-2);line-height:1.5;max-width:36em;text-wrap:pretty}
+.rc-kv{margin:0;display:flex;flex-wrap:wrap;gap:12px 32px}
+.rc-kv div{min-width:0}
+.rc-kv dt{font-family:var(--mono);font-size:var(--t1);letter-spacing:.06em;color:var(--muted)}
+.rc-kv dd{margin:3px 0 0;font-family:var(--mono);font-size:var(--t1);color:var(--ink);overflow-wrap:anywhere}
+.rc-cap{margin-top:auto}
+.rc-cap .bar{display:flex;gap:2px;height:6px;border-radius:3px;overflow:hidden;background:var(--chip)}
+.rc-cap .bar i{display:block;height:100%;flex:none}
+.rc-cap .bar .s{background:var(--ink)}
+.rc-cap .bar .kk{background:var(--accent)}
+.rc-cap .leg{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:10px;font-family:var(--mono);font-size:var(--t1);letter-spacing:.01em;color:var(--ink-2)}
+.rc-cap .leg .sw{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:7px}
+.rc-cap .leg .sw.s{background:var(--ink)}.rc-cap .leg .sw.kk{background:var(--accent)}
+.rc-cap .leg .tot{color:var(--ink);margin-left:auto}
+.bx.hold{display:flex;flex-direction:column}
+.bx.hold .surf{flex:1}
+.bx.prose{display:flex;flex-direction:column;justify-content:flex-start;gap:32px}
+.bx .line{font-size:var(--t3);line-height:1.35;letter-spacing:-.015em;color:var(--ink);margin:0;max-width:22ch;text-wrap:balance;font-weight:500}
+.surf{position:relative;min-height:100%;border-radius:14px;background:var(--surf);color:var(--ink);font-size:12.5px;letter-spacing:-.005em;line-height:1.3;box-shadow:inset 0 1px 0 var(--surf-hi),inset 0 0 0 1px var(--hair),var(--sh-contact),var(--sh-ambient)}
+.surf .ui{overflow:hidden;border-radius:14px}
+.surf .bar{display:flex;justify-content:space-between;align-items:center;gap:10px;min-height:46px;padding:0 16px;font-weight:500;box-shadow:inset 0 -1px 0 var(--hair)}
+.surf .m{font-family:var(--mono);font-size:10.5px;letter-spacing:.04em;color:var(--muted);font-weight:400;white-space:nowrap;font-variant-numeric:tabular-nums}
+.surf .row{display:grid;grid-template-columns:64px minmax(0,1fr) auto;gap:12px;align-items:center;min-height:46px;padding:0 16px;box-shadow:inset 0 -1px 0 var(--hair)}
+.surf .row.w4{grid-template-columns:64px minmax(0,1fr) auto 16px}
+.surf .row.now{padding:12px 16px 13px;background:var(--row-now);align-items:start}
+.surf .chip{display:grid;place-items:center;height:28px;padding:0 7px;border-radius:8px;font-family:var(--mono);font-size:10.5px;letter-spacing:.02em;background:var(--chip);color:var(--ink-2);white-space:nowrap;font-variant-numeric:tabular-nums}
+.surf .row.now .chip{background:var(--ink);color:var(--page)}
+.surf .t{font-weight:500;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.surf .t small{display:block;font-weight:400;font-size:11.5px;line-height:1.4;color:var(--ink-2);margin-top:3px;white-space:normal;text-wrap:pretty}
+.surf .row:not(.now) .t small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--muted)}
+.surf .k{font-family:var(--mono);font-size:11.5px;color:var(--ink-2);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.surf .dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--accent);margin-right:8px;vertical-align:1px}
+.surf .dot.ink{background:var(--ink)}
+.surf .ledger .row{grid-template-columns:64px minmax(0,1fr);min-height:64px}
+/* 01: an agent chat. The user asks, the agent reads memory through Sibyl, answers, and the session end writes the epoch. */
+/* ---- the three product shots. Real UIs, measured in his browser and his terminal on Sep 10 2026, kept at their own
+   native palettes in both page themes (a screenshot does not change with the page); the page supplies only the frame. ---- */
+.tile .surf.app{font-size:11px;letter-spacing:0;line-height:1.35;overflow:hidden}
+.tile .surf.app .ui{border-radius:14px}
+.tile .surf.app svg{flex:none}
+.tile .lift.bleed{right:-64px}
+/* claude.ai, dark appearance: ground #151515, bubble #212121, text #F0EFEC, muted #898781, input #20201F on #373736, Share #2D2D2D, serif reply */
+.cl{--g:#151515;--bub:#212121;--tx:#F0EFEC;--mu:#898781;--inp:#20201F;--inb:#373736;--btn:#2D2D2D;background:var(--g);color:var(--tx);font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+.cl .ui{background:var(--g)}
+.cl-top{display:flex;justify-content:space-between;align-items:center;padding:10px 14px 6px;font-size:11.5px}
+.cl-top .tt{display:inline-flex;align-items:center;gap:6px;min-width:0;white-space:nowrap}
+.cl-top svg{width:10px;height:10px;stroke:var(--tx);fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.cl-top .sh{padding:5px 9px;border-radius:7px;background:var(--btn);font-size:10.5px}
+.cl-body{display:flex;flex-direction:column;align-items:flex-start;padding:8px 14px 0}
+.cl-u{align-self:flex-end;max-width:84%;padding:8px 12px;border-radius:12px;background:var(--bub);font-size:11.5px;line-height:1.35}
+.cl-meta{align-self:flex-end;display:flex;align-items:center;gap:8px;margin:6px 2px 10px;color:var(--mu);font-size:9.5px}
+.cl-meta svg,.cl-acts svg,.cl-tool svg{width:11px;height:11px;stroke:var(--mu);fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.cl-tool{display:inline-flex;align-items:center;gap:4px;color:var(--mu);font-size:11px;margin:0 0 8px}
+.cl-tool svg{width:9px;height:9px}
+.cl p.cl-a{margin:0 0 8px;font-family:"Tiempos Text","Iowan Old Style",Charter,Georgia,serif;font-size:11px;line-height:1.85;color:var(--tx);text-wrap:pretty}
+.cl-acts{display:flex;align-items:center;gap:9px;color:var(--mu);font-size:9.5px;margin:0 0 12px}
+.cl-input{margin:0 14px;display:flex;align-items:center;gap:10px;padding:0 12px;height:38px;border-radius:12px;background:var(--inp);box-shadow:inset 0 0 0 1px var(--inb);color:var(--mu);font-size:11.5px}
+.cl-input .plus{font-size:17px;line-height:1;color:var(--tx);opacity:.85;font-weight:300}
+.cl-input .ph{flex:1;white-space:nowrap;overflow:hidden}
+.cl-input svg{width:12px;height:12px;stroke:var(--tx);fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;opacity:.85}
+.cl-foot{display:flex;justify-content:space-between;gap:12px;padding:8px 14px 12px;color:var(--mu);font-size:9px;white-space:nowrap}
+.cl-foot span:first-child{overflow:hidden;text-overflow:ellipsis}
+.cl-foot b{font-weight:400;color:var(--tx)}
+/* Basescan, the contract page: ground #FDFDFE, card #FFF on #E9ECEF hairlines, text #212529, links and the active tab #0052FF, method pill #F8F9FA on #DFE0E1, IN badge #00A186 on #E5F5F3, Roboto */
+.bs{--g:#FDFDFE;--card:#FFF;--ln:#E9ECEF;--tx:#212529;--mu:#6C757D;--tx2:#626568;--blue:#0052FF;--pill:#F8F9FA;--pillb:#DFE0E1;--in:#00A186;--inbg:#E5F5F3;--inb:#ACE0D8;background:var(--g);color:var(--tx);font-family:Roboto,system-ui,-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;font-size:10.5px}
+.bs .ui{background:var(--g)}
+.bs-head{display:flex;align-items:baseline;gap:8px;padding:13px 14px 11px;box-shadow:inset 0 -1px 0 var(--ln);white-space:nowrap;overflow:hidden}
+.bs-head b{font-weight:700;font-size:13px}
+.bs-head span{font-size:11px;overflow:hidden;text-overflow:ellipsis;letter-spacing:.005em}
+.bs-tabs{display:flex;gap:6px;padding:12px 14px 10px;white-space:nowrap;overflow:hidden}
+.bs-tabs span{padding:5px 9px;border-radius:7px;background:var(--ln);font-weight:500;font-size:10px}
+.bs-tabs .on{background:var(--blue);color:#FFF}
+.bs-card{margin:0 0 0 14px;background:var(--card);border-radius:10px 0 0 10px;box-shadow:inset 0 0 0 1px var(--ln);overflow:hidden}
+.bs-latest{padding:11px 12px;font-size:10.5px;box-shadow:inset 0 -1px 0 var(--ln)}
+.bs table{border-collapse:collapse;white-space:nowrap;font-size:10.5px}
+.bs th{font-weight:700;text-align:left;padding:9px 10px 8px;font-size:10px}
+.bs td{padding:0 10px;height:34px;box-shadow:inset 0 1px 0 var(--ln);vertical-align:middle}
+.bs a{color:var(--blue);text-decoration:none}
+.bs .cb{display:inline-block;width:12px;height:12px;border-radius:3px;box-shadow:inset 0 0 0 1px var(--pillb);vertical-align:middle}
+.bs .mth{display:inline-block;min-width:60px;max-width:78px;text-align:center;padding:3px 6px;border-radius:5px;background:var(--pill);box-shadow:inset 0 0 0 1px var(--pillb);font-size:9.5px;color:#000;overflow:hidden;text-overflow:ellipsis;vertical-align:middle}
+.bs .in{display:inline-block;padding:2px 5px;border-radius:4px;background:var(--inbg);box-shadow:inset 0 0 0 1px var(--inb);color:var(--in);font-weight:700;font-size:8px}
+.bs .to{color:var(--tx2)}
+.bs .fee{color:var(--mu);font-size:10px}
+/* Claude Code in his Ghostty: ground rgb(3,9,18) as composited, fg #ECDEF5, the tool's own greys #999 and #888, the prompt bar #373737, xterm colours in the status line */
+.cc{--g:#030912;--fg:#ECDEF5;--mu:#999;--rule:#888;--bar:#373737;--barp:#505050;background:var(--g);color:var(--fg);font-family:"Ioskeley Mono",var(--mono);font-size:10.5px;line-height:1.6;letter-spacing:0}
+.cc .ui{background:var(--g);padding:12px 0 14px}
+.cc .ln{display:block;padding:0 14px;white-space:pre-wrap;overflow-wrap:anywhere}
+.cc .u{background:var(--bar);color:#FFF;padding:2px 14px}
+.cc .u i{font-style:normal;color:var(--barp)}
+.cc .th{color:var(--mu)}
+.cc .th b{font-weight:700}
+.cc .say{margin-top:.75em;padding-left:calc(14px + 2ch);text-indent:-2ch}
+.cc .say i{font-style:normal;color:#FFF}
+.cc .say b{font-weight:700}
+.cc .done{margin-top:.75em;color:var(--mu)}
+.cc .rule{display:flex;align-items:center;gap:1ch;color:var(--rule);margin-top:.75em;line-height:1.2}
+.cc .rule::before,.cc .rule::after{content:"";height:1px;background:var(--rule)}
+.cc .rule::before{flex:1}.cc .rule::after{width:1ch}
+.cc .rule:empty::after{flex:1}
+.cc .in{color:var(--mu);margin-top:.1em}
+.cc .status{margin-top:.75em;color:var(--mu);white-space:nowrap;overflow:hidden}
+.bs-act{margin:0 14px 10px;padding:10px 12px;background:var(--card);border-radius:8px;box-shadow:inset 0 0 0 1px var(--ln);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bs-act .lbl{display:block;font-weight:700;font-size:8.5px;letter-spacing:.04em;color:var(--tx);margin-bottom:5px}
+.bs-rows{margin:0 14px;padding:10px 12px 12px;background:var(--card);border-radius:8px;box-shadow:inset 0 0 0 1px var(--ln)}
+.bs-r{display:grid;grid-template-columns:82px minmax(0,1fr);gap:0 10px;align-items:baseline;padding:5px 0;white-space:nowrap}
+.bs-r dt{color:var(--mu)}
+.bs-r dd{margin:0;overflow:hidden;text-overflow:ellipsis}
+.bs-r.sep{margin-top:5px;padding-top:10px;box-shadow:inset 0 1px 0 var(--ln)}
+.bs .ok{display:inline-block;padding:2px 6px;border-radius:4px;background:var(--inbg);box-shadow:inset 0 0 0 1px var(--inb);color:var(--in);font-weight:500;font-size:9px}
+.bs .tag{display:inline-block;padding:2px 6px;border-radius:4px;background:var(--pill);box-shadow:inset 0 0 0 1px var(--pillb);font-size:9px;color:var(--tx)}
+.bs .dim{color:var(--mu)}
+/* Claude Code's own /mcp panel, measured Sep 10 2026: apricot logo #D77757, cornflower #B1B9F9 for the rules,
+   the headings, the selector and the selected row, green #4EBA65 for a connected status, grey #999 for the rest */
+/* the first-session terminal: same ground, his real green chevron, the replay tucked into the corner */
+.term.cc .tty{background:transparent;box-shadow:none;border-radius:0;padding:0 14px;min-height:640px;color:var(--fg);font-family:inherit;font-size:inherit;line-height:1.6;letter-spacing:0}
+.term.cc .ln{padding-left:2ch;text-indent:-2ch}
+.term.cc .cmd{color:var(--fg)}
+.term.cc .out{color:var(--mu)}
+/* the typed terminal follows the page theme: white paper in light, the Ghostty ground in dark; the tiles keep their native shots */
+.term.cc{--g:#FFFFFF;--fg:#1C1C21;--mu:#6B6B75;--rule:#9A9AA3;--bar:#ECECF0;--barp:#7A7A85;--prompt:#2E8B22}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .term.cc{--g:#030912;--fg:#ECDEF5;--mu:#999;--rule:#888;--bar:#373737;--barp:#505050;--prompt:#5FD700}}
+:root[data-theme="dark"] .term.cc{--g:#030912;--fg:#ECDEF5;--mu:#999;--rule:#888;--bar:#373737;--barp:#505050;--prompt:#5FD700}
+.term.cc .c{color:var(--prompt)}
+.term.cc .cur{background:var(--prompt);width:.55em;height:1em;vertical-align:-.15em}
+.term.cc .replay{position:absolute;top:10px;right:12px;z-index:2;color:var(--mu)}
+@media (hover:hover) and (pointer:fine){.term.cc .replay:hover{color:var(--fg)}}
+.tile .surf.cc{font-size:11.5px;line-height:1.65;height:100%;display:flex;flex-direction:column}
+.tile .surf.cc .ui{flex:1;display:flex;flex-direction:column}
+.cc .say2{margin-top:.8em;padding-left:calc(14px + 2ch)}
+.cc .ccfoot{margin-top:auto;padding-bottom:40px}
+.cc .status .p{color:#00AFAF}.cc .status .m{color:#AF87FF}.cc .status .c{color:#5FAF5F}.cc .status .sep{color:#62686D}
+.bx.hold>.lift{position:relative;flex:1;min-height:0}
+.bx.hold>.lift .surf{min-height:100%}
+#receipt .bx.hold{overflow:hidden}
+/* surfaces used outside the tiles (the tools, the terminal): same material, sits on the page */
+.surf.flat{min-height:0}
+.surf .chips{padding:14px 16px 16px;display:flex;flex-wrap:wrap;gap:8px}
+.surf .chips+.chips{box-shadow:inset 0 1px 0 var(--hair)}
+.surf .chips li.k{color:var(--accent);box-shadow:inset 0 0 0 1px color-mix(in oklab,var(--accent) 45%,transparent)}
+.surf .tty{background:transparent;box-shadow:none;border-radius:0 0 14px 14px}
+/* the terminal plays a first session when it scrolls in; any command line replays from there */
+.term .tty{min-height:420px;cursor:default;white-space:normal}
+.term .ln{display:block;padding-left:1.4em;text-indent:-1.4em;white-space:pre-wrap;overflow-wrap:anywhere}
+.term .cmd{color:var(--ink);cursor:pointer}
+.term .out{color:var(--ink-2)}
+.term .c{color:var(--muted)}
+.term .cur{display:inline-block;width:.6em;height:1.1em;vertical-align:-.2em;background:var(--accent);animation:blink 1s steps(2,start) infinite}
+@keyframes blink{to{visibility:hidden}}
+.replay{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;color:var(--muted);background:transparent;border:0;padding:0;cursor:pointer;transition:color .2s var(--ease),transform .5s var(--ease)}
+.replay svg{width:14px;height:14px;display:block}
+@media (hover:hover) and (pointer:fine){.replay:hover{color:var(--ink);transform:rotate(-360deg)}}
+.replay:active{transform:scale(.94)}
+@media (prefers-reduced-motion:reduce){.term .cur{animation:none}}
+/* facts: a hairline grid; a cell carries .l when a cell sits to its left, .t when a row sits above it */
+.surf .t small a{color:inherit;text-decoration:none;box-shadow:inset 0 -1px 0 var(--hair)}
+.s6{grid-column:span 6}.s5{grid-column:span 5}.s4{grid-column:span 4}.s3{grid-column:span 3}.s2{grid-column:span 2}
+.tools{list-style:none;margin:0;padding:0;display:contents}
+.tools li{font-family:var(--mono);font-size:var(--t1);letter-spacing:.02em;line-height:1;padding:9px 12px;border-radius:999px;box-shadow:inset 0 0 0 1px var(--hair);color:var(--ink-2)}
+.tools li.k{color:var(--accent);box-shadow:inset 0 0 0 1px color-mix(in oklab,var(--accent) 45%,transparent)}
+.tools{width:100%;border-collapse:collapse;margin:0}
+.tools td{padding:8px 0;vertical-align:baseline;box-shadow:inset 0 1px 0 var(--hair);line-height:1.4}
+.tools tbody:first-child tr:first-child td{box-shadow:none;padding-top:0}
+.tools tbody.k tr:first-child td{padding-top:22px}
+.tools td:first-child{font-family:var(--mono);font-size:var(--t1);letter-spacing:.02em;white-space:nowrap;padding-right:24px;width:1%;color:var(--ink)}
+.tools tbody.k td:first-child{color:var(--accent)}
+.tools td:last-child{color:var(--ink-2);text-wrap:pretty}
+@media (max-width:760px){.tools tr{display:block;padding:9px 0;box-shadow:inset 0 1px 0 var(--hair)}.tools tbody:first-child tr:first-child{box-shadow:none;padding-top:0}.tools td,.tools tbody:first-child tr:first-child td,.tools tbody.k tr:first-child td{display:block;padding:0;box-shadow:none;width:auto}.tools td:last-child{margin-top:2px}.tools tbody.k tr:first-child{padding-top:22px}}
+.harness{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr}
+.harness li{padding:14px 0;box-shadow:inset 0 1px 0 var(--hair);font-size:var(--t2);font-weight:500;letter-spacing:-.01em}
+.harness li:nth-child(-n+2){box-shadow:none}
+.harness li:nth-child(2n){padding-left:20px}
+.harness li span{display:block;font-family:var(--mono);font-size:var(--t1);color:var(--muted);font-weight:400;letter-spacing:.02em;margin-top:4px}
+.foot{position:relative;z-index:2;box-shadow:inset 0 1px 0 var(--hair);padding:clamp(48px,7vh,80px) 0 28px;background:var(--page-2)}
+.foot .wrap{width:min(var(--wide),100% - 48px);margin-inline:auto}
+.fgrid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:24px}
+.fbrand{grid-column:span 5;padding-right:24px}
+.fbrand p{margin:18px 0 0;max-width:36ch;color:var(--ink-2);line-height:1.5;text-wrap:pretty}
+.fbrand .fmono{margin-top:14px;font-family:var(--mono);font-size:var(--t1);color:var(--muted);letter-spacing:.02em}
+.fcol{grid-column:span 2;display:flex;flex-direction:column;gap:9px}
+.fcol:first-of-type{grid-column:7 / span 2}
+.fh{font-weight:500;color:var(--ink);margin-bottom:6px}
+.fcol a{color:var(--ink-2);text-decoration:none;width:fit-content;box-shadow:inset 0 -1px 0 transparent;transition:color .18s var(--ease),box-shadow .18s var(--ease)}
+@media (hover:hover) and (pointer:fine){.fcol a:hover{color:var(--ink);box-shadow:inset 0 -1px 0 var(--hair)}}
+.fbar{margin-top:clamp(36px,5vh,56px);padding-top:22px;box-shadow:inset 0 1px 0 var(--hair);display:flex;align-items:center;justify-content:space-between;gap:16px 28px;flex-wrap:wrap;font-family:var(--mono);font-size:var(--t1);letter-spacing:.02em;color:var(--muted)}
+.flinks{display:flex;align-items:center;gap:18px}
+.flinks a{color:var(--ink-2);text-decoration:none;box-shadow:inset 0 -1px 0 var(--hair)}
+.ftoggle{color:var(--ink-2);opacity:1}
+.rv{opacity:0;transform:translateY(10px);transition:opacity .6s var(--ease),transform .6s var(--ease)}
+.rv.in{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){.rv{opacity:1;transform:none;transition:none}}
+
+/* ---- the studio chip ---- */
+.dk{position:fixed;left:16px;bottom:16px;z-index:90;font-family:ui-monospace,Menlo,monospace}
+.dk-btn{height:34px;padding:0 14px;border-radius:17px;background:#1A1916;color:#fff;font-size:11px;letter-spacing:.08em;border:0;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.35);font-family:inherit}
+.dk-panel{display:none;position:absolute;left:0;bottom:44px;width:300px;background:#fff;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.28),inset 0 0 0 1px rgba(0,0,0,.08);padding:14px;color:#1A1916;font-size:11px;line-height:1.6}
+.dk.open .dk-panel{display:block}
+.dk h4{margin:8px 0 6px;font-size:10px;letter-spacing:.12em;color:#7A766E;font-weight:400}
+.dk h4:first-child{margin-top:0}
+.dk .row{display:flex;flex-wrap:wrap;gap:5px}
+.dk button.opt{font-family:inherit;font-size:11px;padding:5px 9px;border-radius:8px;border:0;background:#EEECE6;color:#1A1916;cursor:pointer}
+.dk button.opt.on{background:#0000FF;color:#fff}
+.dk input[type=range]{width:100%}
+
+/* ---- narrow ---- */
+@media (max-width:760px){
+  .hero{display:flex;flex-direction:column;min-height:0}
+  .hero .scene{position:relative;inset:auto;width:100%;height:auto;aspect-ratio:1920/1200;order:1}
+  .nav{position:absolute;top:0;left:0;right:0;padding:18px 20px 0;gap:16px;z-index:4}
+  .nav a.link,.toggle{color:#171512}
+  :root[data-theme="dark"] .nav a.link,:root[data-theme="dark"] .toggle{color:#F4F1EA}
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .nav a.link,:root:not([data-theme="light"]) .toggle{color:#F4F1EA}}
+  .stack{order:2;align-items:flex-start;text-align:left;padding:clamp(28px,5vh,44px) 20px clamp(20px,3vh,32px);color:var(--ink)}
+  .stack h1,.stack .lede,.stack .readme,.stack .install{color:var(--ink)}
+  .stack .lede{color:var(--ink-2)}
+  .stack .cta{flex-direction:column;align-items:stretch;width:100%;gap:16px}
+  .pill{width:100%;text-align:center;padding:16px 26px;background:var(--ink);color:var(--page)}
+  .readme{align-self:flex-start;border-bottom-color:var(--hair)}
+  h1{max-width:none;font-size:clamp(2.35rem,11vw,3rem)}
+  .stage{width:min(70vw,300px);height:min(70vw,300px)}
+  .section{width:calc(100% - 40px);padding:clamp(64px,9vh,96px) 0}
+  .two{grid-template-columns:minmax(0,1fr);gap:28px}
+  .bento{grid-template-columns:minmax(0,1fr);gap:16px}
+  .bx{grid-column:auto;padding:22px;border-radius:20px}
+  .surf .row{grid-template-columns:56px minmax(0,1fr) auto}
+  .surf .row.w4{grid-template-columns:56px minmax(0,1fr) 16px}
+  .surf .row.w4 .k,.surf .row.now .k{display:none}
+  .tile{min-height:0;padding:24px 22px 0}
+  .tile .stage{min-height:340px;margin:20px -22px 0;width:calc(100% + 44px)}
+  .tile .lift{left:16px;right:16px}
+  .tile .lift.bleed{right:-48px}
+  .tile>p{min-height:0}
+  .bx .line{max-width:none}
+  .fgrid{grid-template-columns:1fr 1fr;gap:28px 20px}
+  .fbrand{grid-column:span 2;padding-right:0}
+  .fcol,.fcol:first-of-type{grid-column:auto}
+  .spot-more{grid-template-columns:minmax(0,1fr);gap:20px}
+  .spot-what,.spot-moves{grid-column:auto}
+  .spot-moves div{grid-template-columns:80px minmax(0,1fr)}
+  .tile .bar .m{display:none}
+  .harness{grid-template-columns:1fr}
+  .harness li:nth-child(2){box-shadow:inset 0 1px 0 var(--hair)}
+  .harness li:nth-child(2n){padding-left:0}
+  .tty{font-size:.78rem;white-space:pre-wrap;overflow-wrap:anywhere}
+}
+@media (prefers-reduced-motion:reduce){.pill:hover{transform:none}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><symbol id="lockh" viewBox="0 -1 80 29"><use href="#leafm" x="0" y="0" width="27" height="27" style="color:var(--kint-accent,#1F3FD6)"/><use href="#wordm" x="28.5" y="2.4" width="50.5" height="22.25"/></symbol><symbol id="wordm" viewBox="1.40 76.35 50.50 22.25"><g fill="currentColor" transform="translate(1.0074,-2.3205) scale(0.060599)"><g transform="translate(0.000000,1672.000000) scale(0.100000,-0.100000)"><path d="M185 3607 c-24 -37 -21 -3388 3 -3417 16 -19 29 -20 312 -21 254 0 296 2 306 15 7 10 13 120 18 318 5 228 11 308 21 323 7 11 66 73 129 139 138 140 106 149 273 -73 64 -86 144 -190 178 -232 33 -42 68 -87 77 -100 20 -28 24 -34 126 -164 43 -55 93 -121 112 -147 62 -88 35 -83 464 -81 208 1 381 5 384 8 10 10 -17 52 -119 182 -122 155 -349 446 -366 471 -7 9 -43 56 -80 103 -38 48 -75 97 -83 109 -8 12 -97 126 -197 252 -101 126 -183 234 -183 240 0 11 108 122 693 710 193 194 296 305 293 314 -5 12 -70 14 -423 12 l-418 -3 -50 -54 c-27 -30 -85 -90 -128 -135 -476 -492 -668 -686 -682 -686 -21 0 -23 86 -24 1019 -1 643 -4 898 -12 908 -9 10 -72 13 -310 13 l-299 0 -15 -23z M7128 3293 c-196 -3 -198 -4 -203 -26 -4 -13 -4 -558 -2 -1213 3 -1173 4 -1190 25 -1284 79 -351 272 -526 640 -581 168 -25 682 -28 702 -5 8 11 12 91 13 281 2 253 1 267 -17 281 -16 11 -68 14 -259 14 -231 0 -240 1 -291 24 -66 30 -121 93 -136 155 -14 54 -31 676 -25 867 3 72 5 136 5 142 0 6 7 18 16 26 13 14 59 16 343 16 246 0 331 3 344 13 26 19 29 541 3 560 -13 10 -91 12 -343 11 l-326 -2 -24 24 -23 23 1 327 c1 306 0 328 -17 341 -13 9 -48 12 -123 11 -58 -2 -195 -4 -303 -5z M5306 2600 c-65 -8 -148 -32 -214 -61 -23 -11 -48 -19 -55 -19 -17 0 -149 -88 -160 -106 -4 -8 -18 -14 -31 -14 -21 0 -24 5 -30 72 -4 41 -13 79 -21 87 -11 12 -65 14 -302 13 -158 -1 -295 -5 -305 -8 -17 -5 -18 -25 -20 -237 -3 -421 4 -2122 9 -2140 4 -16 26 -17 316 -15 l312 3 6 705 c6 758 5 753 61 868 42 89 145 190 216 212 15 5 47 16 71 25 103 38 326 28 432 -19 55 -24 169 -118 169 -139 0 -6 7 -18 15 -27 9 -10 25 -48 37 -86 21 -67 21 -86 25 -799 3 -435 8 -734 13 -739 13 -13 611 -9 623 3 14 14 20 1082 9 1406 -8 212 -14 291 -26 324 -9 24 -16 52 -16 63 0 37 -81 204 -131 271 -154 205 -369 327 -631 357 -95 11 -285 11 -372 0z M2962 2558 c-17 -17 -18 -2368 -1 -2385 16 -16 599 -5 616 11 14 14 25 2344 11 2370 -8 14 -46 16 -311 16 -222 0 -306 -3 -315 -12z"/></g></g><g fill="var(--kint-accent,#0A44F5)" transform="translate(1.0074,-2.3205) scale(0.060599)"><g transform="translate(0.000000,1672.000000) scale(0.100000,-0.100000)"><path d="M2960 3604 c-16 -42 -13 -585 4 -609 13 -19 23 -20 315 -15 254 4 303 7 311 20 13 20 13 571 0 604 -10 26 -10 26 -315 26 -305 0 -305 0 -315 -26z"/></g></g></symbol><symbol id="leafm" viewBox="0 0 100 100"><path fill="currentColor" fill-rule="evenodd" d="M25.94 89.31C26.21 87.90 26.59 86.53 26.69 85.09C26.79 83.53 26.83 82.02 26.63 80.46C26.54 79.78 26.39 79.03 26.19 78.38C26.01 77.76 25.85 77.13 25.60 76.53C24.87 74.71 25.24 75.62 23.42 72.28L17.55 64.20C16.42 61.78 16.82 62.75 16.35 61.62C16.11 61.00 15.74 60.41 15.54 59.77C15.33 59.05 15.21 58.26 15.17 57.52C15.13 56.69 15.04 55.73 15.21 54.90C15.27 54.59 15.41 54.22 15.51 53.92C15.61 53.65 15.74 53.35 15.87 53.09C16.17 52.58 16.51 52.04 16.93 51.61C17.68 50.88 18.52 50.32 19.55 50.14C21.32 49.81 23.03 50.35 24.38 51.46C24.98 51.94 25.47 52.49 26.00 53.01C26.27 53.28 26.56 53.50 26.85 53.73C27.05 53.89 27.54 54.30 27.84 54.27C28.36 54.21 28.74 54.38 29.21 54.00C29.58 53.69 29.84 53.16 29.91 52.69C30.32 50.06 29.02 47.77 28.08 45.48C27.66 44.46 27.15 43.43 26.60 42.47C26.33 41.98 26.07 41.48 25.85 40.98C25.63 40.47 25.26 40.01 25.06 39.50C24.89 39.10 24.78 38.68 24.61 38.26C24.44 37.86 24.21 37.46 24.07 37.04C23.78 36.20 23.52 35.30 23.35 34.42C23.17 33.38 23.03 32.45 23.06 31.38C23.10 30.43 23.27 29.48 23.63 28.60C24.08 27.43 24.79 26.44 25.87 25.77C26.92 25.10 28.18 24.60 29.47 24.67C31.47 24.79 33.38 25.54 34.86 26.88C35.52 27.48 36.11 28.18 36.68 28.85C37.17 29.42 37.77 30.38 38.48 30.71C38.78 30.84 38.98 31.02 39.31 31.11C39.64 31.21 40.02 31.21 40.36 31.14C40.79 31.06 41.15 30.74 41.41 30.40C42.62 28.85 42.41 26.36 42.33 24.50C42.23 22.29 41.98 20.10 42.04 17.87C42.12 15.26 42.56 12.27 44.33 10.25C45.24 9.22 46.60 8.34 47.99 8.16C50.00 7.88 51.85 8.58 53.23 10.02C53.85 10.67 54.31 11.46 54.78 12.22C55.01 12.59 55.18 12.96 55.49 13.29C55.70 13.51 56.17 14.02 56.50 14.03C57.00 14.06 57.44 14.21 57.93 14.02C58.72 13.72 59.32 13.05 59.86 12.44C60.41 11.83 60.92 11.16 61.39 10.50C62.35 9.16 63.24 7.73 64.37 6.54C65.48 5.40 66.61 4.38 67.98 3.58C69.44 2.70 71.19 2.20 72.89 2.03C74.45 1.88 76.13 2.30 77.40 3.18C77.91 3.54 78.33 4.01 78.71 4.53C79.13 5.10 79.33 5.78 79.51 6.48C79.83 7.73 79.88 9.23 79.58 10.50C79.45 11.10 79.28 11.70 79.11 12.30C78.97 12.85 78.73 13.33 78.50 13.85C78.05 14.86 77.53 15.82 77.02 16.81C76.77 17.29 76.49 17.78 76.25 18.28C76.02 18.76 75.71 19.25 75.55 19.76C75.15 21.06 74.84 22.50 75.59 23.73C76.10 24.54 77.33 25.00 78.21 25.17C78.79 25.28 79.37 25.39 79.94 25.49C80.26 25.55 80.53 25.60 80.84 25.71C81.06 25.77 81.38 25.81 81.58 25.93C82.81 26.60 84.09 27.37 84.62 28.77C85.12 30.11 84.87 31.56 84.37 32.86C83.23 35.85 80.21 37.66 77.48 38.97C76.00 39.68 74.44 40.18 72.96 40.89C72.20 41.25 71.42 41.53 70.68 41.91C69.97 42.26 69.21 42.54 68.55 42.97C67.96 43.36 67.38 43.76 66.83 44.21C66.31 44.62 65.75 45.08 65.52 45.73C65.39 46.09 65.31 46.39 65.41 46.79C65.49 47.09 65.75 47.34 65.97 47.52C66.92 48.34 68.49 48.32 69.70 48.39C70.40 48.43 71.13 48.41 71.82 48.52C72.16 48.57 72.47 48.69 72.80 48.76C73.10 48.82 73.42 48.79 73.71 48.87C74.67 49.14 75.58 49.50 76.40 50.07C77.11 50.54 77.86 51.13 78.30 51.87C78.93 52.94 79.24 54.23 79.06 55.47C78.83 56.96 77.84 58.30 76.79 59.33C75.93 60.16 74.94 60.73 73.91 61.30C73.37 61.58 72.81 61.84 72.23 62.06C71.64 62.28 71.06 62.46 70.43 62.63C69.14 62.99 67.84 63.35 66.50 63.56C65.81 63.66 65.15 63.82 64.45 63.90C63.78 63.98 63.07 64.08 62.41 64.19L56.33 65.30C56.13 65.34 55.88 65.48 55.69 65.53C55.49 65.58 55.31 65.66 55.11 65.72C54.68 65.85 54.29 65.96 53.88 66.13C53.13 66.42 52.31 66.67 51.76 67.31C51.61 67.47 51.11 68.09 51.35 68.33C51.52 68.53 51.60 68.73 51.81 68.91C51.99 69.07 52.23 69.23 52.46 69.32C52.94 69.50 53.54 69.64 54.05 69.73C54.68 69.84 55.30 69.94 55.94 70.06C56.45 70.14 57.02 70.24 57.49 70.48C58.58 71.02 59.65 71.60 60.21 72.76C60.55 73.44 60.69 74.22 60.57 74.97C60.39 76.09 59.83 77.21 59.02 78.00C56.95 80.01 54.06 80.99 51.27 81.49C50.45 81.64 49.57 81.76 48.75 81.85C47.92 81.95 47.10 82.09 46.28 82.18C45.45 82.27 44.65 82.39 43.83 82.51C43.07 82.62 42.25 82.74 41.52 82.95C39.79 83.43 38.01 83.94 36.44 84.80C34.98 85.58 33.70 86.55 32.58 87.79C32.03 88.41 31.62 89.10 31.18 89.80C30.73 90.52 30.34 91.36 30.05 92.17C29.73 93.01 29.48 93.86 29.22 94.72C29.02 95.35 28.79 96.79 28.22 97.18C28.09 97.26 28.01 97.41 27.89 97.50C27.78 97.59 27.64 97.62 27.50 97.70C27.18 97.86 26.98 97.96 26.60 97.99C25.90 98.05 25.27 97.90 24.69 97.50C24.31 97.25 24.10 96.81 23.98 96.38C23.66 95.16 24.36 93.88 24.75 92.75C24.96 92.18 25.17 91.61 25.37 91.03C25.46 90.76 25.54 90.48 25.62 90.21C25.71 89.92 25.88 89.60 25.94 89.31ZM32.54 79.31C33.65 76.68 34.74 74.05 35.86 71.43C36.97 68.86 38.07 66.21 39.38 63.75C40.69 61.28 41.82 58.71 43.08 56.22C44.29 53.81 45.53 51.31 46.94 49.00C48.37 46.67 49.76 44.26 51.08 41.88C52.37 39.53 53.90 37.28 55.36 35.03C56.84 32.76 58.24 30.43 59.75 28.19C61.17 26.11 64.26 21.27 64.26 21.27C63.91 21.60 62.64 22.49 62.00 23.17C61.28 23.92 60.56 24.69 59.88 25.49C58.53 27.10 57.15 28.68 55.85 30.34C55.18 31.19 54.51 32.06 53.88 32.94C53.28 33.80 52.63 34.61 52.03 35.48C50.82 37.26 49.53 38.98 48.39 40.80L45.04 46.20C44.18 47.57 43.50 49.08 42.66 50.48C41.83 51.88 41.20 53.40 40.39 54.82C39.59 56.23 38.86 57.79 38.24 59.29C37.60 60.82 36.91 62.31 36.25 63.83C34.88 66.99 33.85 70.30 32.81 73.58C32.28 75.28 31.78 77.01 31.30 78.74C30.75 80.72 30.28 81.68 30.32 84.60L32.54 79.31Z"/></symbol></defs></svg>
+
+<header class="hero" id="hero">
+  <img class="scene day" src="assets/hero-day-noleaf.png" alt="The Sibyl seated at the mouth of her cave, oak leaves lifting from her hand and thinning out across an open sky.">
+  <img class="scene night" src="assets/hero-night-noleaf.png" alt="">
+  <div class="grain" aria-hidden="true"></div>
+  <div class="haze" aria-hidden="true"></div>
+  <nav class="nav" aria-label="Primary">
+    <a class="wm" href="#" aria-label="kint"><svg viewBox="0 -1 80 29" aria-hidden="true" focusable="false"><use href="#lockh"/></svg></a>
+    <a class="link" href="#start">Start</a>
+    <a class="link" href="/docs/">Docs</a>
+    <a class="link" href="https://github.com/s0nderlabs/kint">GitHub</a>
+    <button class="toggle" id="themeToggle" type="button" aria-label="Toggle theme"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true" focusable="false"><rect x="0.5" y="0.5" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1"></rect><path d="M7 0.5 H13.5 V13.5 H7 Z" fill="currentColor"></path></svg></button>
+  </nav>
+  <div class="stack">
+    <h1>Sibyl Memory that <em>outlives</em> the laptop.</h1>
+    <p class="lede">Wipe the machine, connect the wallet, and the agent comes back knowing what it knew, and proves it was not tampered with.</p>
+    <div class="cta"><a class="pill" href="/app">Open the app</a><a class="readme" href="/docs/">Read the docs</a></div>
+  </div>
+</header>
+
+<div class="flyer" id="flyer" aria-hidden="true">
+  <img class="ras day" src="assets/leaf-day.png" alt="">
+  <img class="ras night" src="assets/leaf-night.png" alt="">
+  <div class="fgrain" aria-hidden="true"></div>
+  <svg class="morph" id="morph" viewBox="0 0 86 67" aria-hidden="true">
+    <defs><linearGradient id="lg" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="86" y2="0"><stop id="s0" offset="0" stop-color="#B59A7D"/><stop id="s1" offset="1" stop-color="#B99E80"/></linearGradient></defs>
+    <path id="mpath" fill="url(#lg)" opacity="0" d=""/>
+    <path id="rib" fill="var(--page)" opacity="0" d=""/>
+  </svg>
+</div>
+<svg id="samp" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"></svg>
+<script type="application/json" id="cut">{"day":{"bbox":[859,520,945,587],"image":[1920,1072],"angle":35.68,"cx":0.5469,"cy":0.4621,"ext":0.9569,"path":"M31.00 8.50C30.83 8.82 30.48 9.00 30.00 9.00C29.53 9.00 29.18 9.17 29.00 9.50C28.75 9.95 28.48 10.00 26.10 10.00C23.45 10.00 23.45 10.00 21.50 12.00C19.55 14.00 19.55 14.00 16.40 14.00C13.50 14.00 13.25 13.95 13.00 13.50C12.75 13.02 12.53 13.00 10.43 13.05C8.12 13.12 8.12 13.12 8.12 14.50C8.12 15.88 8.12 15.88 8.93 15.95C9.53 16.00 9.78 15.90 10.00 15.52C10.40 14.75 13.60 14.75 14.00 15.50C14.20 15.88 14.53 16.00 15.40 16.00C16.75 16.00 18.00 17.02 18.00 18.10C18.00 18.47 18.20 18.85 18.50 19.00C18.82 19.17 19.00 19.52 19.00 20.00C19.00 20.47 19.18 20.82 19.50 21.00C19.80 21.15 20.00 21.52 20.00 21.90C20.00 22.38 20.43 22.97 21.50 24.00C23.00 25.45 23.00 25.45 23.00 27.60C23.00 29.48 23.05 29.77 23.50 30.00C23.90 30.20 24.00 30.52 24.00 31.42C24.00 32.45 24.10 32.67 24.98 33.48C25.60 34.05 25.98 34.65 26.05 35.12C26.18 36.35 27.30 36.30 28.48 35.02C29.03 34.42 29.65 34.00 29.98 34.00C30.75 34.00 33.00 36.30 33.00 37.10C33.00 37.47 33.20 37.85 33.50 38.00C33.90 38.20 34.00 38.52 34.00 39.50C34.00 40.47 34.10 40.80 34.50 41.00C34.80 41.15 35.00 41.52 35.00 41.90C35.00 42.38 35.43 42.97 36.50 44.00C37.43 44.90 38.00 45.65 38.00 45.97C38.00 46.30 38.53 47.05 39.25 47.77C40.50 49.02 40.50 49.02 42.18 48.95C43.85 48.88 43.88 48.85 43.95 48.15C44.00 47.70 44.48 47.00 45.28 46.20L46.50 44.97L48.75 47.22C50.12 48.62 51.00 49.67 51.00 50.00C51.00 50.75 53.33 53.00 54.10 53.00C54.48 53.00 54.85 53.20 55.00 53.50C55.25 53.98 55.48 54.02 57.08 53.95C58.85 53.88 58.88 53.88 58.95 53.15C59.05 52.25 60.28 51.00 61.05 51.00C61.40 51.00 61.95 51.38 62.50 52.00C63.35 52.98 63.43 53.00 64.98 53.00C66.55 53.00 66.55 53.00 68.00 54.50C68.92 55.45 69.65 56.00 70.00 56.00C70.35 56.00 71.10 56.55 72.00 57.50C73.48 59.02 73.48 59.02 75.67 58.95L77.88 58.88L77.95 56.58C78.00 54.48 77.98 54.25 77.50 54.00C77.08 53.77 77.00 53.48 77.00 52.05C77.00 50.40 76.98 50.35 76.00 49.50C75.00 48.62 75.00 48.62 75.00 46.55C75.00 44.47 75.00 44.47 72.48 41.97L69.95 39.50L71.98 37.52C73.25 36.27 74.00 35.35 74.00 35.02C74.00 34.67 72.85 33.35 70.75 31.25C67.55 28.05 67.50 28.00 66.40 28.00C65.53 28.00 65.20 27.88 65.00 27.50C64.80 27.12 64.48 27.00 63.60 27.00C62.58 27.00 62.35 26.88 61.23 25.75L59.95 24.47L61.48 23.02C62.88 21.67 63.00 21.45 63.00 20.50C63.00 19.00 61.98 18.00 60.40 18.00C59.53 18.00 59.20 17.88 59.00 17.50C58.83 17.17 58.48 17.00 58.00 17.00C57.53 17.00 57.18 16.82 57.00 16.50C56.80 16.10 56.48 16.00 55.50 16.00C54.53 16.00 54.20 15.90 54.00 15.50C53.83 15.17 53.48 15.00 53.00 15.00C52.53 15.00 52.18 15.17 52.00 15.50C51.78 15.95 51.48 16.00 49.60 16.00C47.48 16.00 47.48 16.00 45.70 14.20C43.93 12.45 43.90 12.42 44.45 12.05C45.23 11.55 45.15 10.60 44.28 9.72C43.55 9.00 43.53 9.00 40.40 9.00C37.52 9.00 37.25 8.95 37.00 8.50C36.75 8.05 36.48 8.00 34.00 8.00C31.53 8.00 31.25 8.05 31.00 8.50Z","base":"#B59A7D","tip":"#B99E80"},"night":{"bbox":[859,521,945,588],"image":[1920,1072],"angle":36.27,"cx":0.5454,"cy":0.4547,"ext":0.947,"path":"M32.00 8.50C31.83 8.82 31.48 9.00 31.00 9.00C30.53 9.00 30.18 9.17 30.00 9.50C29.75 9.95 29.48 10.00 27.00 10.00C24.53 10.00 24.25 10.05 24.00 10.50C23.85 10.80 23.48 11.00 23.10 11.00C22.62 11.00 22.03 11.42 21.00 12.50C19.55 14.00 19.55 14.00 17.90 14.00C16.53 14.00 16.23 13.92 16.00 13.50C15.75 13.05 15.48 13.00 13.03 13.00C10.50 13.00 10.28 12.95 9.95 12.45C9.58 11.90 9.58 11.90 8.78 12.70C7.95 13.50 7.95 13.50 8.70 14.25C9.45 15.00 9.45 15.00 13.50 15.00C17.53 15.00 17.53 15.00 18.75 16.22C19.98 17.45 19.98 17.45 20.05 19.67C20.12 21.88 20.12 21.88 20.85 21.95C21.30 22.00 22.00 22.47 22.78 23.25C24.00 24.47 24.00 24.47 24.00 27.60C24.00 30.48 24.05 30.75 24.50 31.00C24.90 31.20 25.00 31.52 25.00 32.50C25.00 33.48 25.10 33.80 25.48 34.00C25.78 34.15 26.00 34.57 26.05 35.08C26.12 35.88 26.12 35.88 27.50 35.88C28.83 35.88 28.88 35.85 28.95 35.15C29.00 34.75 29.38 34.10 29.78 33.70C30.50 32.98 30.50 32.98 31.75 34.23C32.88 35.35 33.00 35.58 33.00 36.60C33.00 37.47 33.12 37.80 33.50 38.00C33.83 38.17 34.00 38.52 34.00 39.00C34.00 39.47 34.18 39.83 34.50 40.00C34.80 40.17 35.00 40.52 35.00 40.95C35.00 41.42 35.30 41.88 36.00 42.50C36.60 43.02 37.00 43.60 37.00 43.95C37.00 44.70 41.28 49.00 42.00 49.00C42.70 49.00 44.00 47.70 44.00 47.00C44.00 46.70 44.53 45.95 45.25 45.22L46.50 43.97L47.75 45.22C48.50 45.97 49.00 46.70 49.00 47.02C49.00 47.35 49.40 47.95 49.98 48.47C50.60 49.05 50.98 49.65 51.05 50.12C51.12 50.77 51.25 50.88 51.93 50.95C52.43 51.00 52.85 51.23 53.00 51.52C53.18 51.83 53.53 52.00 54.00 52.00C54.48 52.00 54.83 52.17 55.00 52.50C55.45 53.33 57.35 53.20 58.28 52.27C58.68 51.88 59.00 51.30 59.00 51.00C59.00 50.70 59.35 50.12 59.75 49.70C60.50 48.95 60.50 48.95 61.98 50.47C63.45 52.00 63.45 52.00 65.10 52.00C66.48 52.00 66.78 52.08 67.00 52.50C67.15 52.80 67.53 53.00 67.90 53.00C68.38 53.00 69.17 53.65 71.00 55.50C72.83 57.35 73.62 58.00 74.10 58.00C74.48 58.00 74.85 58.20 75.00 58.52C75.23 58.90 75.48 59.00 76.08 58.95C76.78 58.88 76.88 58.77 76.95 58.08C77.00 57.58 77.23 57.15 77.53 57.00C78.18 56.62 78.18 55.35 77.50 55.00C77.08 54.77 77.00 54.48 77.00 53.00C77.00 51.52 76.93 51.23 76.50 51.00C76.17 50.83 76.00 50.47 76.00 50.00C76.00 49.52 75.83 49.17 75.50 49.00C75.17 48.83 75.00 48.47 75.00 48.02C75.00 47.58 74.80 47.15 74.45 46.90C73.88 46.50 73.88 46.50 74.45 46.10C75.55 45.30 75.20 44.67 71.98 41.47C68.98 38.50 68.98 38.50 69.73 37.75C70.12 37.33 70.70 37.00 71.00 37.00C71.30 37.00 71.90 36.65 72.33 36.22C73.10 35.42 73.10 35.42 72.55 35.05C72.25 34.85 72.00 34.42 72.00 34.10C72.00 33.23 67.75 29.00 66.90 29.00C66.53 29.00 66.15 28.80 66.00 28.50C65.80 28.10 65.48 28.00 64.50 28.00C63.53 28.00 63.20 27.90 63.00 27.50C62.83 27.17 62.48 27.00 62.00 27.00C61.53 27.00 61.18 26.82 61.00 26.50C60.85 26.20 60.48 26.00 60.10 26.00C59.73 26.00 59.15 25.70 58.70 25.25C57.95 24.50 57.95 24.50 58.70 23.75C59.33 23.12 59.68 23.00 60.60 23.00C61.48 23.00 61.80 22.88 62.00 22.52C62.15 22.22 62.58 22.00 63.08 21.95C63.75 21.90 63.90 21.75 63.95 21.20C64.05 20.30 61.85 18.00 60.90 18.00C60.53 18.00 60.15 17.80 60.00 17.50C59.83 17.17 59.48 17.00 59.00 17.00C58.53 17.00 58.18 16.82 58.00 16.50C57.80 16.10 57.48 16.00 56.50 16.00C55.53 16.00 55.20 15.90 55.00 15.50C54.75 15.02 54.48 15.00 49.60 15.00C44.45 15.00 44.45 15.00 43.70 14.25C42.95 13.47 42.95 13.47 43.98 12.52C44.58 11.95 45.00 11.35 45.00 11.02C45.00 10.25 43.70 9.00 42.90 9.00C42.53 9.00 42.15 8.80 42.00 8.50C41.75 8.02 41.48 8.00 37.00 8.00C32.52 8.00 32.25 8.02 32.00 8.50Z","base":"#C3B19F","tip":"#C6B5A2"},"vec":{"angle":-59.23,"cx":0.4993,"cy":0.4553,"ext":1.0801}}</script>
+
+<main id="main">
+<section class="spot" id="spot" aria-label="One leaf, kept">
+  <div class="spot-inner">
+    <div class="stage"><div class="slot" id="slot"><div class="vec"><svg><use href="#leafm"/></svg></div></div></div>
+    <p class="spot-line">One row. Written on the machine, kept on Base, and back on any machine that can sign for it.</p>
+    <div class="spot-more">
+      <p class="spot-what">Sibyl Memory decides what a coding agent remembers: five tiers, full-text search, eight tools, one SQLite file on one machine. kint makes that memory the owner's instead of the laptop's. Every change is packed, padded, encrypted to a key only the owner's wallet can produce, and written to Base under a small contract. Nothing decrypted ever leaves the machine.</p>
+      <dl class="spot-moves">
+        <div><dt>Kept</dt><dd>Each session end, the rows that changed become one encrypted epoch on Base. The chain holds ciphertext and a digest, never a byte of plaintext.</dd></div>
+        <div><dt>Restored</dt><dd>On any machine the owner can sign for, kint pulls, verifies every epoch, and replays the rows through Sibyl's own write methods.</dd></div>
+        <div><dt>Verified</dt><dd>Before the agent acts on a recalled row, its exact text is proved against the chain. A row that drifted is refused, naming both block heights.</dd></div>
+      </dl>
+    </div>
+  </div>
+</section>
+<div class="deck">
+<section class="section" id="how" aria-labelledby="how-h">
+  <div class="wrap">
+  <h2 class="sh rv" id="how-h">What happens to one row.</h2>
+  <ol class="bento">
+    <li class="bx tile t1 c4 rv">
+      <div class="head"><span class="ix">01</span><h3>Written where it always was.</h3></div>
+      <p>The agent writes through Sibyl's own tools. When the session ends, the rows that changed are packed, padded to a size bucket, encrypted to a key only the wallet can produce, and written to Base as calldata under a small contract.</p>
+      <div class="stage" aria-hidden="true"><div class="lift" style="--d:0s"><div class="surf app cl"><div class="ui">
+        <div class="cl-top st" style="--i:0"><span class="tt">Friday hotfix <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 4.5l3 3 3-3"/></svg></span><span class="sh">Share</span></div>
+        <div class="cl-body">
+          <div class="cl-u st" style="--i:1">can we ship the hotfix tonight?</div>
+          <div class="cl-meta st" style="--i:2">Aug 28 <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M9.5 6A3.5 3.5 0 1 1 8.4 3.4M9.5 2v2.5H7"/></svg><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2 10l.6-2.4L8 2.2l1.8 1.8L4.4 9.4z"/></svg><svg viewBox="0 0 12 12" aria-hidden="true"><rect x="4" y="4" width="6" height="6" rx="1"/><path d="M2.5 7.5V3a.5.5 0 0 1 .5-.5h4.5"/></svg></div>
+          <div class="cl-tool st" style="--i:3">Loaded tools, used kint integration <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M4.5 3l3 3-3 3"/></svg></div>
+          <p class="cl-a st" style="--i:4">No. The release gate in memory says never on a Friday, and every release needs a green deadlift test, a second reviewer and a passing kint verify. The earliest slot is Monday 09:00 WIB. I logged the refusal in the journal so the next session sees it too.</p>
+          <div class="cl-acts st" style="--i:5"><svg viewBox="0 0 12 12" aria-hidden="true"><rect x="4" y="4" width="6" height="6" rx="1"/><path d="M2.5 7.5V3a.5.5 0 0 1 .5-.5h4.5"/></svg><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2 4.5h2l2.5-2v7L4 7.5H2zM8.5 4.5a2 2 0 0 1 0 3"/></svg><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2 6h2v4H2zM4 6l2.4-3.8c.8 0 1.3.6 1.1 1.4L7.2 5H9.5c.6 0 1 .5.9 1.1l-.6 3A1 1 0 0 1 8.8 10H4"/></svg><svg viewBox="0 0 12 12" aria-hidden="true"><g transform="rotate(180 6 6)"><path d="M2 6h2v4H2zM4 6l2.4-3.8c.8 0 1.3.6 1.1 1.4L7.2 5H9.5c.6 0 1 .5.9 1.1l-.6 3A1 1 0 0 1 8.8 10H4"/></g></svg><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M9.5 6A3.5 3.5 0 1 1 8.4 3.4M9.5 2v2.5H7"/></svg><span>Aug 28</span></div>
+        </div>
+        <div class="cl-input st" style="--i:6"><span class="plus">+</span><span class="ph">Write a message&hellip;</span><svg viewBox="0 0 12 12" aria-hidden="true"><rect x="4.5" y="1.5" width="3" height="6" rx="1.5"/><path d="M3 6a3 3 0 0 0 6 0M6 9v1.5"/></svg><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 4.5l3 3 3-3"/></svg><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2 5v2M4 3.5v5M6 2v8M8 3.5v5M10 5v2"/></svg></div>
+        <div class="cl-foot st" style="--i:7"><span>Claude is AI and can make mistakes. Please double-check responses.</span><span><b>Opus 4.8</b> High</span></div>
+      </div></div></div></div>
+    </li>
+    <li class="bx tile t2 c4 rv">
+      <div class="head"><span class="ix">02</span><h3>Back on any machine that can sign.</h3></div>
+      <p>Wipe the laptop. Connect the wallet, and kint pulls every epoch, checks each one against the chain, decrypts, and replays the rows through Sibyl's write methods. Sibyl never learns the machine changed.</p>
+      <div class="stage" aria-hidden="true"><div class="lift bleed" style="--d:.06s"><div class="surf app bs"><div class="ui">
+        <div class="bs-head st" style="--i:0"><b>Contract</b><span>0xa22E03f7a4145Bf4909a83595C90a38E14d79600</span></div>
+        <div class="bs-tabs st" style="--i:1"><span class="on">Transactions</span><span>Token Transfers (ERC-20)</span><span>Other Transactions</span><span>Contract</span><span>Events</span></div>
+        <div class="bs-card">
+          <div class="bs-latest st" style="--i:2">Latest 5 from a total of 5 transactions</div>
+          <table>
+            <thead><tr class="st" style="--i:2"><th></th><th>Transaction Hash</th><th>Method</th><th>Block</th><th>Age</th><th>From</th><th></th><th>To</th><th>Value</th><th>Txn Fee</th></tr></thead>
+            <tbody>
+            <tr class="st" style="--i:3"><td><i class="cb"></i></td><td><a>0x52a0c1b605&hellip;</a></td><td><span class="mth">Push</span></td><td><a>51087836</a></td><td>21 hrs ago</td><td><a>0xd2085B94&hellip;6803e943e</a></td><td><span class="in">IN</span></td><td class="to">0xa22E03f7&hellip;E14d79600</td><td>0 ETH</td><td class="fee">0.00000251</td></tr>
+            <tr class="st" style="--i:4"><td><i class="cb"></i></td><td><a>0x9c64e2c21b&hellip;</a></td><td><span class="mth">Push</span></td><td><a>51082012</a></td><td>24 hrs ago</td><td><a>0x9e76fe18&hellip;CF08680D5</a></td><td><span class="in">IN</span></td><td class="to">0xa22E03f7&hellip;E14d79600</td><td>0 ETH</td><td class="fee">0.00000385</td></tr>
+            <tr class="st" style="--i:5"><td><i class="cb"></i></td><td><a>0x369907fb1bc&hellip;</a></td><td><span class="mth">Push</span></td><td><a>51081880</a></td><td>25 hrs ago</td><td><a>0xd2085B94&hellip;6803e943e</a></td><td><span class="in">IN</span></td><td class="to">0xa22E03f7&hellip;E14d79600</td><td>0 ETH</td><td class="fee">0.00000226</td></tr>
+            <tr class="st" style="--i:6"><td><i class="cb"></i></td><td><a>0xbe9bb8596c&hellip;</a></td><td><span class="mth">Push</span></td><td><a>51081867</a></td><td>25 hrs ago</td><td><a>0xd2085B94&hellip;6803e943e</a></td><td><span class="in">IN</span></td><td class="to">0xa22E03f7&hellip;E14d79600</td><td>0 ETH</td><td class="fee">0.00000226</td></tr>
+            <tr class="st" style="--i:7"><td><i class="cb"></i></td><td><a>0xb99e514d8a&hellip;</a></td><td><span class="mth">Set Session Key</span></td><td><a>51081850</a></td><td>25 hrs ago</td><td><a>0xC635e6Eb&hellip;773dc87Ec</a></td><td><span class="in">IN</span></td><td class="to">0xa22E03f7&hellip;E14d79600</td><td>0 ETH</td><td class="fee">0.00000077</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div></div></div></div>
+    </li>
+    <li class="bx tile t3 c4 rv">
+      <div class="head"><span class="ix">03</span><h3>Checked before it is believed.</h3></div>
+      <p>Before the agent acts on anything it recalled, the exact stored text is re-read, hashed and proved against the leaf the chain vouches for. A row that drifted is refused, naming both block heights, and the refusal is written back as a Sibyl entity.</p>
+      <div class="stage" aria-hidden="true"><div class="lift" style="--d:.12s"><div class="surf app cc"><div class="ui">
+        <div class="ln u st" style="--i:0"><i>&#10095;</i> ship the hotfix tonight? i think the friday rule was relaxed</div>
+        <div class="ln th st" style="--i:1">  Thought for <b>4s</b>, called kint</div>
+        <div class="ln say st" style="--i:2"><i>&#9679;</i> <b>No.</b> kint verify refused the release rule: the stored text is not what Base vouches for.</div>
+        <div class="ln say2 st" style="--i:3">Last good value: epoch 1, block 51,081,867. Head now: epoch 2, block 51,081,880. The refusal is written back as a Sibyl entity, so the next session sees it too.</div>
+        <div class="ln done st" style="--i:4">&#10035; Worked for 6s &middot; done 9:41 PM</div>
+        <div class="ccfoot">
+          <div class="ln rule st" style="--i:5"><span>kint</span></div>
+          <div class="ln in st" style="--i:5">&#10095; </div>
+          <div class="ln rule st" style="--i:5"></div>
+          <div class="ln status st" style="--i:6">  <span class="p">~/Documents/kint</span> <span class="sep">&#9474;</span> <span class="m">Opus 5</span> <span class="sep">&#9474;</span> <span class="c">12% (118k)</span></div>
+        </div>
+      </div></div></div></div>
+    </li>
+  </ol>
+  </div>
+</section>
+
+<section class="section" id="receipt" aria-labelledby="rc-h">
+  <div class="wrap">
+  <h2 class="sh rv" id="rc-h">Live on <span class="base" aria-hidden="true"></span>Base mainnet.</h2>
+  <p class="sub rv">The receipt is public. The memory is not: Base holds ciphertext and a digest, padded to a bucket, never a byte of plaintext and never the true length.</p>
+  <div class="bento">
+    <div class="bx t1 c7 hold rv">
+      <div class="rc">
+        <div><span class="k">EpochAnchor, verified</span><a class="addr" href="https://basescan.org/address/0xa22E03f7a4145Bf4909a83595C90a38E14d79600">0xa22E03f7a4145Bf4909a83595C90a38E14d79600</a></div>
+        <div class="rc-hero"><span class="big">51,081,880</span><span class="under">The block that holds the latest epoch. Epoch 2 carries 15 rows in one 4 KB bucket; digest <code>7df5378a8c4fa866</code>.</span></div>
+        <dl class="rc-kv">
+          <div><dt>owner</dt><dd>0xC635e6Eb223aE14143E23cEEa9440bC773dc87Ec</dd></div>
+          <div><dt>space</dt><dd>bd2a3b5b8f3fb4c8</dd></div>
+          <div><dt>network</dt><dd><span class="base" aria-hidden="true"></span>Base, chain 8453</dd></div>
+        </dl>
+        <div class="rc-cap">
+          <div class="bar" aria-hidden="true"><i class="s" style="width:5.86%"></i><i class="kk" style="width:.9%"></i></div>
+          <div class="leg"><span><i class="sw s"></i>Sibyl stores 300.0 KB</span><span><i class="sw kk"></i>kint state 46.2 KB</span><span class="tot">346.2 KB of Sibyl's 5 MB free cap</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="bx t2 c5 hold rv"><div class="lift bleed"><div class="surf app bs"><div class="ui">
+        <div class="bs-head st" style="--i:0"><b>Transaction Details</b></div>
+        <div class="bs-tabs st" style="--i:0"><span class="on">Overview</span><span>Logs (1)</span><span>State</span></div>
+        <div class="bs-act st" style="--i:1"><span class="lbl">TRANSACTION ACTION</span>Call <span class="mth">Push</span> Function by <a>0xd2085B94&hellip;6803e943e</a> on <a>0xa22E03f7&hellip;E14d79600</a></div>
+        <dl class="bs-rows">
+          <div class="bs-r st" style="--i:2"><dt>Transaction Hash:</dt><dd>0x369907fb1bccc3222365b2e07b4d6d831642831d481a5f7cb99357823e2a9729</dd></div>
+          <div class="bs-r st" style="--i:3"><dt>Status:</dt><dd><span class="ok">&#10003; Success</span></dd></div>
+          <div class="bs-r st" style="--i:4"><dt>Block:</dt><dd><a>51081880</a> <span class="tag">Confirmed by Sequencer</span></dd></div>
+          <div class="bs-r st" style="--i:5"><dt>Timestamp:</dt><dd>25 hrs ago <span class="tag">Sep-09-2026 11:25:07 AM +UTC</span></dd></div>
+          <div class="bs-r sep st" style="--i:6"><dt>From:</dt><dd><a>0xd2085B94849B2D98333100Fc0005ff96803e943e</a></dd></div>
+          <div class="bs-r st" style="--i:7"><dt>To:</dt><dd><a>0xa22E03f7a4145Bf4909a83595C90a38E14d79600</a></dd></div>
+          <div class="bs-r sep st" style="--i:8"><dt>Value:</dt><dd>0 ETH <span class="dim">($0.00)</span></dd></div>
+          <div class="bs-r st" style="--i:9"><dt>Transaction Fee:</dt><dd>0.00000226833835467 ETH <span class="tag">($0.005472)</span></dd></div>
+          <div class="bs-r st" style="--i:9"><dt>Gas Price:</dt><dd>0.011494974 Gwei <span class="dim">(0.000000000011494974 ETH)</span></dd></div>
+        </dl>
+    </div></div></div></div>
+  </div>
+  </div>
+</section>
+
+<section class="section" id="sibyl" aria-labelledby="sb-h">
+  <div class="wrap">
+  <h2 class="sh rv" id="sb-h">Built on Sibyl Memory, under it.</h2>
+  <div class="bento">
+    <div class="bx t1 c5 prose rv">
+      <p class="line">Their server, imported untouched. Their eight tools, exactly as shipped. Six added.</p>
+      <div>
+        <p>The decision beat reaches the row through their search and keys on their typed verdict.</p>
+        <p>Delete the Sibyl layer and the epoch is a decrypted blob with no query surface: a fresh session neither refuses nor proceeds. Base holds the ciphertext. Sibyl is what turns it back into an answerable store.</p>
+      </div>
+    </div>
+    <div class="bx t2 c7 rv">
+      <table class="tools"><tbody>
+<tr><td>memory_remember</td><td>Store an entity in long-term memory.</td></tr>
+<tr><td>memory_recall</td><td>Read an entity by exact (category, name) lookup.</td></tr>
+<tr><td>memory_search</td><td>Full-text search across all Sibyl tiers: entities, state, reference, journal. Each hit carries its tier.</td></tr>
+<tr><td>memory_list</td><td>List entities, optionally filtered by category, most recently updated first.</td></tr>
+<tr><td>memory_forget</td><td>Archive an entity. Not destroyed: moved to archived_entities.</td></tr>
+<tr><td>memory_set_state</td><td>Write a hot-tier state document.</td></tr>
+<tr><td>memory_get_state</td><td>Read a hot-tier state document by key.</td></tr>
+<tr><td>memory_record_event</td><td>Append a cold-tier journal event. Append-only, never overwrites.</td></tr>
+      </tbody><tbody class="k">
+<tr><td>memory_status</td><td>Where this memory lives and whether it is in step with Base.</td></tr>
+<tr><td>memory_connect</td><td>Connect this machine to the wallet-owned vault, or say exactly what a human must do.</td></tr>
+<tr><td>memory_pull</td><td>Restore or refresh this machine's Sibyl store from Base.</td></tr>
+<tr><td>memory_push</td><td>Anchor every unanchored change now.</td></tr>
+<tr><td>memory_verify</td><td>Before acting on something recalled, verify it against Base and get a decision.</td></tr>
+<tr><td>memory_history</td><td>What this row held at every anchored epoch. A temporal read Sibyl cannot do.</td></tr>
+      </tbody></table>
+    </div>
+  </div>
+  </div>
+</section>
+
+<section class="section" id="start" aria-labelledby="st-h">
+  <div class="wrap">
+  <h2 class="sh rv" id="st-h">Five minutes, once per machine.</h2>
+  <div class="bento">
+    <div class="bx t1 c8 hold rv"><div class="surf app cc term" id="term"><div class="ui">
+      <button type="button" class="replay" id="replay" aria-label="Replay the session"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9"/><path d="M13.5 2.5v3h-3"/></svg></button>
+      <pre class="tty" id="tty" aria-live="polite" aria-label="A first session with kint, typed out"></pre>
+    </div></div></div>
+    <div class="bx t2 c4 prose rv">
+      <p>Base Account owners type a vault passphrase and approve one transaction from a loopback page. Hardware-wallet owners sign once through cast instead. Either way, a few cents of ETH on this machine's session key pays for every push, and every harness you run starts kint-server in place of Sibyl's.</p>
+      <ul class="harness" aria-label="Harnesses">
+        <li>Claude Code<span>kint setup claude</span></li>
+        <li>Codex<span>kint setup codex</span></li>
+        <li>Hermes<span>kint setup hermes</span></li>
+        <li>OpenClaw<span>kint setup openclaw</span></li>
+      </ul>
+    </div>
+  </div>
+  </div>
+</section>
+</div>
+</main>
+<footer class="foot" id="foot">
+  <div class="wrap">
+    <div class="fgrid">
+      <div class="fbrand">
+        <svg class="fwm" viewBox="0 -1 80 29" role="img" aria-label="kint"><use href="#lockh"/></svg>
+        <p>Sibyl Memory that outlives the laptop. Wallet-owned, kept on <span class="base" aria-hidden="true"></span>Base, restored on any machine that can sign, verified before the agent acts.</p>
+        <p class="fmono">v0.3.0 &middot; MIT &middot; Python 3.10+</p>
+      </div>
+      <nav class="fcol" aria-label="Product"><span class="fh">Product</span><a href="#how">How it works</a><a href="#receipt">Live on Base</a><a href="#sibyl">Under Sibyl</a><a href="#start">Start</a><a href="/docs/">Docs</a></nav>
+      <nav class="fcol" aria-label="Source"><span class="fh">Source</span><a href="https://github.com/s0nderlabs/kint">GitHub</a><a href="https://github.com/s0nderlabs/kint#readme">README</a><a href="https://github.com/s0nderlabs/kint/blob/main/docs/judge.md">Claims a judge can check</a><a href="https://github.com/s0nderlabs/kint/releases/tag/v0.3.0">Release v0.3.0</a></nav>
+      <nav class="fcol" aria-label="Chain"><span class="fh">Chain</span><a href="https://basescan.org/address/0xa22E03f7a4145Bf4909a83595C90a38E14d79600">EpochAnchor on Basescan</a><a href="https://basescan.org/tx/0xbe9bb8596c825a8891c3eafe4381e0c6522d647641735c635ca58fcf4bbe4455">Epoch 1, block 51,081,867</a><a href="https://basescan.org/tx/0x369907fb1bccc3222365b2e07b4d6d831642831d481a5f7cb99357823e2a9729">Epoch 2, block 51,081,880</a><a href="https://github.com/Sibyl-Labs/Sibyl-Memory">Sibyl Memory</a></nav>
+    </div>
+    <div class="fbar"><span>s0nderlabs</span><span class="flinks"><a href="#hero">Top</a><button class="toggle ftoggle" type="button" aria-label="Toggle theme"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true" focusable="false"><rect x="0.5" y="0.5" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1"></rect><path d="M7 0.5 H13.5 V13.5 H7 Z" fill="currentColor"></path></svg></button></span></div>
+  </div>
+</footer>
+
+<div class="dk" id="dk">
+  <div class="dk-panel">
+    <h4>THEME &middot; KEY T</h4><div class="row" id="theme"></div>
+    <h4>THE BEAT &middot; progress follows the scroll; drag to scrub</h4>
+    <input type="range" id="scrub" min="0" max="1000" value="0">
+    <div id="read" class="mono"></div>
+    <h4>GROUND UNDER THE LEDE &middot; KEY L</h4><div class="row" id="text"></div>
+    <h4>STACK &middot; KEY K &middot; reloads</h4><div class="row" id="stack"></div>
+    <h4>SCALE &middot; KEY O</h4><div class="row" id="over"></div>
+    <h4>KEYS</h4><div>1 top &middot; 2 handoff &middot; 3 colour &middot; 4 morph &middot; 5 landed &middot; r reset</div>
+  </div>
+  <button class="dk-btn" onclick="document.getElementById('dk').classList.toggle('open')">MOCK CONTROLS</button>
+</div>
+<script>
+(function(){
+  var NS='http://www.w3.org/2000/svg', N=600;
+  var root=document.documentElement, hero=document.getElementById('hero'), flyer=document.getElementById('flyer'), slot=document.getElementById('slot');
+  var ras=flyer.querySelectorAll('.ras'), fgr=flyer.querySelector('.fgrain');
+  var msvg=document.getElementById('morph'), mpath=document.getElementById('mpath'), rib=document.getElementById('rib'), lg=document.getElementById('lg'), s0=document.getElementById('s0'), s1=document.getElementById('s1'), samp=document.getElementById('samp');
+  var CUT=JSON.parse(document.getElementById('cut').textContent);
+  var LOGO=document.getElementById('leafm').querySelector('path').getAttribute('d'), LP=LOGO.split(/Z(?=M)/), LOGO_OUT=LP[0]+'Z', LOGO_RIB=LP[1]||'';
+  var OVER=false; try{OVER=localStorage.getItem('kint-beat-over')==='1';}catch(e){}
+  /* measured Sep 10 2026 (kintSearch, 1920 x 1050): this arc never touches h1, lede, cta or install, and keeps the last 15 percent mostly vertical */
+  var ARC={c1x:0.48,c2x:0.20,c1y:-0.12,c2y:-0.30,n1:22,n2:22,nhold:0.50};
+  var TEXT='haze'; try{var tv=localStorage.getItem('kint-beat-text'); if(tv)TEXT=tv;}catch(e){} document.body.setAttribute('data-text',TEXT);
+  /* smooth scrolling: Lenis (vendored 1.3.26) interpolates the wheel so the beat scrubs without steps; off under reduced motion; touch stays native */
+  var lenis=null, reduce=false; try{reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;}catch(e){}
+  try{ if(!reduce&&window.Lenis){ lenis=new Lenis({lerp:0.09,smoothWheel:true});
+    if(window.gsap){ gsap.ticker.add(function(t){lenis.raf(t*1000);}); gsap.ticker.lagSmoothing(0); } else { (function raf(t){lenis.raf(t);requestAnimationFrame(raf);})(0); } } }catch(e){lenis=null;}
+  var STACK=true; try{STACK=localStorage.getItem('kint-stack')!=='0';}catch(e){}
+  function jump(y){ if(lenis)lenis.scrollTo(y,{immediate:true,force:true}); else window.scrollTo(0,y); }
+  /* theme */
+  function cur(){var a=root.getAttribute('data-theme');if(a==='dark'||a==='light')return a;try{if(matchMedia('(prefers-color-scheme: dark)').matches)return 'dark';}catch(e){}return 'light';}
+  function setTheme(t){ if(t==='system')root.removeAttribute('data-theme'); else root.setAttribute('data-theme',t); try{localStorage.setItem('kint-theme',t);}catch(e){} paint(); layout(); render(); }
+  document.getElementById('themeToggle').addEventListener('click',function(){setTheme(cur()==='dark'?'light':'dark');});
+  /* the sandpaper tile */
+  function prng(seed){return function(){seed=seed+0x6D2B79F5|0;var t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return ((t^t>>>14)>>>0)/4294967296;};}
+  try{var S=128,cv=document.createElement('canvas');cv.width=S;cv.height=S;var ctx=cv.getContext('2d'),id=ctx.createImageData(S,S),d=id.data,r=prng(0x7df5378a);for(var i=0;i<d.length;i+=4){var v=96+Math.floor(r()*96);d[i]=d[i+1]=d[i+2]=v;d[i+3]=255;}ctx.putImageData(id,0,0);root.style.setProperty('--grain-tile','url('+cv.toDataURL('image/png')+')');}catch(e){}
+
+  /* ---- colour: OKLab mix so sand to cobalt does not pass through mud ---- */
+  function hex2rgb(h){h=h.replace('#','');if(h.length===3)h=h.split('').map(function(c){return c+c;}).join('');var n=parseInt(h,16);return [(n>>16)&255,(n>>8)&255,n&255];}
+  function s2l(c){c/=255;return c<=0.04045?c/12.92:Math.pow((c+0.055)/1.055,2.4);}
+  function l2s(c){c=c<=0.0031308?12.92*c:1.055*Math.pow(c,1/2.4)-0.055;return Math.max(0,Math.min(255,Math.round(c*255)));}
+  function lab(rgb){var r=s2l(rgb[0]),g=s2l(rgb[1]),b=s2l(rgb[2]);var l=Math.cbrt(0.4122214708*r+0.5363325363*g+0.0514459929*b),m=Math.cbrt(0.2119034982*r+0.6806995451*g+0.1073969566*b),s=Math.cbrt(0.0883024619*r+0.2817188376*g+0.6299787005*b);return [0.2104542553*l+0.7936177850*m-0.0040720468*s,1.9779984951*l-2.4285922050*m+0.4505937099*s,0.0259040371*l+0.7827717662*m-0.8086757660*s];}
+  function rgb(L){var l_=L[0]+0.3963377774*L[1]+0.2158037573*L[2],m_=L[0]-0.1055613458*L[1]-0.0638541728*L[2],s_=L[0]-0.0894841775*L[1]-1.2914855480*L[2];var l=l_*l_*l_,m=m_*m_*m_,s=s_*s_*s_;return [l2s(4.0767416621*l-3.3077115913*m+0.2309699292*s),l2s(-1.2684380046*l+2.6097574011*m-0.3413193965*s),l2s(-0.0041960863*l-0.7034186147*m+1.7076147010*s)];}
+  function mix(h1,h2,t){var a=lab(hex2rgb(h1)),b=lab(hex2rgb(h2));var c=rgb([a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t]);return 'rgb('+c[0]+','+c[1]+','+c[2]+')';}
+
+  /* ---- the morph: both outlines sampled to N points by arc length, the logo ring pre-placed in the cutout's frame,
+     start point and direction chosen by least squared distance (what a morph plugin's shapeIndex does) ---- */
+  function ring(d){ var p=document.createElementNS(NS,'path'); p.setAttribute('d',d); samp.appendChild(p); var L=p.getTotalLength(), out=[]; for(var i=0;i<N;i++){var q=p.getPointAtLength(L*i/N); out.push([q.x,q.y]);} samp.removeChild(p); return out; }
+  function firstRing(d){ var i=d.indexOf('M',1); return i>0?d.slice(0,i):d; }
+  function align(A,B){
+    var best=Infinity,bk=0,brev=false;
+    [false,true].forEach(function(rev){ var Bb=rev?B.slice().reverse():B;
+      for(var k=0;k<N;k++){ var s=0; for(var i=0;i<N;i+=4){ var b=Bb[(i+k)%N], dx=A[i][0]-b[0], dy=A[i][1]-b[1]; s+=dx*dx+dy*dy; if(s>best)break; } if(s<best){best=s;bk=k;brev=rev;} } });
+    var Bb=brev?B.slice().reverse():B, out=[]; for(var i=0;i<N;i++)out.push(Bb[(i+bk)%N]); return out;
+  }
+  function tween(A,B,t){ var u=1-t, s='M'; for(var i=0;i<N;i++){ s+=(u*A[i][0]+t*B[i][0]).toFixed(2)+' '+(u*A[i][1]+t*B[i][1]).toFixed(2)+(i<N-1?'L':''); } return s+'Z'; }
+
+  /* geometry: where the leaf sits inside the hero (object-fit cover math), and where the slot is */
+  var A={x:0,y:0,w:0,h:0}, B={x:0,y:0,w:0,h:0}, startY=0, endY=1, G=null;
+  function prepare(){
+    var key=cur()==='dark'?'night':'day', R=CUT[key], V=CUT.vec, bb=R.bbox, bw=bb[2]-bb[0], bh=bb[3]-bb[1];
+    if(G&&G.key===key){ G.accent=getComputedStyle(root).getPropertyValue('--kint-accent').trim(); return; }
+    msvg.setAttribute('viewBox','0 0 '+bw+' '+bh);
+    var ROT=V.angle-R.angle, cxc=R.cx*bw, cyc=R.cy*bh, s=(R.ext*bw)/(V.ext*100);
+    rib.setAttribute('d',LOGO_RIB); rib.setAttribute('transform','translate('+cxc+' '+cyc+') rotate('+(-ROT)+') scale('+s+') translate('+(-V.cx*100)+' '+(-V.cy*100)+')');
+    var Ar=ring(firstRing(R.path)), Bl=ring(LOGO_OUT), c=Math.cos(-ROT*Math.PI/180), sn=Math.sin(-ROT*Math.PI/180);
+    var Br=Bl.map(function(q){ var x=(q[0]-V.cx*100)*s, y=(q[1]-V.cy*100)*s; return [cxc+x*c-y*sn, cyc+x*sn+y*c]; });
+    Br=align(Ar,Br);
+    var ang=R.angle*Math.PI/180, ex=R.ext*bw/2;
+    lg.setAttribute('x1',(cxc-Math.cos(ang)*ex).toFixed(2)); lg.setAttribute('y1',(cyc-Math.sin(ang)*ex).toFixed(2)); lg.setAttribute('x2',(cxc+Math.cos(ang)*ex).toFixed(2)); lg.setAttribute('y2',(cyc+Math.sin(ang)*ex).toFixed(2));
+    /* the grain is masked by the traced outline, not the feathered raster: a 3 px feather is a 15 px halo at 5x */
+    flyer.style.setProperty('--leaf-mask','url("data:image/svg+xml;utf8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+bw+' '+bh+'"><path d="'+firstRing(R.path)+'" fill="#000"/></svg>')+'")');
+    G={key:key,R:R,V:V,bw:bw,bh:bh,Ar:Ar,Br:Br,ROT:ROT,path:firstRing(R.path),accent:getComputedStyle(root).getPropertyValue('--kint-accent').trim()};
+  }
+  function layout(){
+    prepare();
+    var key=G.key, bb=G.R.bbox, IW=G.R.image[0], IH=G.R.image[1];
+    var img=hero.querySelector('.scene.'+key), r=img.getBoundingClientRect(), sx=window.scrollX||0, sy=window.scrollY||0;
+    var cw=r.width, ch=r.height, k=Math.max(cw/IW, ch/IH), dw=IW*k, dh=IH*k, ox=(cw-dw)/2, oy=(ch-dh)/2;
+    A={x:r.left+sx+ox+bb[0]*k, y:r.top+sy+oy+bb[1]*k, w:(bb[2]-bb[0])*k, h:(bb[3]-bb[1])*k};
+    var s=slot.getBoundingClientRect();
+    B={x:s.left+sx, y:s.top+sy, w:s.width, h:s.height};
+    var hr=hero.getBoundingClientRect(); var heroH=hr.height;
+    startY=Math.max(0, (window.innerWidth<=760?0.02:0.08)*heroH);
+    endY=Math.max(startY+260, B.y+B.h/2-0.50*window.innerHeight);
+    /* the flight must be reachable: never past what the page can scroll */
+    var maxScroll=Math.max(0, document.documentElement.scrollHeight-window.innerHeight-24);
+    if(endY>maxScroll){ endY=maxScroll; if(startY>endY-200) startY=Math.max(0,endY-200); }
+  }
+  var P=null; /* null = follow the scroll; a number = scrubbed */
+  function progress(){ if(reduce)return 1; if(P!==null)return P; var y=window.scrollY||0; var p=Math.min(1,Math.max(0,(y-startY)/(endY-startY))); return p>=0.995?1:p; }  /* a phone cannot always scroll to the exact end */
+  function ease(t){return 1-Math.pow(1-t,3);}
+  function clamp(t){return Math.min(1,Math.max(0,t));}
+  function smooth(t){return t*t*(3-2*t);}
+  var lastD='';
+  function render(){
+    if(!G)return;
+    var R=G.R, V=G.V, p=progress(), e=ease(p);
+    /* the landing: the vector leaf at the stage's own size, so the flying copy and the slot's copy coincide at p = 1 */
+    var Sv=B.w, tx=B.x+V.cx*Sv, ty=B.y+V.cy*Sv;
+    var cx=A.x+R.cx*A.w, cy=A.y+R.cy*A.h;                      /* the raster leaf's centroid in the scene */
+    var vw0=window.innerWidth, vh0=window.innerHeight, narrow=vw0<=760;
+    /* the arc swings out to the right of the headline and lede and comes back in to land; ARC holds the control points as fractions */
+    var c1x=narrow?vw0-ARC.n1:Math.min(vw0-140, cx+ARC.c1x*vw0), c1y=narrow?cy+0.10*vh0:cy+ARC.c1y*vh0;
+    var c2x=narrow?vw0-ARC.n2:tx+ARC.c2x*vw0, c2y=narrow?ty-0.30*vh0:ty+ARC.c2y*vh0;
+    var u=1-p, x=u*u*u*cx+3*u*u*p*c1x+3*u*p*p*c2x+p*p*p*tx, y=u*u*u*cy+3*u*u*p*c1y+3*u*p*p*c2y+p*p*p*ty;
+    /* size: smoothstep growth until the long axes match at the stage; the overshoot variant peaks at 1.10 around p = 0.8 */
+    var g=smooth(narrow?clamp((p-ARC.nhold)/(1-ARC.nhold)):p); if(OVER){ g+=0.10*Math.sin(clamp((p-0.6)/0.4)*Math.PI); }
+    var wLand=V.ext*Sv/R.ext, w=A.w+(wLand-A.w)*g, h=w*(A.h/A.w);
+    /* rotation: the raster's tip turns from its own heading to the logo's, about its centroid */
+    var ROT=G.ROT, rot=ROT*e, sway=Math.sin(p*Math.PI*2)*5*(1-p);
+    flyer.style.width=w+'px'; flyer.style.height=h+'px';
+    flyer.style.transformOrigin=(R.cx*100)+'% '+(R.cy*100)+'%';
+    flyer.style.transform='translate3d('+(x-R.cx*w)+'px,'+(y-R.cy*h)+'px,0) rotate('+(rot+sway)+'deg)';
+    /* the stages */
+    var hand=clamp((p-0.30)/0.10), col=clamp((p-0.55)/0.25), gr=1-clamp((p-0.70)/0.15), mo=clamp((p-0.85)/0.15), rb=clamp((p-0.93)/0.07);
+    for(var i=0;i<ras.length;i++)ras[i].style.opacity=String(1-hand);
+    mpath.setAttribute('opacity',String(hand));
+    fgr.style.opacity=String(0.55*gr);
+    s0.setAttribute('stop-color',mix(R.base,G.accent,smooth(col))); s1.setAttribute('stop-color',mix(R.tip,G.accent,smooth(col)));
+    var d=mo>0?tween(G.Ar,G.Br,smooth(mo)):G.path; if(d!==lastD){mpath.setAttribute('d',d);lastD=d;}
+    rib.setAttribute('opacity',String(rb));
+    document.body.classList.toggle('landed', p>=1);
+    flyer.style.visibility=(p>=1)?'hidden':'visible';
+    var stage=p<0.30?'raster':p<0.40?'handoff':p<0.55?'vector':p<0.80?'colour':p<0.85?'held':p<1?'morph':'landed';
+    var rd=document.getElementById('read'); if(rd)rd.textContent='p '+p.toFixed(3)+' · '+stage+' · '+Math.round(w)+' px ('+(w/A.w).toFixed(1)+'x) · scroll '+Math.round(window.scrollY)+' · flight '+Math.round(startY)+' to '+Math.round(endY)+' · turn '+Math.round(ROT)+' deg';
+    var sc=document.getElementById('scrub'); if(sc&&P===null)sc.value=String(Math.round(p*1000));
+  }
+  var ticking=false; function onScroll(){ if(ticking)return; ticking=true; requestAnimationFrame(function(){ticking=false; render();}); }
+  addEventListener('scroll', onScroll, {passive:true}); addEventListener('resize', function(){layout(); render();});
+  hero.querySelectorAll('.scene').forEach(function(im){ im.addEventListener('load', function(){layout(); render();}); });
+  document.fonts.ready.then(function(){layout(); render(); if(window.ScrollTrigger&&stacked)ScrollTrigger.refresh();});
+  layout(); render();
+  /* the stack: full-height cards, scrubbed enter, drift while pinned, settle-back exit. Desktop and motion only,
+     and it follows the breakpoint live so a resize across 760 px never leaves sticky cards on a phone layout. */
+  var stacked=false, stackTweens=[];
+  function buildStack(){
+    if(stacked||!(STACK&&!reduce&&window.innerWidth>760&&window.gsap&&window.ScrollTrigger))return;
+    stacked=true; document.body.classList.add('stacked'); gsap.registerPlugin(ScrollTrigger);
+    if(lenis&&!buildStack.hooked){ lenis.on('scroll',ScrollTrigger.update); buildStack.hooked=true; }
+    var secs=[].slice.call(document.querySelectorAll('.deck .section'));
+    function top(el){ var y=0; while(el){ y+=el.offsetTop; el=el.offsetParent; } return y; }  /* layout position: sticky never moves it */
+    secs.forEach(function(sec,i){
+      var wrap=sec.querySelector('.wrap'), cells=sec.querySelectorAll('.bx'), nxt=secs[i+1];
+      var vh=function(){return window.innerHeight;};
+      stackTweens.push(gsap.fromTo(wrap,{y:72,opacity:0},{y:0,opacity:1,ease:'none',scrollTrigger:{start:function(){return top(sec)-vh()*0.94;},end:function(){return top(sec)-vh()*0.24;},scrub:true}}));
+      stackTweens.push(gsap.fromTo(cells,{y:function(k){return 48+(k%3)*32;}},{y:0,ease:'none',scrollTrigger:{start:function(){return top(sec)-vh()*0.96;},end:function(){return top(sec)-vh()*0.18;},scrub:true}}));
+      stackTweens.push(gsap.fromTo(cells,{yPercent:0},{yPercent:function(k){return -(3+(k%3)*2.2);},ease:'none',scrollTrigger:{start:function(){return top(sec);},end:function(){return top(sec)+sec.offsetHeight;},scrub:true}}));
+      if(nxt) stackTweens.push(gsap.fromTo(sec,{scale:1,'--dim':0},{scale:.955,'--dim':.6,ease:'none',scrollTrigger:{start:function(){return top(nxt)-vh();},end:function(){return top(nxt);},scrub:true}}));
+    });
+    ScrollTrigger.refresh();
+  }
+  function killStack(){
+    if(!stacked)return; stacked=false; document.body.classList.remove('stacked');
+    stackTweens.forEach(function(t){ if(t.scrollTrigger)t.scrollTrigger.kill(); t.kill(); }); stackTweens=[];
+    gsap.set(document.querySelectorAll('.deck .section, .deck .wrap, .deck .bx'),{clearProps:'all'});
+    layout(); render();
+  }
+  buildStack();
+  addEventListener('load',function(){ if(stacked)ScrollTrigger.refresh(); });
+  addEventListener('resize',function(){ var want=STACK&&!reduce&&window.innerWidth>760; if(want&&!stacked)buildStack(); if(!want&&stacked)killStack(); if(stacked)ScrollTrigger.refresh(); });
+  /* anchor links glide through Lenis (the deck's layout tops are what sticky pins to, so a section lands at the top) */
+  document.addEventListener('click',function(e){ var a=e.target.closest('a[href^="#"]'); if(!a)return; var id=a.getAttribute('href').slice(1); if(!id)return; var el=document.getElementById(id); if(!el)return; e.preventDefault();
+    var y=0, n=el; while(n){y+=n.offsetTop; n=n.offsetParent;} if(id==='hero')y=0;
+    if(lenis)lenis.scrollTo(y,{duration:1.25,easing:function(t){return 1-Math.pow(1-t,3);}}); else window.scrollTo({top:y,behavior:'smooth'});
+    try{history.replaceState(null,'','#'+id);}catch(x){} });
+  var ft=document.querySelector('.ftoggle'); if(ft)ft.addEventListener('click',function(){setTheme(cur()==='dark'?'light':'dark');});
+  /* reveal once, on entry */
+  try{ var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}});},{threshold:0.12,rootMargin:'0px 0px -6% 0px'}); document.querySelectorAll('.rv').forEach(function(el){io.observe(el);}); }catch(e){document.querySelectorAll('.rv').forEach(function(el){el.classList.add('in');});}
+  /* the terminal: real commands from the README, response lines in the CLI's own wording, placeholders where a value is the user's */
+  var SESSION=[
+    {cmd:'uv tool install git+https://github.com/s0nderlabs/kint@v0.3.0', out:['Resolved 64 packages in 3.85s','Installed 64 packages in 77ms',' + kint==0.3.0 (from git+https://github.com/s0nderlabs/kint@v0.3.0)','Installed 2 executables: kint, kint-server']},
+    {cmd:'kint join --owner 0xd3390EDAC3d0EB41248C132792B0DcC5f0b0D4E3 --base-account --tenant kint-demo', out:['vault passphrase: ','join: owner 0xd3390EDAC3d0EB41248C132792B0DcC5f0b0D4E3','      tenant kint-demo (from --tenant), space bd2a3b5b8f3fb4c8','      contract 0xa22E03f7a4145Bf4909a83595C90a38E14d79600, store ~/.sibyl-memory/memory.db','      this command writes nothing to the chain','session key: 0xB6A4F6Bd61cd9BedfB91c73976679DFb252D4116 (created; it signs epochs for this machine and can never decrypt)','vault: head epoch 1 at block 51082012','connected: key tag 14e3812b, data key from chain head header','pull: cold start, both RPCs agree: head seq 1, digest b64dcde033b03249, block 51082012','pull: applied epoch 1 (5 rows, 0 deletions) from block 51082012','restore: restored 1 epoch(s), 5 rows; head seq 1 at block 51082012; store root matches the anchored root','claude: registered kint (user scope)','codex: wrote [mcp_servers.kint] to ~/.codex/config.toml','hermes: registered kint','openclaw: saved MCP server kint (openclaw mcp set)','writes: off until the session key is funded and authorized by the owner; reads work now','next: put a few cents of ETH on 0xB6A4F6Bd61cd9BedfB91c73976679DFb252D4116 (Base), then kint authorize page']},
+    {cmd:'kint authorize page', out:['open this page in the browser where your Base Account is logged in (owner 0xd3390EDAC3d0EB41248C132792B0DcC5f0b0D4E3):','  http://127.0.0.1:51749/\u2026','page reported 0x81c362b1\u2026; polling the chain for canWrite(0xd3390EDAC3d0EB41248C132792B0DcC5f0b0D4E3, 0xB6A4F6Bd61cd9BedfB91c73976679DFb252D4116)','authorized: 0xB6A4F6Bd61cd9BedfB91c73976679DFb252D4116 may push under 0xd3390EDAC3d0EB41248C132792B0DcC5f0b0D4E3 until 2026-10-09']}
+  ];
+  var tty=document.getElementById('tty'), term=document.getElementById('term'), replay=document.getElementById('replay'), run=0;
+  function esc(t){return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+  function cmdLine(i,t,cur){ return '<span class="ln cmd" data-i="'+i+'"><span class="c">\u276F</span> '+esc(t)+(cur?'<span class="cur"></span>':'')+'</span>'; }
+  function outLine(t){ return '<span class="ln out">'+esc(t)+'</span>'; }
+  function renderAll(){ tty.innerHTML=SESSION.map(function(st,i){ return cmdLine(i,st.cmd)+st.out.map(outLine).join(''); }).join(''); }
+  /* the card's height is the finished session's, measured before the first keystroke, so typing never grows it */
+  function fit(){ if(!tty)return; var keep=tty.innerHTML, was=tty.style.minHeight; tty.style.minHeight=''; renderAll(); tty.innerHTML+='<span class="ln"><span class="cur"></span></span>'; var h=tty.offsetHeight; tty.innerHTML=keep; tty.style.minHeight=(h>0?h:parseFloat(was)||0)+'px'; }
+  function play(from){
+    var id=++run, html='', k=from||0;
+    if(reduce){renderAll();return;}
+    for(var i=0;i<k;i++){ html+=cmdLine(i,SESSION[i].cmd)+SESSION[i].out.map(outLine).join(''); }
+    function step(){
+      if(id!==run)return;
+      if(k>=SESSION.length){ tty.innerHTML=html; return; }
+      var st=SESSION[k], n=0;
+      function tick(){
+        if(id!==run)return;
+        if(n<=st.cmd.length){ tty.innerHTML=html+cmdLine(k,st.cmd.slice(0,n),true); n++; setTimeout(tick, 14+Math.random()*26); return; }
+        setTimeout(function(){ if(id!==run)return; var m=0; html+=cmdLine(k,st.cmd);
+          (function outs(){ if(id!==run)return; if(m<st.out.length){ html+=outLine(st.out[m]); m++; tty.innerHTML=html+'<span class="ln"><span class="cur"></span></span>'; setTimeout(outs,110); return; } k++; tty.innerHTML=html+'<span class="ln"><span class="cur"></span></span>'; setTimeout(step, 420); })();
+        }, 260);
+      }
+      tick();
+    }
+    step();
+  }
+  if(tty){ fit(); addEventListener('resize',fit); replay.addEventListener('click',function(){play(0);}); tty.addEventListener('click',function(e){var c=e.target.closest('.cmd'); if(c)play(parseInt(c.getAttribute('data-i'),10));});
+    try{ var tio=new IntersectionObserver(function(es){ es.forEach(function(e){ if(e.isIntersecting){ tio.disconnect(); setTimeout(function(){play(0);},250); } }); },{threshold:0.35}); tio.observe(term); }catch(e){renderAll();} }
+  window.kintTerm={play:play,all:renderAll};
+  /* studio */
+  var THEMES=['system','light','dark'], tBtns=THEMES.map(function(t){var b=document.createElement('button');b.className='opt';b.textContent=t;b.onclick=function(){setTheme(t);};document.getElementById('theme').appendChild(b);return b;});
+  var TEXTS=['none','haze','fade','ink'], xBtns=TEXTS.map(function(t){var b=document.createElement('button');b.className='opt';b.textContent=t;b.onclick=function(){setText(t);};document.getElementById('text').appendChild(b);return b;});
+  function setText(t){ TEXT=t; document.body.setAttribute('data-text',t); try{localStorage.setItem('kint-beat-text',t);}catch(e){} paint(); }
+  var STK=['flow','stack'], kBtns=STK.map(function(t,i){var b=document.createElement('button');b.className='opt';b.textContent=t;b.onclick=function(){setStack(i===1);};document.getElementById('stack').appendChild(b);return b;});
+  function setStack(v){ try{localStorage.setItem('kint-stack',v?'1':'0');}catch(e){} location.reload(); }
+  var OVERS=['settle','overshoot 1.10'], oBtns=OVERS.map(function(t,i){var b=document.createElement('button');b.className='opt';b.textContent=t;b.onclick=function(){setOver(i===1);};document.getElementById('over').appendChild(b);return b;});
+  function setOver(v){ OVER=!!v; try{localStorage.setItem('kint-beat-over',OVER?'1':'0');}catch(e){} paint(); render(); }
+  function paint(){var a=root.getAttribute('data-theme')||'system';tBtns.forEach(function(b,i){b.classList.toggle('on',THEMES[i]===a);}); oBtns.forEach(function(b,i){b.classList.toggle('on',(i===1)===OVER);}); xBtns.forEach(function(b,i){b.classList.toggle('on',TEXTS[i]===TEXT);}); kBtns.forEach(function(b,i){b.classList.toggle('on',(i===1)===STACK);});}
+  paint();
+  var sc=document.getElementById('scrub'); sc.addEventListener('input',function(){P=parseInt(sc.value,10)/1000; render();});
+  window.kintBeat=function(o){ if(o&&typeof o.p==='number'){P=o.p; render();} if(o&&o.p===null){P=null; render();} if(o&&o.scrollTo!==undefined){P=null; jump(o.scrollTo); layout(); render();} if(o&&o.theme){setTheme(o.theme);} if(o&&o.over!==undefined){setOver(o.over);} if(o&&o.arc){for(var k in o.arc)ARC[k]=o.arc[k]; render();} if(o&&o.text){setText(o.text);} return {arc:ARC,text:TEXT,lenis:!!lenis,stacked:stacked,p:progress(),A:A,B:B,startY:startY,endY:endY,over:OVER,key:G&&G.key}; };
+  /* probe: how many points of the leaf's OWN outline fall inside the hero text boxes, per p (exact through the svg's screen matrix) */
+  function textRects(){ return ['h1','.lede','.cta','.install'].map(function(q){var el=hero.querySelector(q);return el?el.getBoundingClientRect():null;}).filter(Boolean); }
+  function hitsAt(p,rects){ P=p; render(); var m=msvg.getScreenCTM(), n=0, pts=G.Ar; for(var i=0;i<pts.length;i+=3){ var q=new DOMPoint(pts[i][0],pts[i][1]).matrixTransform(m); for(var r=0;r<rects.length;r++){ var R=rects[r]; if(q.x>=R.left-8&&q.x<=R.right+8&&q.y>=R.top-8&&q.y<=R.bottom+8){n++;break;} } } return n; }
+  window.kintProbe=function(step){ step=step||0.05; var out=[], keep=P, rects=textRects();
+    for(var p=0;p<=1.0001;p+=step){ var n=hitsAt(p,rects); var f=flyer.getBoundingClientRect(); out.push([+p.toFixed(2),Math.round(f.left),Math.round(f.top),Math.round(f.width),n]); }
+    P=keep; render(); return out; };
+  window.kintSearch=function(grid){ var keep=P, keepArc=JSON.parse(JSON.stringify(ARC)), rects=textRects(), res=[];
+    grid.c1x.forEach(function(a){ grid.c2x.forEach(function(b){ grid.c1y.forEach(function(c){ grid.c2y.forEach(function(d){
+      ARC.c1x=a; ARC.c2x=b; ARC.c1y=c; ARC.c2y=d; var hits=0, worst=0;
+      for(var p=0.05;p<0.9;p+=0.05){ var n=hitsAt(p,rects); hits+=n; if(n>worst)worst=n; }
+      P=0.85; render(); var f1=flyer.getBoundingClientRect(); P=1; render(); var f2=flyer.getBoundingClientRect();
+      res.push({c1x:a,c2x:b,c1y:c,c2y:d,hits:hits,worst:worst,lastDx:Math.round(Math.abs(f2.left-f1.left)),lastDy:Math.round(Math.abs(f2.top-f1.top))});
+    });});});});
+    for(var k in keepArc)ARC[k]=keepArc[k]; P=keep; render();
+    res.sort(function(u,v){ return (u.hits-v.hits)||(u.lastDx-v.lastDx)||(u.c1x-v.c1x); }); return res.slice(0,12); };
+  function at(p){ P=null; jump(startY+(endY-startY)*p); layout(); render(); }
+  document.addEventListener('keydown',function(e){ if(/select|input|textarea/i.test(e.target.tagName))return; var k=e.key.toLowerCase();
+    if(k==='t')setTheme(cur()==='dark'?'light':'dark'); if(k==='o')setOver(!OVER); if(k==='1')at(0); if(k==='2')at(0.35); if(k==='3')at(0.68); if(k==='4')at(0.92); if(k==='5')window.kintBeat({scrollTo:endY+40}); if(k==='r'){P=null;jump(0);render();} if(k==='l'){setText(TEXTS[(TEXTS.indexOf(TEXT)+1)%TEXTS.length]);} if(k==='k'){setStack(!STACK);} });
+})();
+</script>
+</body>
+</html>

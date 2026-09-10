@@ -1,6 +1,6 @@
 # local instructions for Claude Code, never committed
 CLAUDE.md
-.claude/settings.local.json
+.claude/
 # secrets and local state
 .env
 .env.*
@@ -8,3 +8,13 @@ CLAUDE.md
 credentials.json
 __pycache__/
 .venv/
+
+# design working files that never belong in the repo
+design/logo-master/.venv/
+design/mocks/assets/poster-*.png
+design/mocks/assets/ref-*.png
+.vercel/
+.vercel
+.env*.local
+# the mock's hero renders are the same bytes as web/public/assets; the site copy is the one that ships
+design/mocks/assets/hero-*-noleaf.png

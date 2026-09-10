@@ -1,0 +1,563 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script>(function(){try{var t=localStorage.getItem('kint-theme');if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark light">
+<title>kint</title>
+<link href="https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&display=swap" rel="stylesheet">
+<style>
+/* ==========================================================================
+   kint  ·  L4 Terminal
+   The page reads as terminal output. Martian Mono is the only face.
+   Dark is the default ground; a complete light palette sits under the same
+   three state pattern, so an OS set to light gets light with nothing stamped.
+   ========================================================================== */
+
+/* ---- tokens ---- bare :root carries the COMPLETE dark palette ----------- */
+:root{
+  --page:#0E1116;
+  --card:#141920;
+  --ink:#E6E8EC;
+  --ink-2:#B9BEC7;
+  --muted:#7D8590;
+  --accent:#7A93FF;
+  --accent-2:#9DB0FF;
+  --accent-ink:#0B0E13;
+  --ok:#3AD1A6;
+  --bad:#EE8295;
+  --hair:rgba(230,232,236,.14);
+  --hair-strong:rgba(230,232,236,.30);
+  --tint:rgba(122,147,255,.12);
+  --pill2-bg:#242B35;
+  --pill2-bg-h:#2E3742;
+  --pill2-ink:#E6E8EC;
+
+  /* non colour tokens, identical in both palettes */
+  --mono:"Martian Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --s1:12px;
+  --s2:13px;
+  --s3:15px;
+  --s4:18px;
+  --wrap:775px;
+  --indent:clamp(14px, 2.2vw, 28px);
+  --band:clamp(56px, 8vh, 104px);
+  --ease-out-expo:cubic-bezier(0.16,1,0.3,1);
+}
+
+/* ---- light applies when the OS prefers light and no dark was chosen ----- */
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    --page:#F5F5F0;
+    --card:#FFFFFF;
+    --ink:#111318;
+    --ink-2:#3D424D;
+    --muted:#5F6673;
+    --accent:#1F3FD6;
+    --accent-2:#16309F;
+    --accent-ink:#FFFFFF;
+    --ok:#0F7A5C;
+    --bad:#B3404A;
+    --hair:rgba(17,19,24,.14);
+    --hair-strong:rgba(17,19,24,.28);
+    --tint:rgba(31,63,214,.09);
+    --pill2-bg:#E7E7E0;
+    --pill2-bg-h:#DCDCD3;
+    --pill2-ink:#111318;
+  }
+}
+
+/* ---- an explicit choice wins in both directions ------------------------- */
+:root[data-theme="light"]{
+  --page:#F5F5F0;
+  --card:#FFFFFF;
+  --ink:#111318;
+  --ink-2:#3D424D;
+  --muted:#5F6673;
+  --accent:#1F3FD6;
+  --accent-2:#16309F;
+  --accent-ink:#FFFFFF;
+  --ok:#0F7A5C;
+  --bad:#B3404A;
+  --hair:rgba(17,19,24,.14);
+  --hair-strong:rgba(17,19,24,.28);
+  --tint:rgba(31,63,214,.09);
+  --pill2-bg:#E7E7E0;
+  --pill2-bg-h:#DCDCD3;
+  --pill2-ink:#111318;
+}
+:root[data-theme="dark"]{
+  --page:#0E1116;
+  --card:#141920;
+  --ink:#E6E8EC;
+  --ink-2:#B9BEC7;
+  --muted:#7D8590;
+  --accent:#7A93FF;
+  --accent-2:#9DB0FF;
+  --accent-ink:#0B0E13;
+  --ok:#3AD1A6;
+  --bad:#EE8295;
+  --hair:rgba(230,232,236,.14);
+  --hair-strong:rgba(230,232,236,.30);
+  --tint:rgba(122,147,255,.12);
+  --pill2-bg:#242B35;
+  --pill2-bg-h:#2E3742;
+  --pill2-ink:#E6E8EC;
+}
+
+/* ---- base --------------------------------------------------------------- */
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body.v-l4{
+  margin:0;
+  background:var(--page);
+  color:var(--ink);
+  font-family:var(--mono);
+  font-size:var(--s3);
+  font-weight:400;
+  line-height:1.75;
+  letter-spacing:-0.012em;
+  font-variant-ligatures:none;
+}
+.v-l4 ::selection{background:var(--tint);color:var(--ink)}
+.v-l4 p,.v-l4 h1,.v-l4 h2,.v-l4 dl,.v-l4 dd,.v-l4 ol,.v-l4 ul,.v-l4 pre{margin:0}
+.v-l4 .wrap{
+  max-width:var(--wrap);
+  margin:0 auto;
+  padding:0 20px 0;
+}
+
+/* ---- links, focus ------------------------------------------------------- */
+.v-l4 a{
+  color:var(--ink);
+  text-decoration:none;
+  border-bottom:1px dashed var(--hair-strong);
+  transition:color .16s var(--ease-out-expo), border-color .16s var(--ease-out-expo);
+}
+.v-l4 a:hover{color:var(--accent);border-bottom-color:var(--accent);border-bottom-style:solid}
+.v-l4 a:focus-visible,
+.v-l4 button:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:2px}
+
+/* ---- the wordmark, k dotless i n t, the dot drawn as the accent square --- */
+.v-l4 .wm{font-weight:500;letter-spacing:0}
+.v-l4 .wm .i{position:relative}
+.v-l4 .wm .i::after{
+  content:"";
+  position:absolute;
+  left:50%;
+  transform:translateX(-50%);
+  top:0.135em;
+  width:.18em;
+  height:.18em;
+  background:var(--accent);
+}
+.v-l4 .wm-a{color:var(--accent)}
+
+/* ---- top line ----------------------------------------------------------- */
+.v-l4 .top{
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  gap:16px 24px;
+  flex-wrap:wrap;
+  padding-top:26px;
+}
+.v-l4 .eyebrow{
+  font-size:var(--s1);
+  font-weight:300;
+  color:var(--muted);
+  letter-spacing:0;
+}
+.v-l4 .tog{
+  font-family:inherit;
+  font-size:var(--s1);
+  font-weight:400;
+  color:var(--ink-2);
+  background:transparent;
+  border:0;
+  padding:2px 0;
+  cursor:pointer;
+  letter-spacing:.02em;
+  transition:color .16s var(--ease-out-expo);
+}
+.v-l4 .tog:hover{color:var(--accent)}
+.v-l4 .tog .br{color:var(--muted)}
+
+/* ---- hero: one sentence, one blinking block cursor ---------------------- */
+.v-l4 .hero{padding:clamp(64px, 16vh, 168px) 0 clamp(56px, 9vh, 112px)}
+.v-l4 .open{
+  font-size:var(--s4);
+  font-weight:400;
+  line-height:1.72;
+  letter-spacing:-0.02em;
+  max-width:34ch;
+  color:var(--ink);
+}
+.v-l4 .open .wm{font-weight:500}
+.v-l4 .open .brace,
+.v-l4 .open .outl{color:var(--muted);font-weight:300}
+.v-l4 .cursor{
+  display:inline-block;
+  width:.58em;
+  height:1.02em;
+  margin-left:.34em;
+  vertical-align:-0.16em;
+  background:var(--ink);
+  animation:blink 1.06s steps(1,end) infinite;
+}
+@keyframes blink{0%,50%{opacity:1}50.01%,100%{opacity:0}}
+@media (prefers-reduced-motion: reduce){
+  .v-l4 .cursor{animation:none}
+}
+
+/* ---- the action line ---------------------------------------------------- */
+.v-l4 .acts{
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:12px 18px;
+  margin-top:38px;
+}
+.v-l4 .pill{
+  display:inline-flex;
+  align-items:center;
+  border:1px solid transparent;
+  border-radius:999px;
+  padding:9px 20px;
+  font-size:var(--s2);
+  font-weight:500;
+  letter-spacing:-0.01em;
+  line-height:1.2;
+  transition:background-color .16s var(--ease-out-expo), color .16s var(--ease-out-expo);
+}
+.v-l4 .pill-1{background:var(--accent);color:var(--accent-ink)}
+.v-l4 .pill-1:hover{background:var(--accent-2);color:var(--accent-ink);border-color:transparent}
+.v-l4 .pill-2{background:var(--pill2-bg);color:var(--pill2-ink)}
+.v-l4 .pill-2:hover{background:var(--pill2-bg-h);color:var(--pill2-ink);border-color:transparent}
+.v-l4 .sep{color:var(--hair-strong);font-size:var(--s2)}
+.v-l4 .nav{font-size:var(--s2);color:var(--ink-2)}
+.v-l4 .install{margin-top:22px}
+.v-l4 .chip{
+  display:inline-block;
+  border:1px dashed var(--hair-strong);
+  border-radius:12px;
+  padding:7px 14px;
+  font-size:var(--s2);
+  font-weight:400;
+  color:var(--ink-2);
+}
+
+/* ---- sections: a man page label, then indented output ------------------- */
+.v-l4 .sec{padding-top:var(--band)}
+.v-l4 .lbl{
+  font-size:var(--s3);
+  font-weight:500;
+  letter-spacing:.10em;
+  color:var(--accent);
+  margin-bottom:22px;
+}
+.v-l4 .out{padding-left:var(--indent)}
+.v-l4 .prose{max-width:62ch;color:var(--ink-2)}
+.v-l4 .prose + .prose{margin-top:18px}
+.v-l4 strong{font-weight:500;color:var(--ink)}
+.v-l4 .tok{font-weight:500;color:var(--ink)}
+
+/* ---- the three actors --------------------------------------------------- */
+.v-l4 .actors{list-style:none;padding:0;margin-top:30px}
+.v-l4 .actors li{
+  display:grid;
+  grid-template-columns:3.4ch 1fr;
+  gap:0 8px;
+  max-width:62ch;
+}
+.v-l4 .actors li + li{margin-top:22px}
+.v-l4 .actors .n{color:var(--muted);font-weight:300}
+.v-l4 .actors .t{color:var(--ink-2)}
+
+/* ---- anything that must not wrap scrolls inside its own box ------------- */
+.v-l4 .scroll{
+  overflow-x:auto;
+  overflow-y:hidden;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:thin;
+}
+.v-l4 .scroll::-webkit-scrollbar{height:8px}
+.v-l4 .scroll::-webkit-scrollbar-thumb{background:var(--hair-strong);border-radius:999px}
+.v-l4 .scroll::-webkit-scrollbar-track{background:transparent}
+
+/* ---- proof: label column, value column, plain lines --------------------- */
+.v-l4 .proof{
+  display:grid;
+  grid-template-columns:max-content 1fr;
+  gap:4px 3ch;
+  min-width:max-content;
+  font-size:var(--s2);
+  white-space:nowrap;
+}
+.v-l4 .proof dt{color:var(--muted);font-weight:300}
+.v-l4 .proof dd{color:var(--ink-2);margin:0}
+.v-l4 .proof .dim{color:var(--muted);font-weight:300}
+
+/* ---- the beat: the transcript, verbatim, in a dashed box ---------------- */
+.v-l4 .term{
+  border:1px dashed var(--hair-strong);
+  border-radius:12px;
+  background:var(--card);
+  padding:20px 22px;
+}
+.v-l4 .term pre{
+  font-family:var(--mono);
+  font-size:var(--s2);
+  line-height:1.85;
+  letter-spacing:-0.02em;
+  color:var(--ink-2);
+  min-width:max-content;
+  font-weight:400;
+}
+.v-l4 .term .cmd{color:var(--ink);font-weight:500}
+.v-l4 .term .pmt{color:var(--muted);font-weight:300}
+.v-l4 .term .ok{color:var(--ok);font-weight:500}
+.v-l4 .term .bad{color:var(--bad);font-weight:500}
+.v-l4 .cap{
+  margin-top:16px;
+  font-size:var(--s1);
+  font-weight:300;
+  color:var(--muted);
+  max-width:62ch;
+}
+
+/* ---- architecture: three stacked boxes drawn in the text itself --------- */
+.v-l4 .diagram{
+  font-family:var(--mono);
+  font-size:var(--s2);
+  line-height:1.5;
+  letter-spacing:-0.02em;
+  color:var(--ink-2);
+  min-width:max-content;
+  font-weight:400;
+}
+.v-l4 .diagram .rule{color:var(--muted);font-weight:300}
+.v-l4 .diagram .name{color:var(--ink);font-weight:500}
+
+/* ---- what Sibyl does: the one solid container on the page -------------- */
+.v-l4 .box{
+  border:1px solid var(--hair-strong);
+  border-radius:12px;
+  background:var(--card);
+  padding:clamp(22px, 3.4vw, 34px);
+  max-width:66ch;
+}
+.v-l4 .box-h{font-weight:500;color:var(--ink);max-width:44ch}
+.v-l4 .box-b{margin-top:16px;color:var(--ink-2)}
+
+/* ---- limits ------------------------------------------------------------- */
+.v-l4 .limits{list-style:none;padding:0}
+.v-l4 .limits li{
+  display:grid;
+  grid-template-columns:2.6ch 1fr;
+  gap:0 6px;
+  max-width:62ch;
+  color:var(--ink-2);
+}
+.v-l4 .limits li + li{margin-top:18px}
+.v-l4 .limits .d{color:var(--muted);font-weight:300}
+
+/* ---- footer and the version line ---------------------------------------- */
+.v-l4 .foot{
+  margin-top:clamp(72px, 11vh, 140px);
+  border-top:1px solid var(--hair);
+  padding:26px 0 56px;
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  flex-wrap:wrap;
+  gap:10px 24px;
+}
+.v-l4 .foot p{font-size:var(--s1);font-weight:300;color:var(--muted)}
+.v-l4 .ver .wm{color:var(--ink-2);font-weight:500}
+
+/* ---- 390 and under: nothing may push the page sideways ------------------ */
+@media (max-width: 560px){
+  .v-l4 .open{max-width:none;letter-spacing:-0.025em}
+  .v-l4 .acts{gap:10px 14px}
+  .v-l4 .sep{display:none}
+  .v-l4 .pill{padding:9px 16px}
+  .v-l4 .actors li{grid-template-columns:3ch 1fr}
+  .v-l4 .foot{padding-bottom:44px}
+}
+</style>
+</head>
+<body class="v-l4">
+<main class="wrap">
+
+  <header class="top">
+    <p class="eyebrow">Built on Sibyl Memory, under it. Live on Base mainnet.</p>
+    <button class="tog" id="tog" type="button" aria-label="Toggle theme"><span class="br">[</span> <span id="togtxt">dark</span> <span class="br">]</span></button>
+  </header>
+
+  <section class="hero">
+    <h1 class="open"><span class="wm wm-a">k<span class="i">&#305;</span>nt</span> is Sibyl Memory that <span class="brace">{</span><span class="outl">outlives</span><span class="brace">}</span> the laptop.<span class="cursor" aria-hidden="true"></span></h1>
+
+    <nav class="acts" aria-label="Primary">
+      <a class="pill pill-1" href="#app">Open the app</a>
+      <a class="pill pill-2" href="#readme">Read the README</a>
+      <span class="sep" aria-hidden="true">&#183;</span>
+      <a class="nav" href="#app">App</a>
+      <a class="nav" href="#readme">GitHub</a>
+    </nav>
+
+    <p class="install"><span class="chip">uv tool install kint</span></p>
+  </section>
+
+  <section class="sec" id="synopsis">
+    <h2 class="lbl">SYNOPSIS</h2>
+    <div class="out">
+      <p class="prose">Wipe the machine, connect the wallet, and the agent comes back knowing what it knew, and proves it was not tampered with.</p>
+
+      <ol class="actors">
+        <li><span class="n">1</span><span class="t"><strong>The wallet owns.</strong> One frozen message, signed once per machine, derives the key. Nothing decrypted ever leaves the machine.</span></li>
+        <li><span class="n">2</span><span class="t"><strong>The passphrase or the signature unlocks.</strong> A Base Account owner types a passphrase. An EOA owner signs. Either opens the same vault, and a recovery code covers the day both are gone.</span></li>
+        <li><span class="n">3</span><span class="t"><strong>kint does the rest.</strong> Every change is packed, padded, encrypted and written to Base as calldata under a small contract. On any machine you connect, kint pulls, verifies every epoch against the chain, and replays the rows through Sibyl's own write methods.</span></li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="sec" id="proof">
+    <h2 class="lbl">PROOF</h2>
+    <div class="out">
+      <div class="scroll">
+        <dl class="proof">
+          <dt>contract</dt>
+          <dd>EpochAnchor <a href="https://basescan.org/address/0xa22E03f7a4145Bf4909a83595C90a38E14d79600">0xa22E03f7a4145Bf4909a83595C90a38E14d79600</a></dd>
+          <dt>head</dt>
+          <dd>seq 2 <span class="dim">&#183;</span> <a href="https://basescan.org/block/51081880">block 51,081,880</a></dd>
+          <dt>digest</dt>
+          <dd>7df5378a8c4fa866</dd>
+          <dt>rows</dt>
+          <dd>15 rows <span class="dim">&#183;</span> 4 KB bucket <span class="dim">&#183;</span> Base mainnet</dd>
+        </dl>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" id="beat">
+    <h2 class="lbl">THE BEAT</h2>
+    <div class="out">
+      <div class="term">
+        <div class="scroll">
+<pre><span class="pmt">$</span> <span class="cmd">kint status</span>
+tenant kint-demo  space bd2a3b5b8f3fb4c8  store ~/.sibyl-memory/memory.db
+owner 0xC635e6Eb223aE14143E23cEEa9440bC773dc87Ec  data key cached
+last anchored on this machine: seq 2 block 51081880 rows 15
+chain head: seq 2 digest 7df5378a8c4fa866 block 51081880 (in step)
+
+<span class="pmt">$</span> <span class="cmd">kint verify "release rule"</span>
+sibyl verdict: ok  hits: 3
+  <span class="ok">verified</span>   entity rules/release-gate: stored text matches the leaf anchored on Base
+  <span class="ok">verified</span>   reference runbook-release: stored text matches the leaf anchored on Base
+DECISION: <span class="ok">PROCEED</span>: verified against rows_root 390336ff71dbcb85 anchored at epoch 2, block 51081880
+
+<span class="pmt">$</span> <span class="cmd">sqlite3 ~/.sibyl-memory/memory.db "update entities set body = replace(body, 'never', 'always') where name = 'release-gate'"</span>
+<span class="pmt">$</span> <span class="cmd">kint verify "release rule"</span>
+  <span class="bad">REFUSED</span>    entity rules/release-gate: stored text does not match the leaf anchored at epoch 2, block 51081880
+DECISION: <span class="bad">REFUSE</span>: refusal written back as entity kint_refusal/release-gate
+
+<span class="pmt">$</span> <span class="cmd">kint history entity release-gate --category rules</span>
+epoch 1 block &lt;= 51081867 leaf f406bb0919d23360: {"rule":"never ship on a Friday; every release needs a green deadlift test and a second reviewer", ...}
+epoch 2 block &lt;= 51081880 leaf 4ac605528bbb00e7: {"rule":"never ship on a Friday; every release needs a green deadlift test, a second reviewer, AND a passing kint verify", ...}</pre>
+        </div>
+      </div>
+      <p class="cap">A row's block height is an upper bound: it existed no later than that block.</p>
+    </div>
+  </section>
+
+  <section class="sec" id="architecture">
+    <h2 class="lbl">ARCHITECTURE</h2>
+    <div class="out">
+      <div class="scroll">
+<pre class="diagram">  +------------------------------------------------------+
+  |  <span class="name">Sibyl Memory server</span>                                 |
+  |  their eight tools, unmodified                       |
+  +----------------------------+-------------------------+
+                               |
+                               |  kint sits under it and wraps it,
+                               |  never patches it
+                               v
+  +------------------------------------------------------+
+  |  <span class="name">kint wrapper</span>                                        |
+  |  packs, pads, encrypts every change                  |
+  +----------------------------+-------------------------+
+                               |
+                               |  calldata, written under a small
+                               |  contract after the write returns
+                               v
+  +------------------------------------------------------+
+  |  <span class="name">EpochAnchor on Base mainnet</span>                         |
+  |  0xa22E03f7a4145Bf4909a83595C90a38E14d79600          |
+  |  head seq 2 &#183; block 51,081,880 &#183; 15 rows             |
+  +------------------------------------------------------+</pre>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" id="sibyl">
+    <h2 class="lbl">WHAT SIBYL DOES</h2>
+    <div class="out">
+      <div class="box">
+        <p class="box-h">Delete the Sibyl Memory layer and what breaks.</p>
+        <p class="box-b">The decision beat reaches the row through Sibyl's <span class="tok">memory_search</span> (four FTS5 indexes plus the shadow fallback) and keys on the typed verdict from <span class="tok">verdicts.py</span>. Without Sibyl there is no ranked candidate and no verdict to key on: the epoch is a decrypted blob with no query surface, so a fresh session neither refuses nor proceeds. Base holds the ciphertext; Sibyl is what turns it back into an answerable store. Their eight tools ship unmodified; kint adds six.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" id="limits">
+    <h2 class="lbl">LIMITS</h2>
+    <div class="out">
+      <ul class="limits">
+        <li><span class="d">-</span><span>One wallet owns one memory; many machines may write under it, one at a time. Two machines writing at once is a fork: kint refuses and tells you.</span></li>
+        <li><span class="d">-</span><span>Base holds ciphertext, but the row count and the size bucket are public.</span></li>
+        <li><span class="d">-</span><span>A phished derive signature is a permanent key. The EIP-712 message says so in the one field every wallet renders. kint never accepts that signature as a login and never sends it anywhere.</span></li>
+        <li><span class="d">-</span><span>A cold start stops at the newest snapshot epoch, so restore cost is bounded by the size of the memory, not its history.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <p class="foot-line">MIT &#183; Built for the Sibyl Labs Hackathon, September 2026 &#183; s0nderlabs &#183; on Base</p>
+    <p class="ver"><span class="wm">k<span class="i">&#305;</span>nt</span> 0.2.0 &#183; f5d1eee &#183; 2026-09-10</p>
+  </footer>
+
+</main>
+
+<script>
+(function(){
+  var root=document.documentElement;
+  var btn=document.getElementById('tog');
+  var txt=document.getElementById('togtxt');
+  function current(){
+    var a=root.getAttribute('data-theme');
+    if(a==='dark'||a==='light')return a;
+    try{
+      if(window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches)return 'light';
+    }catch(e){}
+    return 'dark';
+  }
+  function label(){ txt.textContent=current(); }
+  label();
+  btn.addEventListener('click',function(){
+    var next=current()==='dark'?'light':'dark';
+    root.setAttribute('data-theme',next);
+    try{ localStorage.setItem('kint-theme',next); }catch(e){}
+    label();
+  });
+  try{
+    var mq=window.matchMedia('(prefers-color-scheme: light)');
+    var onch=function(){ if(!root.hasAttribute('data-theme')) label(); };
+    if(mq.addEventListener) mq.addEventListener('change',onch);
+    else if(mq.addListener) mq.addListener(onch);
+  }catch(e){}
+})();
+</script>
+</body>
+</html>

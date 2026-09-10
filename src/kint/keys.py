@@ -57,10 +57,14 @@ def _keychain_read() -> str | None:
 
 
 def _keychain_write(value: str) -> bool:
+    # `security -i` reads its command from stdin, so the passphrase never
+    # appears on a process argv where `ps` could show it. The value is
+    # token_urlsafe output ([A-Za-z0-9_-]), so the quoting below is exact.
+    line = (f'add-generic-password -s "{KEYCHAIN_SERVICE}" -a "{KEYCHAIN_ACCOUNT}" '
+            f'-w "{value}" -U\n')
     try:
         out = subprocess.run(
-            ["security", "add-generic-password", "-s", KEYCHAIN_SERVICE, "-a", KEYCHAIN_ACCOUNT,
-             "-w", value, "-U"],
+            ["security", "-i"], input=line,
             capture_output=True, text=True, timeout=10,
         )
         return out.returncode == 0

@@ -1,0 +1,773 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script>(function(){try{var t=localStorage.getItem('kint-theme');if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>kint, Sibyl Memory that outlives the laptop</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&display=swap" rel="stylesheet">
+<style>
+/* L3b Poster, image. Faces: Bricolage Grotesque (Google) + Geist Mono (local). */
+
+@font-face{
+  font-family:'Geist Mono';
+  src:url('fonts/geist-mono-var.ttf') format('truetype');
+  font-weight:100 900;font-style:normal;font-display:swap;
+}
+
+/* ---- tokens: bare :root carries the COMPLETE light palette ---- */
+:root{
+  --page:#F4F1EA;
+  --page-2:#EBE7DC;
+  --card:#FBF9F4;
+  --ink:#171512;
+  --ink-2:#403B34;
+  --muted:#675F57;
+  --hair:rgba(23,21,18,.13);
+  --hair-2:rgba(23,21,18,.24);
+  --accent:#1F3FD6;
+  --accent-soft:rgba(31,63,214,.10);
+  --accent-lift:#A6B8FF;
+  --ok:#137A5E;
+  --bad:#A6333D;
+  /* the poster is dark in both themes, so its bone set lives here only */
+  --bone:#F4F1EA;
+  --bone-2:rgba(244,241,234,.80);
+  --bone-3:rgba(244,241,234,.30);
+  --bone-hi:#FFFFFF;
+  --bone-veil:rgba(244,241,234,.12);
+  --on-bone:#12141F;
+  --hero-ground:#0F1424;
+  --img-veil:rgba(15,20,36,0);
+  /* the cobalt band under WHAT SIBYL DOES: the accent at mass */
+  --band:#1D3ACE;
+  --band-ink:#F4F1EA;
+  --band-ink-2:rgba(244,241,234,.88);
+  --band-hair:rgba(244,241,234,.24);
+  /* the one sheet that floats */
+  --sheet:#FBF9F4;
+  --sheet-hi:rgba(255,255,255,.9);
+  --sheet-shadow:0 1px 2px rgba(20,18,14,.06),0 30px 64px -34px rgba(20,18,14,.34);
+  --focus:#1F3FD6;
+  --t1:clamp(2.5rem,4.8vw,4.25rem);
+  --t2:clamp(1.28rem,1.9vw,1.5rem);
+  --t3:clamp(1.06rem,1.45vw,1.25rem);
+  --t4:1.0625rem;
+  --t5:.8125rem;
+  --ease-out-expo:cubic-bezier(0.16,1,0.3,1);
+  --wide:1180px;
+  --pad:clamp(72px,9vh,132px);
+  color-scheme:light;
+}
+/* ---- same tokens, dark, for the unstamped (system) state ---- */
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --page:#0F1424;
+    --page-2:#0B0F1C;
+    --card:#161C2E;
+    --ink:#ECEAE4;
+    --ink-2:#C9C6BE;
+    --muted:#8F98AF;
+    --hair:rgba(236,234,228,.14);
+    --hair-2:rgba(236,234,228,.26);
+    --accent:#7A93FF;
+    --accent-soft:rgba(122,147,255,.16);
+    --accent-lift:#AEC0FF;
+    --ok:#3AD1A6;
+    --bad:#EE8295;
+    --img-veil:rgba(9,13,32,.36);
+    --band:#16225E;
+    --band-ink:#ECEAE4;
+    --band-ink-2:rgba(236,234,228,.86);
+    --band-hair:rgba(236,234,228,.20);
+    --sheet:#161C2E;
+    --sheet-hi:rgba(255,255,255,.06);
+    --sheet-shadow:0 1px 2px rgba(0,0,0,.34),0 30px 64px -34px rgba(0,0,0,.62);
+    --focus:#7A93FF;
+    color-scheme:dark;
+  }
+}
+/* ---- same tokens again, so an explicit choice wins in both directions ---- */
+:root[data-theme="dark"]{
+  --page:#0F1424;
+  --page-2:#0B0F1C;
+  --card:#161C2E;
+  --ink:#ECEAE4;
+  --ink-2:#C9C6BE;
+  --muted:#8F98AF;
+  --hair:rgba(236,234,228,.14);
+  --hair-2:rgba(236,234,228,.26);
+  --accent:#7A93FF;
+  --accent-soft:rgba(122,147,255,.16);
+  --accent-lift:#AEC0FF;
+  --ok:#3AD1A6;
+  --bad:#EE8295;
+  --img-veil:rgba(9,13,32,.36);
+  --band:#16225E;
+  --band-ink:#ECEAE4;
+  --band-ink-2:rgba(236,234,228,.86);
+  --band-hair:rgba(236,234,228,.20);
+  --sheet:#161C2E;
+  --sheet-hi:rgba(255,255,255,.06);
+  --sheet-shadow:0 1px 2px rgba(0,0,0,.34),0 30px 64px -34px rgba(0,0,0,.62);
+  --focus:#7A93FF;
+  color-scheme:dark;
+}
+
+/* ---- base ---- */
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body.v-l3b{
+  margin:0;
+  background:var(--page);
+  color:var(--ink);
+  font-family:'Bricolage Grotesque','Helvetica Neue',Arial,sans-serif;
+  font-variation-settings:'opsz' 14,'wght' 400;
+  font-weight:400;
+  font-size:var(--t4);
+  line-height:1.62;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+  overflow-x:hidden;
+}
+/* the house grain */
+body.v-l3b::before{
+  content:"";position:fixed;inset:0;z-index:9999;pointer-events:none;opacity:.03;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='256' height='256' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size:256px 256px;
+}
+/* focus: one soft ring, hairline weight, in the accent */
+.v-l3b :focus-visible{
+  outline:1px solid var(--focus);outline-offset:3px;
+  box-shadow:0 0 0 4px var(--accent-soft);
+}
+.v-l3b .hero :focus-visible{outline-color:var(--accent-lift);box-shadow:0 0 0 4px var(--bone-veil)}
+.v-l3b ::selection{background:var(--accent-soft)}
+
+.v-l3b .wide{width:min(var(--wide),100% - 48px);margin-inline:auto}
+.v-l3b .section{padding-block:var(--pad)}
+.v-l3b .skip{
+  position:absolute;left:-9999px;top:0;background:var(--card);color:var(--ink);
+  padding:10px 16px;z-index:10000;border-radius:999px;
+}
+.v-l3b .skip:focus{left:16px;top:16px}
+
+/* ---- type: two voices, five sizes ---- */
+.v-l3b .mono{
+  font-family:'Geist Mono',ui-monospace,Menlo,monospace;
+  font-size:var(--t5);font-weight:400;font-variation-settings:normal;
+  letter-spacing:.01em;font-variant-numeric:tabular-nums;
+}
+.v-l3b .eyebrow{
+  font-family:'Geist Mono',ui-monospace,Menlo,monospace;
+  font-size:var(--t5);font-weight:400;font-variation-settings:normal;
+  letter-spacing:.14em;color:var(--muted);margin:0 0 20px;
+}
+.v-l3b h1,.v-l3b h2,.v-l3b h3{margin:0;text-wrap:balance}
+.v-l3b .h1{
+  font-size:var(--t1);font-weight:500;font-variation-settings:'opsz' 96,'wght' 500;
+  line-height:1.02;letter-spacing:-.03em;
+}
+.v-l3b .h2{
+  font-size:var(--t2);font-weight:500;font-variation-settings:'opsz' 48,'wght' 500;
+  line-height:1.22;letter-spacing:-.018em;
+}
+.v-l3b .lede{
+  font-size:var(--t3);line-height:1.5;color:var(--ink-2);margin:0;max-width:46ch;
+}
+.v-l3b p{margin:0 0 1.05em;max-width:64ch;text-wrap:pretty}
+.v-l3b p:last-child{margin-bottom:0}
+.v-l3b strong{font-weight:500;font-variation-settings:'opsz' 14,'wght' 500;color:var(--ink)}
+.v-l3b .hl{color:var(--accent)}
+
+/* ---- the wordmark, dotless i plus a drawn accent square ---- */
+.v-l3b .wm{
+  font-weight:500;font-variation-settings:'opsz' 96,'wght' 500;
+  letter-spacing:-.03em;line-height:1;display:inline-block;
+}
+.v-l3b .wm .i{position:relative}
+.v-l3b .wm .i::after{
+  content:"";position:absolute;left:50%;transform:translateX(-50%);
+  top:0.202em;width:.18em;height:.18em;background:var(--accent);
+}
+.v-l3b .wm-nav{font-size:var(--t3);color:var(--bone);text-decoration:none}
+.v-l3b .wm-nav .i::after{background:var(--accent-lift)}
+.v-l3b .wm-foot{font-size:var(--t3)}
+
+/* ---- nav: one control language, laid over the poster ---- */
+.v-l3b .nav{
+  position:absolute;top:0;left:0;right:0;z-index:3;
+  display:flex;align-items:center;justify-content:space-between;gap:24px;
+  padding:20px max(24px,calc((100% - var(--wide))/2));
+}
+.v-l3b .nav-links{display:flex;align-items:center;gap:22px}
+.v-l3b .nav-links a{
+  font-size:var(--t5);font-weight:500;font-variation-settings:'opsz' 14,'wght' 500;
+  letter-spacing:.02em;color:var(--bone-2);text-decoration:none;
+  display:inline-flex;align-items:center;height:28px;
+  transition:color .18s var(--ease-out-expo);
+}
+
+/* ---- the theme toggle: an icon button, the weight of a link ---- */
+.v-l3b .tog{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:28px;height:28px;padding:0;margin:0;
+  background:none;border:0;border-radius:999px;cursor:pointer;color:var(--bone-2);
+  transition:color .18s var(--ease-out-expo),background .18s var(--ease-out-expo);
+}
+.v-l3b .tog .glyph{
+  width:12px;height:12px;display:block;
+  box-shadow:inset 0 0 0 1px currentColor;
+  background:linear-gradient(to right,currentColor 0 50%,transparent 50% 100%);
+}
+.v-l3b .foot .tog{color:var(--muted)}
+
+/* ---- the poster hero ---- */
+.v-l3b .hero{
+  position:relative;isolation:isolate;overflow:hidden;
+  min-height:100svh;background:var(--hero-ground);
+  display:flex;align-items:flex-start;
+  padding:clamp(88px,10svh,132px) 0 clamp(48px,7vh,88px);
+}
+.v-l3b .hero-art{position:absolute;inset:0;z-index:0}
+.v-l3b .hero-img{
+  position:absolute;inset:0;
+  background-image:var(--poster);
+  background-size:var(--poster-size,cover);background-position:var(--poster-pos,center center);background-repeat:no-repeat;
+  background-color:var(--hero-ground);
+}
+/* the scrim: the fifteen-stop smoothstep, run left to right so the figure,
+   the rings and the laptop stay clear of it. */
+.v-l3b .hero-scrim{
+  position:absolute;inset:0;background-color:var(--img-veil);
+  background-image:linear-gradient(to right,
+    rgb(15 20 36 / .900) 0%,
+    rgb(15 20 36 / .887) 4.4%,
+    rgb(15 20 36 / .851) 8.9%,
+    rgb(15 20 36 / .794) 13.3%,
+    rgb(15 20 36 / .722) 17.7%,
+    rgb(15 20 36 / .637) 22.1%,
+    rgb(15 20 36 / .545) 26.6%,
+    rgb(15 20 36 / .450) 31.0%,
+    rgb(15 20 36 / .355) 35.4%,
+    rgb(15 20 36 / .263) 39.9%,
+    rgb(15 20 36 / .178) 44.3%,
+    rgb(15 20 36 / .106) 48.7%,
+    rgb(15 20 36 / .050) 53.1%,
+    rgb(15 20 36 / .014) 57.6%,
+    rgb(15 20 36 / 0) 62%);
+}
+.v-l3b .hero-inner{
+  position:relative;z-index:2;
+  width:min(var(--wide),100% - 48px);margin-inline:auto;
+}
+.v-l3b .hero-stack{max-width:min(720px,50vw)}
+.v-l3b .hero-eyebrow{color:var(--bone-2);letter-spacing:.12em;margin:0 0 18px}
+.v-l3b .hero .h1{color:var(--bone);margin:0}
+.v-l3b .hero .h1 .hl{color:var(--accent-lift)}
+.v-l3b .hero .lede{color:var(--bone-2);margin:22px 0 0;max-width:44ch}
+.v-l3b .cta{display:flex;align-items:center;gap:14px 26px;flex-wrap:wrap;margin-top:32px}
+.v-l3b .hero .install{color:var(--bone-2);margin:18px 0 0;display:block}
+
+/* ---- poster modes: one attribute on the hero, everything else follows from tokens ----
+   data-poster="sand"            the sand plain (the first render, dark, copy left, scrim from the left)
+   data-poster="leaves"          the Sibyl's leaves, first render (blue squares on the ledger)
+   data-poster="leaves-blue"     the pinned leaves are cobalt, no squares (his call, Sep 10)
+   data-poster="leaves-turning"  the leaves tint toward cobalt as they reach the ledger
+   data-poster="leaves-night"    the same scene at night (this one also serves every leaves mode in the dark theme)
+   data-poster="blueprint"       the patent drawing (paper, copy top-left, the drawing contained under it)
+   data-poster="stele"           the stele at night (dark, copy right, scrim from the right)
+   Every colour in these blocks is a token already defined on :root, so both themes hold. */
+.v-l3b .hero{--poster:url('assets/poster-kint.png')}
+.v-l3b .hero[data-poster^="leaves"]{
+  --hero-ground:#E9DECE;
+  --bone:#171512;--bone-2:rgba(23,21,18,.78);--bone-3:rgba(23,21,18,.28);--bone-hi:#000;
+  --bone-veil:rgba(23,21,18,.08);--on-bone:#F4F1EA;
+  --img-veil:rgba(233,222,206,0);
+  --scrim-a:233 222 206;
+  --wm-nav:#F4F1EA;--wm-nav-sq:var(--accent-lift);
+}
+.v-l3b .hero[data-poster="leaves"]{--poster:url('assets/poster-leaves.png')}
+.v-l3b .hero[data-poster="leaves-blue"]{--poster:url('assets/poster-leaves-blue.png')}
+.v-l3b .hero[data-poster="leaves-turning"]{--poster:url('assets/poster-leaves-turning.png')}
+.v-l3b .hero[data-poster="leaves-night"],
+:root[data-theme="dark"] .v-l3b .hero[data-poster^="leaves"]{
+  --poster:url('assets/poster-leaves-night.png');
+  --hero-ground:#171F2B;
+  --bone:#F4F1EA;--bone-2:rgba(244,241,234,.80);--bone-3:rgba(244,241,234,.30);--bone-hi:#FFFFFF;
+  --bone-veil:rgba(244,241,234,.12);--on-bone:#12141F;
+  --img-veil:rgba(23,31,43,0);
+  --scrim-a:23 31 43;
+  --wm-nav:#F4F1EA;--wm-nav-sq:var(--accent-lift);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]) .v-l3b .hero[data-poster^="leaves"]{
+    --poster:url('assets/poster-leaves-night.png');
+    --hero-ground:#171F2B;
+    --bone:#F4F1EA;--bone-2:rgba(244,241,234,.80);--bone-3:rgba(244,241,234,.30);--bone-hi:#FFFFFF;
+    --bone-veil:rgba(244,241,234,.12);--on-bone:#12141F;
+    --img-veil:rgba(23,31,43,0);
+    --scrim-a:23 31 43;
+    --wm-nav:#F4F1EA;--wm-nav-sq:var(--accent-lift);
+  }
+}
+.v-l3b .hero[data-poster="blueprint"]{
+  --poster:url('assets/poster-blueprint.png');
+  --poster-size:min(100%,1180px) auto;--poster-pos:center bottom;
+  --hero-ground:#EFE8D9;
+  --bone:#171512;--bone-2:rgba(23,21,18,.78);--bone-3:rgba(23,21,18,.28);--bone-hi:#000;
+  --bone-veil:rgba(23,21,18,.08);--on-bone:#F4F1EA;
+  --img-veil:rgba(239,232,217,0);
+  --scrim-a:239 232 217;
+  --wm-nav:#171512;--wm-nav-sq:var(--accent);
+}
+.v-l3b .hero[data-poster="stele"]{
+  --poster:url('assets/poster-stele.png');
+  --poster-size:140% auto;--poster-pos:right center;
+  --hero-ground:#12100C;
+  --img-veil:rgba(18,16,12,0);
+  --scrim-a:18 16 12;
+}
+/* the nav wordmark follows the mode: bone over the cave, ink over paper */
+.v-l3b .hero[data-poster] .wm-nav{color:var(--wm-nav,var(--bone))}
+.v-l3b .hero[data-poster] .wm-nav .i::after{background:var(--wm-nav-sq,var(--accent-lift))}
+/* leaves: the copy sits in the sky, centred, over a soft radial veil of the sky colour */
+.v-l3b .hero[data-poster^="leaves"] .hero-scrim{
+  background-image:radial-gradient(ellipse 48% 44% at 50% 40%,
+    rgb(var(--scrim-a) / .90) 0%,rgb(var(--scrim-a) / .84) 32%,rgb(var(--scrim-a) / .55) 62%,rgb(var(--scrim-a) / 0) 100%);
+}
+.v-l3b .hero[data-poster^="leaves"]{align-items:flex-start}
+.v-l3b .hero[data-poster^="leaves"] .hero-inner{display:flex;justify-content:center;text-align:center}
+.v-l3b .hero[data-poster^="leaves"] .hero-stack{max-width:min(700px,60vw);margin-top:clamp(8px,4vh,48px)}
+.v-l3b .hero[data-poster^="leaves"] .lede{margin-inline:auto}
+.v-l3b .hero[data-poster^="leaves"] .cta{justify-content:center}
+.v-l3b .hero[data-poster^="leaves"] .h1 .hl{color:var(--accent)}
+.v-l3b .hero[data-poster="leaves-night"] .h1 .hl,
+:root[data-theme="dark"] .v-l3b .hero[data-poster^="leaves"] .h1 .hl{color:var(--accent-lift)}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]) .v-l3b .hero[data-poster^="leaves"] .h1 .hl{color:var(--accent-lift)}
+}
+/* blueprint: the drawing is contained at the foot of the hero, the copy stands above it on paper */
+.v-l3b .hero[data-poster="blueprint"]{min-height:0;padding-bottom:0;flex-direction:column;align-items:stretch}
+.v-l3b .hero[data-poster="blueprint"] .hero-art{position:relative;order:2;width:100%;height:auto;aspect-ratio:1920/1072;max-height:66svh;margin-top:clamp(24px,4vh,56px)}
+.v-l3b .hero[data-poster="blueprint"] .nav{order:0}
+.v-l3b .hero[data-poster="blueprint"] .hero-inner{order:1}
+.v-l3b .hero[data-poster="blueprint"] .hero-scrim{background-image:linear-gradient(to bottom,rgb(var(--scrim-a) / 1) 0%,rgb(var(--scrim-a) / 0) 12%)}
+.v-l3b .hero[data-poster="blueprint"] .hero-stack{max-width:min(760px,64vw)}
+.v-l3b .hero[data-poster="blueprint"] .h1 .hl{color:var(--accent)}
+/* stele: the image is enlarged and anchored right so the stone clears the copy, which takes the right third */
+.v-l3b .hero[data-poster="stele"] .hero-scrim{
+  background-image:linear-gradient(to left,
+    rgb(var(--scrim-a) / .92) 0%,rgb(var(--scrim-a) / .90) 6%,rgb(var(--scrim-a) / .84) 12%,rgb(var(--scrim-a) / .74) 18%,
+    rgb(var(--scrim-a) / .62) 24%,rgb(var(--scrim-a) / .48) 30%,rgb(var(--scrim-a) / .34) 36%,rgb(var(--scrim-a) / .22) 42%,
+    rgb(var(--scrim-a) / .12) 48%,rgb(var(--scrim-a) / .05) 54%,rgb(var(--scrim-a) / 0) 60%);
+}
+.v-l3b .hero[data-poster="stele"]{align-items:center}
+.v-l3b .hero[data-poster="stele"] .hero-inner{display:flex;justify-content:flex-end}
+.v-l3b .hero[data-poster="stele"] .hero-stack{max-width:min(520px,30vw)}
+/* narrow: every poster becomes a band under the copy, the scrim runs bottom up in the mode's ground */
+@media (max-width:760px){
+  .v-l3b .hero[data-poster]{display:block;min-height:0}
+  .v-l3b .hero[data-poster="stele"]{--poster-size:cover;--poster-pos:center center}
+  .v-l3b .hero[data-poster="blueprint"] .hero-art{order:0;height:auto;aspect-ratio:1920/1072;max-height:none;margin-top:0}
+  .v-l3b .hero[data-poster] .hero-scrim{
+    background-image:linear-gradient(to top,rgb(var(--scrim-a) / 1) 0%,rgb(var(--scrim-a) / .6) 12%,rgb(var(--scrim-a) / 0) 30%);
+  }
+  .v-l3b .hero[data-poster^="leaves"] .hero-inner,.v-l3b .hero[data-poster="stele"] .hero-inner{display:block;text-align:left}
+  .v-l3b .hero[data-poster] .hero-stack{max-width:none;margin-top:0}
+  .v-l3b .hero[data-poster^="leaves"] .lede{margin-inline:0}
+  .v-l3b .hero[data-poster^="leaves"] .cta{justify-content:flex-start}
+  .v-l3b .hero[data-poster^="leaves"] .hero-art,.v-l3b .hero[data-poster="stele"] .hero-art{height:auto;aspect-ratio:1920/1072;min-height:0}
+}
+
+/* no eyebrow above the headline (his rule, Sep 10): the H1 opens the page */
+.v-l3b .hero-eyebrow{display:none}
+
+/* ---- controls: pills for actions, text for the rest ---- */
+.v-l3b .pill{
+  display:inline-flex;align-items:center;gap:10px;
+  font-size:var(--t4);font-weight:500;font-variation-settings:'opsz' 14,'wght' 500;
+  text-decoration:none;border-radius:999px;padding:13px 26px;
+  transition:transform .22s var(--ease-out-expo),background .22s var(--ease-out-expo);
+}
+.v-l3b .pill-bone{background:var(--bone);color:var(--on-bone)}
+.v-l3b .pill .sq{width:9px;height:9px;background:var(--accent);display:block;margin-top:-1px}
+.v-l3b .textlink{
+  display:inline-block;font-size:var(--t4);color:var(--bone);text-decoration:none;
+  box-shadow:inset 0 -1px 0 var(--bone-3);
+  transition:box-shadow .18s var(--ease-out-expo),transform .22s var(--ease-out-expo);
+}
+.v-l3b .mono-link{
+  color:var(--ink);text-decoration:none;display:inline-block;
+  box-shadow:inset 0 -1px 0 var(--hair-2);
+  transition:color .18s var(--ease-out-expo),box-shadow .18s var(--ease-out-expo);
+}
+
+/* ---- (a) the proof strip: a ruled band of mono cells, right under the poster ---- */
+.v-l3b .proof{
+  background:var(--page-2);box-shadow:inset 0 -1px 0 var(--hair);
+  padding-block:8px;
+}
+.v-l3b .facts{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(12,1fr)}
+.v-l3b .cell{
+  padding:15px 20px;line-height:1.55;
+  box-shadow:inset 1px 0 0 var(--hair);
+}
+.v-l3b .cell:nth-child(n+5){box-shadow:inset 1px 0 0 var(--hair),inset 0 1px 0 var(--hair)}
+.v-l3b .cell:nth-child(1){box-shadow:none}
+.v-l3b .cell:nth-child(5){box-shadow:inset 0 1px 0 var(--hair)}
+.v-l3b .cell .k{display:block;color:var(--muted);letter-spacing:.08em}
+.v-l3b .cell .v{display:block;color:var(--ink);overflow-wrap:anywhere}
+.v-l3b .s5{grid-column:span 5}
+.v-l3b .s3{grid-column:span 3}
+.v-l3b .s2{grid-column:span 2}
+
+/* ---- (b) the three actors: three columns on one hairline ---- */
+.v-l3b .actors{
+  list-style:none;margin:0;padding:34px 0 0;
+  display:grid;grid-template-columns:repeat(3,1fr);gap:0 clamp(28px,4vw,56px);
+  box-shadow:inset 0 1px 0 var(--hair);
+}
+.v-l3b .actors .n{display:block;color:var(--accent);letter-spacing:.1em;margin-bottom:16px}
+.v-l3b .actors .h2{margin-bottom:12px}
+.v-l3b .actors p{color:var(--ink-2);max-width:38ch}
+
+/* ---- (c) the beat: one sheet, the only shadow on the page ---- */
+.v-l3b .beat{background:var(--page-2);box-shadow:inset 0 1px 0 var(--hair)}
+.v-l3b .sheet{
+  background:var(--sheet);border-radius:14px;
+  box-shadow:var(--sheet-shadow),inset 0 1px 0 var(--sheet-hi);
+  padding:clamp(18px,2.6vw,30px);overflow-x:auto;
+}
+.v-l3b .sheet pre{
+  margin:0;font-family:'Geist Mono',ui-monospace,Menlo,monospace;
+  font-size:var(--t5);font-weight:400;line-height:1.78;letter-spacing:.005em;
+  white-space:pre;color:var(--ink-2);font-variant-numeric:tabular-nums;
+}
+.v-l3b .sheet .cmd{color:var(--ink);font-weight:500}
+.v-l3b .sheet .ok{color:var(--ok)}
+.v-l3b .sheet .bad{color:var(--bad)}
+.v-l3b .caption{color:var(--muted);margin:20px 0 0;max-width:64ch}
+
+/* ---- (d) what Sibyl does: the accent at mass, bone on cobalt ---- */
+.v-l3b .box{background:var(--band);color:var(--band-ink)}
+.v-l3b .box .eyebrow{color:var(--band-ink-2)}
+.v-l3b .box .h2{max-width:22ch;margin-bottom:24px;color:var(--band-ink)}
+.v-l3b .box p{font-size:var(--t3);line-height:1.55;color:var(--band-ink);max-width:62ch}
+.v-l3b .box .close{
+  margin-top:26px;padding-top:24px;color:var(--band-ink);
+  box-shadow:inset 0 1px 0 var(--band-hair);
+}
+.v-l3b .box code{
+  font-family:'Geist Mono',ui-monospace,Menlo,monospace;
+  font-size:var(--t4);font-weight:400;font-variation-settings:normal;color:var(--band-ink);
+}
+
+/* ---- (e) honest limits: a two-column ruled list ---- */
+.v-l3b .limits{
+  list-style:none;margin:0;padding:0 0 24px;
+  display:grid;grid-template-columns:repeat(2,1fr);gap:0 clamp(28px,4vw,56px);
+  box-shadow:inset 0 -1px 0 var(--hair);
+}
+.v-l3b .limits li{padding:24px 0;box-shadow:inset 0 1px 0 var(--hair)}
+.v-l3b .limits .n{display:block;color:var(--muted);letter-spacing:.1em;margin-bottom:10px}
+.v-l3b .limits p{color:var(--ink-2);max-width:52ch}
+
+/* ---- footer: quiet, base layer ---- */
+.v-l3b .foot{background:var(--page-2);box-shadow:inset 0 1px 0 var(--hair);padding-block:36px}
+.v-l3b .foot .row{display:flex;align-items:center;justify-content:space-between;gap:16px 28px;flex-wrap:wrap}
+.v-l3b .foot .meta{color:var(--muted);margin:0;max-width:none}
+
+/* ---- hover, gated ---- */
+@media (hover:hover) and (pointer:fine){
+  .v-l3b .nav-links a:hover{color:var(--bone)}
+  .v-l3b .tog:hover{color:var(--bone);background:var(--bone-veil)}
+  .v-l3b .foot .tog:hover{color:var(--ink);background:var(--hair)}
+  .v-l3b .pill-bone:hover{background:var(--bone-hi);transform:translateY(-1px)}
+  .v-l3b .textlink:hover{box-shadow:inset 0 -1px 0 var(--bone)}
+  .v-l3b .mono-link:hover{color:var(--accent);box-shadow:inset 0 -1px 0 var(--accent)}
+}
+/* ---- press, on everything pressable ---- */
+.v-l3b .pill:active,.v-l3b .tog:active,.v-l3b .textlink:active,
+.v-l3b .mono-link:active{transform:scale(.97)}
+
+/* ---- narrow: the hero is designed, not collapsed ---- */
+@media (max-width:900px){
+  .v-l3b .facts{grid-template-columns:repeat(2,1fr)}
+  .v-l3b .cell{grid-column:auto}
+  .v-l3b .cell,.v-l3b .cell:nth-child(n+5){box-shadow:inset 1px 0 0 var(--hair),inset 0 1px 0 var(--hair)}
+  .v-l3b .cell:nth-child(odd){box-shadow:inset 0 1px 0 var(--hair)}
+  .v-l3b .actors{grid-template-columns:1fr;padding-top:0;box-shadow:none}
+  .v-l3b .actors li{padding:26px 0;box-shadow:inset 0 1px 0 var(--hair)}
+  .v-l3b .actors p{max-width:64ch}
+  .v-l3b .limits{grid-template-columns:1fr}
+}
+@media (max-width:760px){
+  .v-l3b .hero{
+    display:block;min-height:0;padding:0 0 clamp(40px,6vh,64px);
+  }
+  .v-l3b .hero-art{position:relative;height:46svh;min-height:300px}
+  .v-l3b .hero-scrim{
+    background-image:linear-gradient(to top,
+      rgb(15 20 36 / 1) 0%,
+      rgb(15 20 36 / .985) 3.1%,
+      rgb(15 20 36 / .945) 6.3%,
+      rgb(15 20 36 / .882) 9.4%,
+      rgb(15 20 36 / .802) 12.6%,
+      rgb(15 20 36 / .708) 15.7%,
+      rgb(15 20 36 / .606) 18.9%,
+      rgb(15 20 36 / .5) 22.0%,
+      rgb(15 20 36 / .394) 25.1%,
+      rgb(15 20 36 / .292) 28.3%,
+      rgb(15 20 36 / .198) 31.4%,
+      rgb(15 20 36 / .118) 34.6%,
+      rgb(15 20 36 / .055) 37.7%,
+      rgb(15 20 36 / .015) 40.9%,
+      rgb(15 20 36 / 0) 44%);
+  }
+  .v-l3b .hero-stack{max-width:none;padding-top:26px}
+  .v-l3b .hero .lede{max-width:none}
+  .v-l3b .cta{display:block;margin-top:26px}
+  .v-l3b .cta .pill{display:flex;justify-content:center;width:100%;padding:15px 24px}
+  .v-l3b .cta .textlink{margin-top:18px}
+}
+@media (max-width:640px){
+  .v-l3b .wide,.v-l3b .hero-inner{width:min(var(--wide),100% - 32px)}
+  .v-l3b .nav{padding:14px 16px;gap:14px}
+  .v-l3b .nav-links{gap:16px}
+  .v-l3b .facts{grid-template-columns:1fr}
+  .v-l3b .cell,.v-l3b .cell:nth-child(n+5),.v-l3b .cell:nth-child(odd){box-shadow:inset 0 1px 0 var(--hair)}
+  .v-l3b .cell:nth-child(1){box-shadow:none}
+  .v-l3b .cell{padding:13px 0}
+  .v-l3b .sheet{border-radius:12px}
+  .v-l3b .foot .row{gap:20px}
+}
+@media (prefers-reduced-motion:reduce){
+  .v-l3b .pill:hover,.v-l3b .pill:active,.v-l3b .tog:active,
+  .v-l3b .textlink:active,.v-l3b .mono-link:active{transform:none}
+}
+</style>
+</head>
+<body class="v-l3b">
+<a class="skip mono" href="#main">Skip to content</a>
+
+<header class="hero" data-poster="leaves-blue">
+  <div class="hero-art">
+    <div class="hero-img" role="img" aria-label="The Sibyl seated at the mouth of her cave, oak leaves lifting from her hand across the sky toward a tall ruled stone ledger; the leaves already pinned into its rows have turned cobalt blue."></div>
+    <div class="hero-scrim"></div>
+  </div>
+
+  <nav class="nav" aria-label="Primary">
+    <a class="wm wm-nav" href="#main">k<span class="i">&#305;</span>nt</a>
+    <span class="nav-links">
+      <a href="#main">App</a>
+      <a href="https://github.com/">GitHub</a>
+      <button class="tog" type="button" data-theme-toggle aria-label="Toggle theme">
+        <span class="glyph" aria-hidden="true"></span>
+      </button>
+    </span>
+  </nav>
+
+  <div class="hero-inner">
+    <div class="hero-stack">
+      <p class="eyebrow hero-eyebrow">Built on Sibyl Memory, under it. Live on Base mainnet.</p>
+      <h1 class="h1">Sibyl Memory that <span class="hl">outlives</span> the laptop.</h1>
+      <p class="lede">Wipe the machine, connect the wallet, and the agent comes back knowing what it
+        knew, and proves it was not tampered with.</p>
+      <div class="cta">
+        <a class="pill pill-bone" href="#main">
+          <span class="sq" aria-hidden="true"></span>
+          Open the app
+        </a>
+        <a class="textlink" href="https://github.com/">Read the README</a>
+      </div>
+      <code class="mono install">uv tool install kint</code>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+
+<section class="proof" aria-label="Live chain facts">
+  <ul class="facts mono wide">
+    <li class="cell s5">
+      <span class="k">EpochAnchor</span>
+      <a class="mono-link v"
+         href="https://basescan.org/address/0xa22E03f7a4145Bf4909a83595C90a38E14d79600">0xa22E03f7a4145Bf4909a83595C90a38E14d79600</a>
+    </li>
+    <li class="cell s2"><span class="k">head seq</span><span class="v">2</span></li>
+    <li class="cell s2"><span class="k">block</span><span class="v">51,081,880</span></li>
+    <li class="cell s3"><span class="k">digest</span><span class="v">7df5378a8c4fa866</span></li>
+    <li class="cell s2"><span class="k">rows</span><span class="v">15</span></li>
+    <li class="cell s2"><span class="k">bucket</span><span class="v">4 KB</span></li>
+    <li class="cell s2"><span class="k">network</span><span class="v">Base mainnet</span></li>
+    <li class="cell s3">
+      <span class="k">epoch 1 &middot; block 51,081,867</span>
+      <a class="mono-link v"
+         title="0xbe9bb8596c825a8891c3eafe4381e0c6522d647641735c635ca58fcf4bbe4455"
+         href="https://basescan.org/tx/0xbe9bb8596c825a8891c3eafe4381e0c6522d647641735c635ca58fcf4bbe4455">tx 0xbe9bb859&hellip;4455</a>
+    </li>
+    <li class="cell s3">
+      <span class="k">epoch 2 &middot; block 51,081,880</span>
+      <a class="mono-link v"
+         title="0x369907fb1bccc3222365b2e07b4d6d831642831d481a5f7cb99357823e2a9729"
+         href="https://basescan.org/tx/0x369907fb1bccc3222365b2e07b4d6d831642831d481a5f7cb99357823e2a9729">tx 0x369907fb&hellip;9729</a>
+    </li>
+  </ul>
+</section>
+
+<section class="section wide" aria-labelledby="eb-actors">
+  <p class="eyebrow" id="eb-actors">THE THREE ACTORS</p>
+  <ol class="actors">
+    <li>
+      <span class="mono n">01</span>
+      <h2 class="h2">The wallet owns.</h2>
+      <p>One frozen message, signed once per machine, derives the key. Nothing decrypted ever
+        leaves the machine.</p>
+    </li>
+    <li>
+      <span class="mono n">02</span>
+      <h2 class="h2">The passphrase or the signature unlocks.</h2>
+      <p>A Base Account owner types a passphrase. An EOA owner signs. Either opens the same
+        vault, and a recovery code covers the day both are gone.</p>
+    </li>
+    <li>
+      <span class="mono n">03</span>
+      <h2 class="h2">kint does the rest.</h2>
+      <p>Every change is packed, padded, encrypted and written to Base as calldata under a small
+        contract. On any machine you connect, kint pulls, verifies every epoch against the chain,
+        and replays the rows through Sibyl's own write methods.</p>
+    </li>
+  </ol>
+</section>
+
+<section class="beat" aria-labelledby="eb-beat">
+  <div class="section wide">
+    <p class="eyebrow" id="eb-beat">THE BEAT</p>
+    <div class="sheet">
+<pre><span class="cmd">$ kint status</span>
+tenant kint-demo  space bd2a3b5b8f3fb4c8  store ~/.sibyl-memory/memory.db
+owner 0xC635e6Eb223aE14143E23cEEa9440bC773dc87Ec  data key cached
+last anchored on this machine: seq 2 block 51081880 rows 15
+chain head: seq 2 digest 7df5378a8c4fa866 block 51081880 (in step)
+
+<span class="cmd">$ kint verify "release rule"</span>
+sibyl verdict: ok  hits: 3
+  <span class="ok">verified</span>   entity rules/release-gate: stored text matches the leaf anchored on Base
+  <span class="ok">verified</span>   reference runbook-release: stored text matches the leaf anchored on Base
+DECISION: PROCEED: verified against rows_root 390336ff71dbcb85 anchored at epoch 2, block 51081880
+
+<span class="cmd">$ sqlite3 ~/.sibyl-memory/memory.db "update entities set body = replace(body, 'never', 'always') where name = 'release-gate'"</span>
+<span class="cmd">$ kint verify "release rule"</span>
+<span class="bad">  REFUSED    entity rules/release-gate: stored text does not match the leaf anchored at epoch 2, block 51081880</span>
+DECISION: REFUSE: refusal written back as entity kint_refusal/release-gate
+
+<span class="cmd">$ kint history entity release-gate --category rules</span>
+epoch 1 block &lt;= 51081867 leaf f406bb0919d23360: {"rule":"never ship on a Friday; every release needs a green deadlift test and a second reviewer", ...}
+epoch 2 block &lt;= 51081880 leaf 4ac605528bbb00e7: {"rule":"never ship on a Friday; every release needs a green deadlift test, a second reviewer, AND a passing kint verify", ...}</pre>
+    </div>
+    <p class="mono caption">A row's block height is an upper bound: it existed no later than that
+      block.</p>
+  </div>
+</section>
+
+<section class="box" aria-labelledby="eb-box">
+  <div class="section wide">
+    <p class="eyebrow" id="eb-box">WHAT SIBYL DOES</p>
+    <h2 class="h2">Delete the Sibyl Memory layer and what breaks.</h2>
+    <p>The decision beat reaches the row through Sibyl's <code>memory_search</code> (four FTS5
+      indexes plus the shadow fallback) and keys on the typed verdict from
+      <code>verdicts.py</code>. Without Sibyl there is no ranked candidate and no verdict to key
+      on: the epoch is a decrypted blob with no query surface, so a fresh session neither refuses
+      nor proceeds. Base holds the ciphertext; Sibyl is what turns it back into an answerable
+      store.</p>
+    <p class="close">Their eight tools ship unmodified; kint adds six.</p>
+  </div>
+</section>
+
+<section class="section wide" aria-labelledby="eb-limits">
+  <p class="eyebrow" id="eb-limits">HONEST LIMITS</p>
+  <ul class="limits">
+    <li>
+      <span class="mono n">01</span>
+      <p>One wallet owns one memory; many machines may write under it, one at a time. Two machines
+        writing at once is a fork: kint refuses and tells you.</p>
+    </li>
+    <li>
+      <span class="mono n">02</span>
+      <p>Base holds ciphertext, but the row count and the size bucket are public.</p>
+    </li>
+    <li>
+      <span class="mono n">03</span>
+      <p>A phished derive signature is a permanent key. The EIP-712 message says so in the one
+        field every wallet renders. kint never accepts that signature as a login and never sends
+        it anywhere.</p>
+    </li>
+    <li>
+      <span class="mono n">04</span>
+      <p>A cold start stops at the newest snapshot epoch, so restore cost is bounded by the size
+        of the memory, not its history.</p>
+    </li>
+  </ul>
+</section>
+
+</main>
+
+<footer class="foot">
+  <div class="wide row">
+    <span class="wm wm-foot">k<span class="i">&#305;</span>nt</span>
+    <p class="mono meta">MIT &middot; Built for the Sibyl Labs Hackathon, September 2026 &middot;
+      s0nderlabs &middot; on Base</p>
+    <button class="tog" type="button" data-theme-toggle aria-label="Toggle theme">
+      <span class="glyph" aria-hidden="true"></span>
+    </button>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var root=document.documentElement;
+  function current(){
+    var a=root.getAttribute('data-theme');
+    if(a==='dark'||a==='light'){return a;}
+    try{
+      if(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches){return 'dark';}
+    }catch(e){}
+    return 'light';
+  }
+  function flip(){
+    var next=current()==='dark'?'light':'dark';
+    root.setAttribute('data-theme',next);
+    try{localStorage.setItem('kint-theme',next);}catch(e){}
+  }
+  var buttons=document.querySelectorAll('[data-theme-toggle]');
+  for(var i=0;i<buttons.length;i++){buttons[i].addEventListener('click',flip);}
+})();
+</script>
+<script>
+(function(){
+  var ok={sand:1,leaves:1,'leaves-blue':1,'leaves-turning':1,'leaves-night':1,blueprint:1,stele:1};
+  var alts={
+    sand:'A lone figure standing at the centre of rings raked into a sand plain, a closed laptop half sunk in the foreground sand, a cobalt night sky with a crescent moon and one small red house on the far hill.',
+    leaves:'The Sibyl seated at the mouth of her cave, oak leaves lifting from her hand across the sky toward a tall ruled stone ledger, where the first leaves are pinned row by row, each row marked with a small blue square.',
+    'leaves-blue':'The Sibyl seated at the mouth of her cave, oak leaves lifting from her hand across the sky toward a tall ruled stone ledger; the leaves already pinned into its rows have turned cobalt blue.',
+    'leaves-turning':'The Sibyl seated at the mouth of her cave, oak leaves lifting from her hand across the sky, tinting from sand to cobalt as they near a tall ruled stone ledger where the pinned leaves are fully blue.',
+    'leaves-night':'The same scene at night under stars and a crescent moon: the Sibyl at her cave, pale leaves crossing the sky, the pinned leaves on the stone ledger glowing cobalt.',
+    blueprint:'An engraved patent drawing: an open laptop whose screen holds stacked rows, gathered into a sealed envelope, carried along a dotted path up a staircase of cobalt blocks to a reference line, and returned to a second laptop where the same rows reappear, each ticked with a small blue square.',
+    stele:'A tall inscribed stone stele at night, its ruled rows lit from below by the screen of a small open laptop at its base, an iron key beside it, the Sibyl standing in silhouette reading the stone, a thin blue crescent moon above.'
+  };
+  function pick(){
+    var m=(location.search+location.hash).match(/[?&#]poster=([a-z-]+)/);
+    return m&&ok[m[1]]?m[1]:null;
+  }
+  window.kintPosterMode=function(name){
+    if(name==='rings')name='leaves-blue';
+    if(!ok[name])return;
+    var h=document.querySelector('.hero');h.setAttribute('data-poster',name);
+    var img=h.querySelector('.hero-img');if(img)img.setAttribute('aria-label',alts[name]);
+  };
+  var p=pick();if(p)window.kintPosterMode(p);
+})();
+</script>
+</body>
+</html>

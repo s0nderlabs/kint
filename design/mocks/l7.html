@@ -1,0 +1,730 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script>(function(){try{var t=localStorage.getItem('kint-theme');if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>kint, Sibyl Memory that outlives the laptop</title>
+<link href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=EB+Garamond:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   L7 ARCHIVE. A card catalogue, a ledger page, the record.
+   Faces: EB Garamond (voice), Courier Prime (chain facts).
+   ============================================================ */
+
+/* ---- tokens: bare :root carries the COMPLETE light palette ---- */
+:root{
+  --page:#F5F0E6;
+  --card:#FBF8F2;
+  --ink:#1F1A14;
+  --ink-2:#4E463C;
+  --muted:#6E6558;
+  --hair:rgba(31,26,20,.14);
+  --rule:rgba(31,26,20,.085);
+  --edge:rgba(31,26,20,.34);
+  --accent:#9E2B25;
+  --accent-soft:rgba(158,43,37,.09);
+  --btn-bg:#1F1A14;
+  --btn-fg:#F5F0E6;
+  --btn-bg-hover:#4E463C;
+
+  /* five type sizes, nothing under 12px */
+  --t1:clamp(3rem, 6.5vw, 5.8rem);
+  --t2:clamp(1.5rem, 2.6vw, 2.15rem);
+  --t3:20px;
+  --t4:18px;
+  --t5:13px;
+
+  /* the ledger */
+  --lead:32px;
+  --sheet:940px;
+  --gutter:84px;
+  --rail:32px;
+  --pad:96px;
+
+  --serif:"EB Garamond", Georgia, "Times New Roman", serif;
+  --mono:"Courier Prime", "Courier New", Courier, monospace;
+  --ease-out-expo:cubic-bezier(0.16,1,0.3,1);
+}
+
+/* ---- dark, unstamped viewers: tokens only ---- */
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --page:#16130F;
+    --card:#1E1A15;
+    --ink:#EBE4D6;
+    --ink-2:#C6BCAB;
+    --muted:#9A9083;
+    --hair:rgba(235,228,214,.16);
+    --rule:rgba(235,228,214,.075);
+    --edge:rgba(235,228,214,.30);
+    --accent:#E06A62;
+    --accent-soft:rgba(224,106,98,.13);
+    --btn-bg:#EBE4D6;
+    --btn-fg:#16130F;
+    --btn-bg-hover:#C6BCAB;
+  }
+}
+
+/* ---- dark, stamped by the toggle: tokens only ---- */
+:root[data-theme="dark"]{
+  --page:#16130F;
+  --card:#1E1A15;
+  --ink:#EBE4D6;
+  --ink-2:#C6BCAB;
+  --muted:#9A9083;
+  --hair:rgba(235,228,214,.16);
+  --rule:rgba(235,228,214,.075);
+  --edge:rgba(235,228,214,.30);
+  --accent:#E06A62;
+  --accent-soft:rgba(224,106,98,.13);
+  --btn-bg:#EBE4D6;
+  --btn-fg:#16130F;
+  --btn-bg-hover:#C6BCAB;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0}
+
+.v-l7{
+  background:var(--page);
+  color:var(--ink);
+  font-family:var(--serif);
+  font-size:var(--t4);
+  font-weight:400;
+  line-height:var(--lead);
+  font-feature-settings:"kern" 1,"liga" 1;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+
+/* the house grain, fixed over the paper */
+.v-l7::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  z-index:9999;
+  pointer-events:none;
+  opacity:.03;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size:256px 256px;
+}
+
+.v-l7 ::selection{background:var(--accent-soft);color:var(--ink)}
+
+/* ---- the wordmark, dotless i with a drawn accent square ---- */
+.v-l7 .wm{
+  font-family:var(--serif);
+  font-weight:500;
+  line-height:1;
+  letter-spacing:.005em;
+  display:inline-block;
+}
+.v-l7 .wm .i{position:relative}
+.v-l7 .wm .i::after{
+  content:"";
+  position:absolute;
+  left:50%;
+  transform:translateX(-50%);
+  top:0.35em;
+  width:.17em;
+  height:.17em;
+  background:var(--accent);
+}
+
+/* ---- type roles ---- */
+.v-l7 .mono{
+  font-family:var(--mono);
+  font-weight:400;
+  font-size:var(--t5);
+  line-height:var(--lead);
+  letter-spacing:.01em;
+}
+.v-l7 .eyebrow{
+  font-family:var(--serif);
+  font-size:var(--t4);
+  font-weight:500;
+  font-variant-caps:small-caps;
+  letter-spacing:.07em;
+  color:var(--ink-2);
+  margin:0 0 20px;
+}
+.v-l7 h1,.v-l7 h2,.v-l7 h3{margin:0;font-weight:500}
+.v-l7 h1{
+  font-size:var(--t1);
+  line-height:1.03;
+  letter-spacing:-.012em;
+  max-width:18ch;
+  margin:0 0 24px;
+}
+.v-l7 h1 .hl{color:var(--accent)}
+.v-l7 .sec{
+  font-size:var(--t2);
+  font-weight:500;
+  font-variant-caps:small-caps;
+  letter-spacing:.055em;
+  line-height:1.15;
+  color:var(--ink);
+  margin:0 0 8px;
+}
+.v-l7 .lede{
+  font-size:var(--t3);
+  line-height:34px;
+  color:var(--ink-2);
+  max-width:33em;
+  margin:0 0 32px;
+}
+.v-l7 p{margin:0 0 var(--lead);max-width:36em}
+.v-l7 p:last-child{margin-bottom:0}
+.v-l7 .cap{color:var(--muted);max-width:34em}
+
+/* ---- the ledger page ---- */
+/* the ruled paper is drawn once, on main, so the lines register
+   straight through every section boundary */
+.v-l7 .ledger{
+  background-image:repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 31px,
+    var(--rule) 31px,
+    var(--rule) 32px
+  );
+  background-position:0 8px;
+}
+.v-l7 .band{padding-block:var(--pad)}
+/* the single vertical margin rule, unbroken down the whole page */
+.v-l7 .band,
+.v-l7 .boxband{position:relative}
+.v-l7 .band::before,
+.v-l7 .boxband::before{
+  content:"";
+  position:absolute;
+  top:0;
+  bottom:0;
+  left:calc(max(20px, (100% - var(--sheet)) / 2) + var(--gutter));
+  width:1px;
+  background:var(--hair);
+  pointer-events:none;
+}
+
+.v-l7 .sheet{
+  width:min(100% - 40px, var(--sheet));
+  margin-inline:auto;
+  display:grid;
+  grid-template-columns:var(--gutter) minmax(0,1fr);
+  column-gap:0;
+  row-gap:0;
+  align-items:start;
+}
+/* the margin column of a ledger: numerals only, right aligned */
+.v-l7 .mg{
+  font-family:var(--mono);
+  font-size:var(--t5);
+  line-height:var(--lead);
+  color:var(--muted);
+  text-align:right;
+  padding-right:16px;
+  padding-top:2px;
+  min-height:1px;
+}
+/* the reading column: the rule is drawn by the band, this is its right side */
+.v-l7 .col{
+  padding-left:var(--rail);
+  padding-bottom:var(--lead);
+  min-width:0;
+}
+.v-l7 .col.tight{padding-bottom:0}
+.v-l7 .col.gap{padding-bottom:calc(var(--lead) * 2)}
+
+/* ---- nav ---- */
+.v-l7 .nav{
+  border-bottom:1px solid var(--hair);
+  background:var(--page);
+}
+.v-l7 .nav-in{
+  width:min(100% - 40px, var(--sheet));
+  margin-inline:auto;
+  height:72px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+}
+.v-l7 .wm-link{
+  color:var(--ink);
+  text-decoration:none;
+  font-size:var(--t3);
+}
+.v-l7 .wm-link:hover{color:var(--ink)}
+.v-l7 .navset{display:flex;align-items:center;gap:14px}
+.v-l7 .navset a{
+  color:var(--ink-2);
+  text-decoration:none;
+  font-size:var(--t4);
+  border-bottom:1px solid transparent;
+  padding-bottom:1px;
+  transition:color .18s var(--ease-out-expo), border-color .18s var(--ease-out-expo);
+}
+.v-l7 .navset a:hover{color:var(--ink);border-bottom-color:var(--hair)}
+.v-l7 .dot{color:var(--muted);font-size:var(--t4)}
+
+/* ---- theme toggle ---- */
+.v-l7 .toggle{
+  width:34px;
+  height:34px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  background:transparent;
+  border:1px solid var(--hair);
+  border-radius:2px;
+  color:var(--ink-2);
+  cursor:pointer;
+  padding:0;
+  margin-left:4px;
+  transition:color .18s var(--ease-out-expo), border-color .18s var(--ease-out-expo);
+}
+.v-l7 .toggle:hover{color:var(--ink);border-color:var(--edge)}
+.v-l7 .toggle svg{display:block}
+
+/* ---- actions ---- */
+.v-l7 .actions{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:24px;
+  margin:0 0 24px;
+  max-width:none;
+}
+.v-l7 .btn{
+  display:inline-flex;
+  align-items:center;
+  background:var(--btn-bg);
+  color:var(--btn-fg);
+  font-family:var(--serif);
+  font-size:var(--t4);
+  font-weight:500;
+  line-height:1;
+  letter-spacing:.005em;
+  padding:15px 26px;
+  border:1px solid var(--btn-bg);
+  border-radius:0;
+  text-decoration:none;
+  transition:background .18s var(--ease-out-expo), border-color .18s var(--ease-out-expo);
+}
+.v-l7 .btn:hover{background:var(--btn-bg-hover);border-color:var(--btn-bg-hover)}
+.v-l7 .tlink{
+  color:var(--ink);
+  font-size:var(--t4);
+  text-decoration:underline;
+  text-underline-offset:5px;
+  text-decoration-thickness:1px;
+  text-decoration-color:var(--hair);
+  transition:text-decoration-color .18s var(--ease-out-expo);
+}
+.v-l7 .tlink:hover{text-decoration-color:var(--ink)}
+.v-l7 .install{
+  font-family:var(--mono);
+  font-size:var(--t5);
+  color:var(--muted);
+  margin:0;
+}
+
+/* ---- focus, in the accent, everywhere ---- */
+.v-l7 a:focus-visible,
+.v-l7 button:focus-visible{
+  outline:2px solid var(--accent);
+  outline-offset:3px;
+  border-radius:1px;
+}
+
+/* ---- the stamped index card ---- */
+.v-l7 .indexcard{
+  position:relative;
+  background-color:var(--card);
+  border:1px solid var(--edge);
+  border-radius:3px;
+  padding:24px 28px 44px;
+  max-width:none;
+}
+.v-l7 .stamp{
+  position:absolute;
+  top:22px;
+  right:26px;
+  font-family:var(--mono);
+  font-size:var(--t5);
+  font-weight:700;
+  line-height:1.1;
+  text-transform:uppercase;
+  letter-spacing:.12em;
+  color:var(--accent);
+  border:2px solid var(--accent);
+  border-radius:2px;
+  padding:6px 11px;
+  transform:rotate(-3deg);
+  opacity:.85;
+  white-space:nowrap;
+}
+/* the rod hole of a catalogue card */
+.v-l7 .punch{
+  position:absolute;
+  left:50%;
+  bottom:14px;
+  width:15px;
+  height:15px;
+  margin-left:-7.5px;
+  border:1px solid var(--hair);
+  border-radius:50%;
+}
+.v-l7 .cardhead{
+  font-family:var(--mono);
+  font-size:var(--t5);
+  line-height:var(--lead);
+  color:var(--muted);
+  text-transform:uppercase;
+  letter-spacing:.11em;
+  margin:0 0 8px;
+  max-width:none;
+}
+.v-l7 .facts{
+  list-style:none;
+  margin:0;
+  padding:0;
+  border-top:1px solid var(--hair);
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+}
+.v-l7 .facts li{
+  border-bottom:1px solid var(--hair);
+  border-right:1px solid var(--hair);
+  min-width:0;
+}
+.v-l7 .facts li.cend,
+.v-l7 .facts li.span3{border-right:0}
+.v-l7 .facts li.span3{grid-column:1 / -1}
+.v-l7 .facts a{
+  display:block;
+  font-family:var(--mono);
+  font-size:var(--t5);
+  line-height:var(--lead);
+  color:var(--ink-2);
+  text-decoration:none;
+  padding:5px 14px 5px 0;
+  overflow-wrap:anywhere;
+  transition:color .18s var(--ease-out-expo);
+}
+.v-l7 .facts li:not(.span3) a{padding-left:14px}
+.v-l7 .facts li.span3 a,
+.v-l7 .facts li.c1 a{padding-left:0}
+.v-l7 .facts a:hover{color:var(--ink);text-decoration:underline;text-underline-offset:4px}
+
+/* ---- the transcript, Courier on card stock ---- */
+.v-l7 .transcript{
+  background:var(--card);
+  border:1px solid var(--edge);
+  border-radius:3px;
+  padding:22px 0;
+  margin:0 0 20px;
+}
+.v-l7 .transcript pre{
+  margin:0;
+  padding:0 28px;
+  overflow-x:auto;
+  font-family:var(--mono);
+  font-size:var(--t5);
+  font-weight:400;
+  line-height:21px;
+  color:var(--ink-2);
+  white-space:pre;
+  tab-size:2;
+}
+.v-l7 .transcript .cmd{color:var(--ink);font-weight:700}
+.v-l7 .transcript .dec{color:var(--ink)}
+
+/* ---- the actors ---- */
+.v-l7 .num{color:var(--muted)}
+.v-l7 .lead-in{font-weight:600;color:var(--ink)}
+.v-l7 .actor p{color:var(--ink-2)}
+.v-l7 .actor .lead-in{color:var(--ink)}
+
+/* ---- the box: a plate laid on the ledger ---- */
+.v-l7 .boxband{
+  background:var(--card);
+  border-top:1px solid var(--edge);
+  border-bottom:1px solid var(--edge);
+  box-shadow:inset 0 4px 0 -3px var(--edge), inset 0 -4px 0 -3px var(--edge);
+  padding-block:var(--pad);
+}
+.v-l7 .box-h{
+  font-size:var(--t2);
+  font-weight:500;
+  line-height:1.2;
+  letter-spacing:-.005em;
+  margin:0 0 20px;
+  max-width:22ch;
+}
+.v-l7 .box-body{
+  font-size:var(--t3);
+  line-height:34px;
+  color:var(--ink-2);
+  max-width:34em;
+  margin:0;
+}
+.v-l7 .box-body strong{font-weight:600;color:var(--ink)}
+
+/* ---- limits ---- */
+.v-l7 .limit p{color:var(--ink-2);margin:0}
+
+/* ---- footer ---- */
+.v-l7 .foot{border-top:1px solid var(--hair)}
+.v-l7 .foot-in{
+  width:min(100% - 40px, var(--sheet));
+  margin-inline:auto;
+  padding-block:28px 40px;
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  gap:16px 24px;
+  flex-wrap:wrap;
+}
+.v-l7 .foot .wm{font-size:var(--t3);color:var(--ink)}
+.v-l7 .foot .mono{color:var(--muted);flex:1 1 auto;min-width:0}
+
+/* ---- 390 and under stays a clean ledger ---- */
+@media (max-width:760px){
+  .v-l7{--gutter:44px;--rail:16px;--pad:64px}
+  .v-l7 h1{max-width:none}
+  .v-l7 .nav-in{height:64px}
+  .v-l7 .navset{gap:10px}
+  .v-l7 .indexcard{padding:22px 18px 42px}
+  .v-l7 .stamp{
+    position:static;
+    display:inline-block;
+    max-width:100%;
+    white-space:normal;
+    letter-spacing:.07em;
+    margin:0 0 14px;
+    transform:rotate(-3deg);
+    transform-origin:left center;
+  }
+  .v-l7 .facts{grid-template-columns:minmax(0,1fr)}
+  .v-l7 .facts li{border-right:0}
+  .v-l7 .facts li a{padding-left:0}
+  .v-l7 .transcript pre{padding:0 18px}
+  .v-l7 .actions{gap:18px}
+}
+@media (prefers-reduced-motion: reduce){
+  .v-l7 *{transition-duration:.01ms !important}
+}
+</style>
+</head>
+<body class="v-l7" id="top">
+
+<header class="nav">
+  <div class="nav-in">
+    <a class="wm-link" href="#top"><span class="wm">k<span class="i">ı</span>nt</span></a>
+    <nav class="navset" aria-label="Primary">
+      <a href="#">App</a>
+      <span class="dot" aria-hidden="true">&middot;</span>
+      <a href="#">GitHub</a>
+      <button class="toggle" id="themeToggle" type="button" aria-label="Toggle theme">
+        <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+          <circle cx="8" cy="8" r="6.4" fill="none" stroke="currentColor" stroke-width="1.2"></circle>
+          <path d="M8 1.6a6.4 6.4 0 0 0 0 12.8z" fill="currentColor"></path>
+        </svg>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main id="main" class="ledger">
+
+  <!-- ============ hero ============ -->
+  <section class="band" aria-labelledby="h1">
+    <div class="sheet">
+      <div class="mg"></div>
+      <div class="col tight">
+        <p class="eyebrow">Built on Sibyl Memory, under it. Live on Base mainnet.</p>
+        <h1 id="h1">Sibyl Memory that <span class="hl">outlives</span> the laptop.</h1>
+        <p class="lede">Wipe the machine, connect the wallet, and the agent comes back knowing
+          what it knew, and proves it was not tampered with.</p>
+        <p class="actions">
+          <a class="btn" href="#">Open the app</a>
+          <a class="tlink" href="#">Read the README</a>
+        </p>
+        <p class="install">uv tool install kint</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ proof strip, as a stamped index card ============ -->
+  <section class="band" aria-label="Live facts on Base mainnet">
+    <div class="sheet">
+      <div class="mg"></div>
+      <div class="col gap">
+        <div class="indexcard">
+          <span class="stamp">Anchored &middot; block 51,081,880</span>
+          <p class="cardhead">tenant kint-demo</p>
+          <ul class="facts">
+            <li class="span3"><a href="https://basescan.org/address/0xa22E03f7a4145Bf4909a83595C90a38E14d79600">EpochAnchor 0xa22E03f7a4145Bf4909a83595C90a38E14d79600</a></li>
+            <li class="c1"><a href="https://basescan.org/address/0xa22E03f7a4145Bf4909a83595C90a38E14d79600">head seq 2</a></li>
+            <li><a href="https://basescan.org/address/0xa22E03f7a4145Bf4909a83595C90a38E14d79600">block 51,081,880</a></li>
+            <li class="cend"><a href="https://basescan.org/address/0xa22E03f7a4145Bf4909a83595C90a38E14d79600">digest 7df5378a8c4fa866</a></li>
+            <li class="c1"><a href="https://basescan.org/address/0xa22E03f7a4145Bf4909a83595C90a38E14d79600">15 rows</a></li>
+            <li><a href="https://basescan.org/address/0xa22E03f7a4145Bf4909a83595C90a38E14d79600">4 KB bucket</a></li>
+            <li class="cend"><a href="https://basescan.org/address/0xa22E03f7a4145Bf4909a83595C90a38E14d79600">Base mainnet</a></li>
+          </ul>
+          <span class="punch" aria-hidden="true"></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ the three actors ============ -->
+  <section class="band" aria-labelledby="sec-actors">
+    <div class="sheet">
+      <div class="mg"></div>
+      <div class="col">
+        <h2 class="sec" id="sec-actors">The three actors</h2>
+      </div>
+
+      <div class="mg"><span class="num">01</span></div>
+      <div class="col actor">
+        <p><span class="lead-in">The wallet owns.</span> One frozen message, signed once per
+          machine, derives the key. Nothing decrypted ever leaves the machine.</p>
+      </div>
+
+      <div class="mg"><span class="num">02</span></div>
+      <div class="col actor">
+        <p><span class="lead-in">The passphrase or the signature unlocks.</span> A Base Account
+          owner types a passphrase. An EOA owner signs. Either opens the same vault, and a
+          recovery code covers the day both are gone.</p>
+      </div>
+
+      <div class="mg"><span class="num">03</span></div>
+      <div class="col actor gap">
+        <p><span class="lead-in">kint does the rest.</span> Every change is packed, padded,
+          encrypted and written to Base as calldata under a small contract. On any machine you
+          connect, kint pulls, verifies every epoch against the chain, and replays the rows
+          through Sibyl's own write methods.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ the beat ============ -->
+  <section class="band" aria-labelledby="sec-beat">
+    <div class="sheet">
+      <div class="mg"></div>
+      <div class="col">
+        <h2 class="sec" id="sec-beat">The beat</h2>
+      </div>
+
+      <div class="mg"></div>
+      <div class="col gap">
+        <div class="transcript">
+<pre><span class="cmd">$ kint status</span>
+tenant kint-demo  space bd2a3b5b8f3fb4c8  store ~/.sibyl-memory/memory.db
+owner 0xC635e6Eb223aE14143E23cEEa9440bC773dc87Ec  data key cached
+last anchored on this machine: seq 2 block 51081880 rows 15
+chain head: seq 2 digest 7df5378a8c4fa866 block 51081880 (in step)
+
+<span class="cmd">$ kint verify "release rule"</span>
+sibyl verdict: ok  hits: 3
+  verified   entity rules/release-gate: stored text matches the leaf anchored on Base
+  verified   reference runbook-release: stored text matches the leaf anchored on Base
+<span class="dec">DECISION: PROCEED: verified against rows_root 390336ff71dbcb85 anchored at epoch 2, block 51081880</span>
+
+<span class="cmd">$ sqlite3 ~/.sibyl-memory/memory.db "update entities set body = replace(body, 'never', 'always') where name = 'release-gate'"</span>
+<span class="cmd">$ kint verify "release rule"</span>
+  REFUSED    entity rules/release-gate: stored text does not match the leaf anchored at epoch 2, block 51081880
+<span class="dec">DECISION: REFUSE: refusal written back as entity kint_refusal/release-gate</span>
+
+<span class="cmd">$ kint history entity release-gate --category rules</span>
+epoch 1 block &lt;= 51081867 leaf f406bb0919d23360: {"rule":"never ship on a Friday; every release needs a green deadlift test and a second reviewer", ...}
+epoch 2 block &lt;= 51081880 leaf 4ac605528bbb00e7: {"rule":"never ship on a Friday; every release needs a green deadlift test, a second reviewer, AND a passing kint verify", ...}</pre>
+        </div>
+        <p class="cap">A row's block height is an upper bound: it existed no later than that block.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ what Sibyl does, the plate ============ -->
+  <section class="boxband" aria-labelledby="sec-box">
+    <div class="sheet">
+      <div class="mg"></div>
+      <div class="col tight">
+        <h2 class="sec" id="sec-box">What Sibyl does</h2>
+        <p class="box-h">Delete the Sibyl Memory layer and what breaks.</p>
+        <p class="box-body">The decision beat reaches the row through Sibyl's memory_search (four
+          FTS5 indexes plus the shadow fallback) and keys on the typed verdict from verdicts.py.
+          Without Sibyl there is no ranked candidate and no verdict to key on: the epoch is a
+          decrypted blob with no query surface, so a fresh session neither refuses nor proceeds.
+          Base holds the ciphertext; Sibyl is what turns it back into an answerable store.
+          Their eight tools ship unmodified; kint adds six.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ honest limits ============ -->
+  <section class="band" aria-labelledby="sec-limits">
+    <div class="sheet">
+      <div class="mg"></div>
+      <div class="col">
+        <h2 class="sec" id="sec-limits">Honest limits</h2>
+      </div>
+
+      <div class="mg"><span class="num">i</span></div>
+      <div class="col limit">
+        <p>One wallet owns one memory; many machines may write under it, one at a time. Two
+          machines writing at once is a fork: kint refuses and tells you.</p>
+      </div>
+
+      <div class="mg"><span class="num">ii</span></div>
+      <div class="col limit">
+        <p>Base holds ciphertext, but the row count and the size bucket are public.</p>
+      </div>
+
+      <div class="mg"><span class="num">iii</span></div>
+      <div class="col limit">
+        <p>A phished derive signature is a permanent key. The EIP-712 message says so in the one
+          field every wallet renders. kint never accepts that signature as a login and never
+          sends it anywhere.</p>
+      </div>
+
+      <div class="mg"><span class="num">iv</span></div>
+      <div class="col limit gap">
+        <p>A cold start stops at the newest snapshot epoch, so restore cost is bounded by the
+          size of the memory, not its history.</p>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <div class="foot-in">
+    <span class="wm">k<span class="i">ı</span>nt</span>
+    <span class="mono">MIT &middot; Built for the Sibyl Labs Hackathon, September 2026 &middot; s0nderlabs &middot; on Base</span>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var root = document.documentElement;
+  var btn = document.getElementById('themeToggle');
+  if (!btn) return;
+  btn.addEventListener('click', function(){
+    var cur = root.getAttribute('data-theme');
+    if (cur !== 'dark' && cur !== 'light') {
+      cur = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+    }
+    var next = (cur === 'dark') ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('kint-theme', next); } catch (e) {}
+  });
+})();
+</script>
+
+</body>
+</html>

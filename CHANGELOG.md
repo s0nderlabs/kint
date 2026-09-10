@@ -2,6 +2,67 @@
 
 All notable changes to kint are recorded here. Format based on Keep a Changelog.
 
+## [0.3.0] - 2026-09-10
+
+One command to join a machine (`kint join`), pushes held instead of laundered when a row drifted,
+a recovery path past an epoch that never opens, the documentation site, and the web app.
+
+### Added
+
+- `kint join`: the read half of onboarding in one command (session key, connect, restore, harness
+  registration), writing nothing to the chain; it refuses an empty head unless `--new-vault`, names the
+  tenant and where it came from, pins `KINT_TENANT` in every registration, and resumes on a re-run.
+- `web/`: the Next.js site (the landing page, the `/app` memory viewer that decrypts in the browser on
+  the kint-core code, and `/docs`), deployed at kint.s0nderlabs.xyz from `main`.
+- Documentation: sixteen chapters in `docs/site/` rendered by `scripts/build_docs.py` into the site's
+  `/docs` (each page also served as raw markdown) plus `llms.txt` and `llms-full.txt` for agents. README
+  rewritten with a judges' walkthrough and a live on-chain check; `SECURITY.md`; `docs/judge.md`
+  regenerated against the current code.
+- `kint compact --over-skipped` and `kint rekey --over-skipped`: the owner's recovery path past an epoch
+  this machine can never open (a leaked session key wrote it); CLI only, never a tool argument.
+- `memory_status` reports `held` when kint-server is holding a push; `KINT_RPC_TIMEOUT` and
+  `KINT_BOOTSTRAP_SECONDS`.
+
+### Changed
+
+- kint-server holds its own pushes (error `HELD`, nothing anchored, nothing dropped) when a row the chain
+  vouches for changed behind Sibyl's tools while it ran, or when kint already refused exactly that
+  value; `kint push` from a terminal is the human's escape hatch.
+- `memory_verify` and `kint verify` go through Sibyl's gated `multi_record_search` (the call
+  `memory_search` makes) and refuse when the chain head moved past this machine's last pull; the
+  server reads that head at most once every 30 seconds with a 3 second timeout, so the decision beat
+  never hangs on a dead RPC.
+- A pull resumes past an epoch that never opens when a later snapshot carries the whole state; connect
+  and rekey read the newest readable epoch past a junk head, and only a non-kint epoch is ever walked
+  past (unreadable or lying calldata stops the walk).
+- The cached data key is renewed while kint-server runs; changes an earlier session left unanchored are
+  pushed at the next quiet period; a failing auto-push backs off (one minute doubling to an hour) instead
+  of retrying every poll; a hung RPC no longer stalls the server start.
+- A pull's replay no longer runs the per-row drift bookkeeping (the baseline is rebuilt once when it
+  returns), so a restore is linear in the number of rows.
+- `kint setup` prints what it printed before; its body moved to `src/kint/setup.py`, shared with `kint join`.
+- `kint doctor` and `kint join` use the same session-key balance floor (`MIN_SESSION_BALANCE_WEI`,
+  0.00002 ETH); CLI errors flush stdout first so they land after the progress lines in a pipe.
+- The fork and chain-moved messages name the real flags (`kint pull`, `kint pull --discard-local`).
+
+### Fixed
+
+- Keyed RPC URLs no longer reach a tool result or a log: every exception string is redacted and the
+  server logs no raw tracebacks.
+- `kint join` checksums the owner before the restore compares it with the calldata, so a lowercase
+  address restores instead of refusing every epoch.
+- A snapshot anchored with `--over-skipped` ratchets its size bucket from the head epoch's bucket, so
+  the published bucket never shrinks.
+- `kint pull --full` walks only the epochs below the oldest cached one when nothing above it is missing,
+  and backfills every epoch from the head to genesis otherwise, so history no longer misses the diff
+  epochs behind a snapshot.
+- `kint authorize burn-nonce` refuses a key that is not the owner's; a trailing slash on `KINT_RPC_URL`
+  no longer collapses the second opinion; the termination handler no longer pushes inside an in-flight
+  Sibyl write.
+- The session-key passphrase no longer passes through the security command's argv.
+- The export's docstring: Sibyl's `memory_forget` does write `archived_entities`, which the export does
+  not carry.
+
 ## [0.2.0] - 2026-09-10
 
 Snapshots, key rotation, and the browser-side decrypt path for the app.
@@ -71,5 +132,6 @@ First release, built for the Sibyl Labs Hackathon.
 - `kint setup` wires Claude Code, Codex, Hermes and OpenClaw to `kint-server`; `kint doctor`,
   `kint status`, `kint history`, `kint recovery-code`.
 
+[0.3.0]: https://github.com/s0nderlabs/kint/releases/tag/v0.3.0
 [0.2.0]: https://github.com/s0nderlabs/kint/releases/tag/v0.2.0
 [0.1.0]: https://github.com/s0nderlabs/kint/releases/tag/v0.1.0

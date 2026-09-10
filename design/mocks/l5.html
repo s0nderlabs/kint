@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>(function(){try{var t=localStorage.getItem('kint-theme');if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>kint, Sibyl Memory that outlives the laptop</title>
+<link href="https://fonts.googleapis.com/css2?family=Doto:ROND,wght@0,400..900&family=Schibsted+Grotesk:wght@400..700&display=swap" rel="stylesheet">
+<style>
+/* ------------------------------------------------------------------
+   L5 Pixel. Doto (H1 and the section numerals only) + Schibsted
+   Grotesk (every headline and all prose) + Geist Mono (coordinates).
+   The dither band is 900 real bytes of epoch 1 ciphertext and it is
+   the only playful element on the page. Hairlines are inset shadows,
+   controls are pills, containers are 12px.
+   ------------------------------------------------------------------ */
+
+@font-face{
+  font-family:"Geist Mono";
+  src:url("fonts/geist-mono-var.ttf") format("truetype-variations"),
+      url("fonts/geist-mono-var.ttf") format("truetype");
+  font-weight:100 900;
+  font-style:normal;
+  font-display:swap;
+}
+
+/* ---- tokens: complete LIGHT palette on bare :root ---- */
+:root{
+  color-scheme:light;
+
+  --page:#FAFAF7;
+  --card:#FFFFFF;
+  --sunk:#F1F0EA;
+  --ink:#111111;
+  --ink-2:#43423E;
+  --muted:#6E6B64;
+  --hair:rgba(17,17,17,.12);
+  --hair-2:rgba(17,17,17,.22);
+  --hi:rgba(255,255,255,0);
+  --accent:#0000FF;
+  --accent-ink:#FAFAF7;
+  --accent-soft:rgba(0,0,255,.20);
+  --ok:#2F6A58;
+  --bad:#9C4048;
+  --dither-op:.24;
+
+  --sans:"Schibsted Grotesk","Helvetica Neue",Arial,sans-serif;
+  --display:"Doto","Geist Mono",monospace;
+  --mono:"Geist Mono","Courier New",monospace;
+
+  --t1:clamp(2.8rem,6vw,5.2rem);
+  --t2:22px;
+  --t3:19px;
+  --t4:15px;
+  --t5:12px;
+
+  --wrap:1180px;
+  --pad:clamp(20px,4vw,40px);
+  --sec:clamp(72px,9vh,144px);
+  --rad:12px;
+  --ease-out-expo:cubic-bezier(0.16,1,0.3,1);
+}
+
+/* ---- the same tokens, dark, for the viewer who stamped nothing ---- */
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+
+    --page:#101010;
+    --card:#191918;
+    --sunk:#161615;
+    --ink:#F2F2EE;
+    --ink-2:#C7C5BE;
+    --muted:#8D8A83;
+    --hair:rgba(242,242,238,.13);
+    --hair-2:rgba(242,242,238,.24);
+    --hi:rgba(255,255,255,.05);
+    --accent:#5B8CFF;
+    --accent-ink:#101010;
+    --accent-soft:rgba(91,140,255,.28);
+    --ok:#6FC3AB;
+    --bad:#E0959C;
+    --dither-op:.30;
+  }
+}
+
+/* ---- and again for the explicit choice, so the toggle wins ---- */
+:root[data-theme="dark"]{
+  color-scheme:dark;
+
+  --page:#101010;
+  --card:#191918;
+  --sunk:#161615;
+  --ink:#F2F2EE;
+  --ink-2:#C7C5BE;
+  --muted:#8D8A83;
+  --hair:rgba(242,242,238,.13);
+  --hair-2:rgba(242,242,238,.24);
+  --hi:rgba(255,255,255,.05);
+  --accent:#5B8CFF;
+  --accent-ink:#101010;
+  --accent-soft:rgba(91,140,255,.28);
+  --ok:#6FC3AB;
+  --bad:#E0959C;
+  --dither-op:.30;
+}
+
+/* ---- reset ---- */
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;
+  background:var(--page);
+  color:var(--ink);
+  font-family:var(--sans);
+  font-weight:400;
+  font-size:var(--t4);
+  line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+img{max-width:100%}
+h1,h2,h3,p,ul,ol,figure,pre{margin:0}
+ul{padding:0;list-style:none}
+a{color:inherit}
+button{font:inherit;color:inherit}
+
+/* ---- shared ---- */
+.v-l5 .wrap{width:100%;max-width:var(--wrap);margin:0 auto;padding:0 var(--pad)}
+.v-l5 .mono{
+  font-family:var(--mono);
+  font-weight:400;
+  font-size:var(--t5);
+  line-height:1.7;
+  letter-spacing:.02em;
+  font-variant-numeric:tabular-nums;
+  font-variant-ligatures:none;
+}
+.v-l5 p{text-wrap:pretty}
+.v-l5 h1,.v-l5 h2,.v-l5 h3{text-wrap:balance}
+
+/* ---- the wordmark, dotless i plus a drawn accent square ---- */
+.v-l5 .wm{
+  font-family:var(--display);
+  font-weight:700;
+  font-variation-settings:'ROND' 0;
+  font-size:var(--t3);
+  line-height:1;
+  letter-spacing:.02em;
+  color:var(--ink);
+  display:inline-block;
+}
+.v-l5 .wm .i{position:relative}
+.v-l5 .wm .i::after{
+  content:"";
+  position:absolute;
+  left:50%;
+  transform:translateX(-50%);
+  top:0.207em;
+  width:.18em;
+  height:.18em;
+  background:var(--accent);
+}
+
+/* ---- nav: one control language, everything quiet, one hairline under ---- */
+.v-l5 .nav{
+  position:sticky;
+  top:0;
+  z-index:40;
+  background:var(--page);
+  box-shadow:inset 0 -1px 0 var(--hair);
+}
+.v-l5 .nav-in{
+  display:flex;
+  align-items:center;
+  gap:18px;
+  height:60px;
+  max-width:var(--wrap);
+  margin:0 auto;
+  padding:0 var(--pad);
+}
+.v-l5 .brand{
+  text-decoration:none;
+  display:inline-flex;
+  align-items:center;
+  padding:6px 2px;
+  border-radius:999px;
+  transition:transform .16s var(--ease-out-expo);
+}
+.v-l5 .nav-links{
+  margin-left:auto;
+  display:flex;
+  align-items:center;
+  gap:16px;
+  font-size:var(--t4);
+  font-weight:500;
+}
+.v-l5 .nav-links a{
+  display:inline-block;
+  text-decoration:none;
+  color:var(--ink-2);
+  padding:6px 2px;
+  border-radius:999px;
+  transition:color .16s var(--ease-out-expo),transform .16s var(--ease-out-expo);
+}
+.v-l5 .sep{color:var(--muted)}
+
+/* ---- theme toggle: the only icon on the page, drawn on the dither's grid ---- */
+.v-l5 .toggle{
+  width:34px;
+  height:34px;
+  flex:none;
+  display:inline-grid;
+  place-items:center;
+  padding:0;
+  background:transparent;
+  border:0;
+  border-radius:999px;
+  color:var(--ink-2);
+  cursor:pointer;
+  transition:background-color .16s var(--ease-out-expo),color .16s var(--ease-out-expo),
+    transform .16s var(--ease-out-expo);
+}
+.v-l5 .toggle svg{display:block}
+
+/* ---- buttons: pills, one height, one radius ---- */
+.v-l5 .btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  height:46px;
+  padding:0 24px;
+  border:0;
+  border-radius:999px;
+  font-size:var(--t4);
+  font-weight:500;
+  text-decoration:none;
+  white-space:nowrap;
+  transition:transform .16s var(--ease-out-expo),background-color .16s var(--ease-out-expo),
+    box-shadow .16s var(--ease-out-expo),color .16s var(--ease-out-expo);
+}
+.v-l5 .btn-primary{background:var(--accent);color:var(--accent-ink)}
+.v-l5 .btn-ghost{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 1px var(--hair-2)}
+
+/* ---- the install line ---- */
+.v-l5 .install{
+  display:inline-block;
+  margin-top:26px;
+  padding:10px 16px;
+  border-radius:999px;
+  background:var(--card);
+  box-shadow:inset 0 0 0 1px var(--hair);
+  color:var(--ink-2);
+  font-family:var(--mono);
+  font-weight:400;
+  font-size:var(--t5);
+  letter-spacing:.02em;
+  font-variant-ligatures:none;
+}
+
+/* ---- section scaffold: text voice for the headline, Doto for the numeral ---- */
+.v-l5 section{padding:var(--sec) 0}
+.v-l5 .sec-head{display:flex;align-items:baseline;gap:14px;margin-bottom:34px}
+.v-l5 .sec-head .idx{
+  font-family:var(--display);
+  font-weight:700;
+  font-variation-settings:'ROND' 0;
+  font-size:var(--t5);
+  line-height:1;
+  letter-spacing:.12em;
+  font-variant-numeric:tabular-nums;
+  color:var(--accent);
+  flex:none;
+}
+.v-l5 .sec-title{
+  font-family:var(--sans);
+  font-weight:500;
+  font-size:var(--t2);
+  line-height:1.25;
+  letter-spacing:-.012em;
+  color:var(--ink);
+}
+
+/* ---- hero ---- */
+.v-l5 .hero{
+  position:relative;
+  overflow:hidden;
+  padding:clamp(56px,9vh,120px) 0 clamp(64px,9vh,128px);
+}
+.v-l5 .hero-eyebrow{
+  font-family:var(--mono);
+  font-weight:400;
+  font-size:var(--t5);
+  letter-spacing:.06em;
+  color:var(--muted);
+  margin-bottom:clamp(28px,5vh,56px);
+}
+.v-l5 .h1-band{position:relative}
+.v-l5 .band{
+  position:absolute;
+  left:calc(50% - 50vw);
+  right:calc(50% - 50vw);
+  top:-58px;
+  bottom:-58px;
+  z-index:0;
+  pointer-events:none;
+  opacity:var(--dither-op);
+  -webkit-mask-image:
+    linear-gradient(90deg,transparent 0,#000 17%,#000 83%,transparent 100%),
+    linear-gradient(180deg,transparent 0,#000 24%,#000 74%,transparent 100%);
+  -webkit-mask-composite:source-in;
+  mask-image:
+    linear-gradient(90deg,transparent 0,#000 17%,#000 83%,transparent 100%),
+    linear-gradient(180deg,transparent 0,#000 24%,#000 74%,transparent 100%);
+  mask-composite:intersect;
+}
+.v-l5 .band canvas{display:block;width:100%;height:100%}
+.v-l5 h1{
+  position:relative;
+  z-index:1;
+  font-family:var(--display);
+  font-weight:700;
+  font-variation-settings:'ROND' 0;
+  font-size:var(--t1);
+  line-height:1.06;
+  letter-spacing:0;
+  color:var(--ink);
+  max-width:19ch;
+  overflow-wrap:break-word;
+}
+.v-l5 h1 .hl{color:var(--accent)}
+
+/* ---- the breadcrumb that tells the reader the field is real ---- */
+.v-l5 .field-note{
+  position:relative;
+  z-index:1;
+  display:flex;
+  align-items:flex-start;
+  gap:10px;
+  margin-top:26px;
+  color:var(--muted);
+  max-width:66ch;
+}
+.v-l5 .field-note .cell{
+  flex:none;
+  width:6px;
+  height:6px;
+  margin-top:7px;
+  background:currentColor;
+  opacity:.55;
+}
+.v-l5 .lede{
+  position:relative;
+  z-index:1;
+  margin-top:clamp(26px,4vh,40px);
+  max-width:52ch;
+  font-size:var(--t3);
+  line-height:1.55;
+  color:var(--ink-2);
+}
+.v-l5 .cta-row{
+  position:relative;
+  z-index:1;
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:12px;
+  margin-top:32px;
+}
+.v-l5 .install-row{position:relative;z-index:1}
+
+/* ---- proof strip: one system, every cell is label over value ----
+   Stacked by default; the twelve column grid arrives at 1060 where the
+   address cell has room to sit on one line. ---- */
+.v-l5 .proof{
+  background:var(--sunk);
+  box-shadow:inset 0 1px 0 var(--hair),inset 0 -1px 0 var(--hair);
+}
+.v-l5 .proof-in{
+  display:grid;
+  grid-template-columns:1fr;
+  max-width:var(--wrap);
+  margin:0 auto;
+  padding:0 var(--pad);
+}
+.v-l5 .fact{
+  min-width:0;
+  padding:13px 0;
+  box-shadow:inset 0 1px 0 var(--hair);
+  color:var(--ink-2);
+  text-decoration:none;
+  transition:color .16s var(--ease-out-expo),transform .16s var(--ease-out-expo);
+}
+.v-l5 .fact:first-child{box-shadow:none}
+.v-l5 .fact .k{
+  display:block;
+  font-family:var(--mono);
+  font-weight:400;
+  font-size:var(--t5);
+  line-height:1.5;
+  letter-spacing:.1em;
+  color:var(--muted);
+  margin-bottom:3px;
+}
+.v-l5 .fact .v{
+  display:block;
+  font-family:var(--mono);
+  font-weight:500;
+  font-size:var(--t5);
+  line-height:1.5;
+  letter-spacing:.01em;
+  font-variant-numeric:tabular-nums;
+  font-variant-ligatures:none;
+  color:var(--ink);
+  overflow-wrap:anywhere;
+}
+.v-l5 .fact.is-link .v{
+  text-decoration:underline;
+  text-decoration-color:transparent;
+  text-underline-offset:3px;
+  text-decoration-thickness:1px;
+  transition:text-decoration-color .16s var(--ease-out-expo);
+}
+
+/* ---- the three actors: three columns on one hairline ---- */
+.v-l5 .actors{display:grid;grid-template-columns:repeat(3,1fr);gap:0}
+.v-l5 .actor{
+  padding:26px 28px 0 0;
+  box-shadow:inset 0 1px 0 var(--hair);
+}
+.v-l5 .actor + .actor{padding-left:28px;box-shadow:inset 0 1px 0 var(--hair),inset 1px 0 0 var(--hair)}
+.v-l5 .actor:last-child{padding-right:0}
+.v-l5 .actor .n{
+  display:block;
+  font-family:var(--mono);
+  font-weight:500;
+  font-size:var(--t5);
+  letter-spacing:.14em;
+  font-variant-numeric:tabular-nums;
+  color:var(--muted);
+  margin-bottom:14px;
+}
+.v-l5 .actor h3{
+  font-size:var(--t3);
+  font-weight:600;
+  line-height:1.3;
+  letter-spacing:-.008em;
+  color:var(--ink);
+  margin-bottom:10px;
+}
+.v-l5 .actor p{color:var(--ink-2);line-height:1.62;max-width:38ch}
+
+/* ---- the beat: the one sheet that floats, by luminance, not by shadow ---- */
+.v-l5 .term{
+  border-radius:var(--rad);
+  background:var(--card);
+  box-shadow:inset 0 0 0 1px var(--hair),inset 0 1px 0 var(--hi);
+  padding:clamp(18px,3vw,28px);
+}
+.v-l5 .scroller{
+  overflow-x:auto;
+  overflow-y:hidden;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:thin;
+  scrollbar-color:var(--hair-2) transparent;
+  -webkit-mask-image:linear-gradient(90deg,#000 0,#000 calc(100% - 56px),rgba(0,0,0,.12) 100%);
+  mask-image:linear-gradient(90deg,#000 0,#000 calc(100% - 56px),rgba(0,0,0,.12) 100%);
+}
+.v-l5 .scroller::-webkit-scrollbar{height:8px}
+.v-l5 .scroller::-webkit-scrollbar-thumb{background:var(--hair-2);border-radius:999px}
+.v-l5 .scroller::-webkit-scrollbar-track{background:transparent}
+.v-l5 pre{
+  font-family:var(--mono);
+  font-weight:400;
+  font-size:var(--t4);
+  line-height:1.75;
+  letter-spacing:0;
+  font-variant-numeric:tabular-nums;
+  font-variant-ligatures:none;
+  color:var(--ink-2);
+  white-space:pre;
+  min-width:max-content;
+  padding-bottom:6px;
+  tab-size:2;
+}
+.v-l5 pre .ok{color:var(--ok);font-weight:500}
+.v-l5 pre .bad{color:var(--bad);font-weight:500}
+.v-l5 pre .cmd{color:var(--ink);font-weight:500}
+.v-l5 .caption{
+  margin-top:18px;
+  color:var(--muted);
+  max-width:66ch;
+}
+
+/* ---- the box: what Sibyl does, the section that carries the weight ---- */
+.v-l5 .sibyl-band{
+  background:var(--sunk);
+  box-shadow:inset 0 1px 0 var(--hair),inset 0 -1px 0 var(--hair);
+}
+.v-l5 .sibyl{
+  border-radius:var(--rad);
+  background:var(--card);
+  box-shadow:inset 0 0 0 1px var(--hair),inset 0 1px 0 var(--hi);
+  padding:clamp(28px,5vw,64px);
+}
+.v-l5 .sibyl .sec-head{margin-bottom:26px}
+.v-l5 .sibyl h3{
+  font-family:var(--sans);
+  font-weight:600;
+  font-size:var(--t2);
+  line-height:1.25;
+  letter-spacing:-.012em;
+  color:var(--ink);
+  max-width:28ch;
+  margin-bottom:22px;
+}
+.v-l5 .sibyl p{
+  font-size:var(--t3);
+  line-height:1.62;
+  color:var(--ink-2);
+  max-width:66ch;
+}
+.v-l5 .sibyl code{
+  font-family:var(--mono);
+  font-size:.86em;
+  color:var(--ink);
+  background:var(--sunk);
+  border-radius:4px;
+  padding:1px 5px;
+}
+.v-l5 .sibyl .close{
+  margin-top:26px;
+  padding-top:24px;
+  box-shadow:inset 0 1px 0 var(--hair);
+  font-size:var(--t3);
+  font-weight:500;
+  color:var(--ink);
+  max-width:66ch;
+}
+
+/* ---- honest limits ---- */
+.v-l5 .limits li{
+  display:grid;
+  grid-template-columns:46px 1fr;
+  gap:0 12px;
+  padding:22px 0;
+  box-shadow:inset 0 1px 0 var(--hair);
+  color:var(--ink-2);
+  line-height:1.62;
+}
+.v-l5 .limits li:last-child{box-shadow:inset 0 1px 0 var(--hair),inset 0 -1px 0 var(--hair)}
+.v-l5 .limits .n{
+  font-family:var(--mono);
+  font-weight:500;
+  font-size:var(--t5);
+  letter-spacing:.14em;
+  font-variant-numeric:tabular-nums;
+  color:var(--muted);
+  padding-top:3px;
+}
+.v-l5 .limits p{max-width:66ch}
+.v-l5 .limits code{font-family:var(--mono);font-size:.92em;color:var(--ink)}
+
+/* ---- footer: base layer, no card, no rules but the one above it ---- */
+.v-l5 .foot{
+  box-shadow:inset 0 1px 0 var(--hair);
+  padding:34px 0 44px;
+}
+.v-l5 .foot-in{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:16px 24px;
+  max-width:var(--wrap);
+  margin:0 auto;
+  padding:0 var(--pad);
+}
+.v-l5 .foot .mono{margin-left:auto;color:var(--muted)}
+
+/* ---- press feedback: every pressable answers ---- */
+.v-l5 .btn:active,
+.v-l5 .toggle:active,
+.v-l5 .brand:active,
+.v-l5 .nav-links a:active{transform:scale(.97)}
+.v-l5 .fact:active{transform:scale(.99)}
+
+/* ---- hover, only where a pointer can actually hover ---- */
+@media (hover:hover) and (pointer:fine){
+  .v-l5 .nav-links a:hover{color:var(--ink)}
+  .v-l5 .toggle:hover{background:var(--sunk);color:var(--ink)}
+  .v-l5 .btn-primary:hover{transform:translateY(-1px)}
+  .v-l5 .btn-ghost:hover{box-shadow:inset 0 0 0 1px var(--ink-2)}
+  .v-l5 .fact:hover{color:var(--ink)}
+  .v-l5 .fact.is-link:hover .v{text-decoration-color:var(--hair-2)}
+}
+
+/* ---- the strip in two columns while the address still needs a full row ---- */
+@media (min-width:760px) and (max-width:1099.98px){
+  .v-l5 .proof-in{grid-template-columns:repeat(2,1fr)}
+  .v-l5 .fact{padding:14px 18px;box-shadow:inset 1px 0 0 var(--hair),inset 0 1px 0 var(--hair)}
+  .v-l5 .fact:nth-child(2),
+  .v-l5 .fact:nth-child(4),
+  .v-l5 .fact:nth-child(6){grid-column:1;padding-left:0;box-shadow:inset 0 1px 0 var(--hair)}
+  .v-l5 .fact.w4{grid-column:1 / -1;padding-left:0;box-shadow:inset 0 1px 0 var(--hair)}
+  .v-l5 .fact:first-child{box-shadow:none}
+}
+
+/* ---- the twelve column proof grid, once the address fits on one line ---- */
+@media (min-width:1100px){
+  .v-l5 .proof-in{grid-template-columns:repeat(12,1fr)}
+  .v-l5 .fact{grid-column:span 2;padding:15px 18px;box-shadow:inset 1px 0 0 var(--hair)}
+  .v-l5 .fact.w4{grid-column:span 4}
+  .v-l5 .fact.r2{box-shadow:inset 1px 0 0 var(--hair),inset 0 1px 0 var(--hair)}
+  .v-l5 .fact.lead{padding-left:0;box-shadow:none}
+  .v-l5 .fact.r2.lead{box-shadow:inset 0 1px 0 var(--hair)}
+}
+
+/* ---- 900 and below ---- */
+@media (max-width:900px){
+  .v-l5 .actors{grid-template-columns:1fr}
+  .v-l5 .actor{padding:22px 0 0}
+  .v-l5 .actor + .actor{padding-left:0;box-shadow:inset 0 1px 0 var(--hair)}
+  .v-l5 .actor p{max-width:66ch}
+}
+
+/* ---- focus: one soft accent ring, the weight of a hairline ---- */
+.v-l5 :focus-visible{outline:1px solid var(--accent);outline-offset:3px}
+.v-l5 .btn:focus-visible,
+.v-l5 .toggle:focus-visible,
+.v-l5 .fact:focus-visible{box-shadow:0 0 0 4px var(--accent-soft)}
+.v-l5 .btn-ghost:focus-visible{box-shadow:inset 0 0 0 1px var(--ink-2),0 0 0 4px var(--accent-soft)}
+.v-l5 .scroller:focus-visible{outline-offset:6px}
+
+/* ---- 640 and below: the mobile layout is designed, not collapsed ---- */
+@media (max-width:640px){
+  :root{--t2:20px;--t3:17px}
+  .v-l5 .nav-in{gap:12px}
+  .v-l5 .nav-links{gap:14px}
+  .v-l5 .cta-row{flex-direction:column;align-items:stretch;gap:16px}
+  .v-l5 .btn-primary{width:100%}
+  .v-l5 .btn-ghost{
+    height:auto;
+    padding:0;
+    background:transparent;
+    box-shadow:none;
+    justify-content:flex-start;
+    color:var(--ink-2);
+    text-decoration:underline;
+    text-decoration-thickness:1px;
+    text-underline-offset:4px;
+  }
+  .v-l5 .btn-ghost:focus-visible{box-shadow:0 0 0 4px var(--accent-soft)}
+  .v-l5 .install{margin-top:22px}
+  .v-l5 .band{top:-34px;bottom:-34px}
+  .v-l5 .limits li{grid-template-columns:38px 1fr}
+  .v-l5 .foot .mono{margin-left:0;flex:1 1 100%}
+}
+
+/* ---- reduced motion: the field holds still, the page still answers ---- */
+@media (prefers-reduced-motion: reduce){
+  .v-l5 *{transition-duration:.001ms !important}
+}
+</style>
+</head>
+<body class="v-l5" id="top">
+
+<header class="nav">
+  <div class="nav-in">
+    <a class="brand" href="#top" aria-label="kint, home"><span class="wm">k<span class="i">&#305;</span>nt</span></a>
+    <nav class="nav-links" aria-label="Primary">
+      <a href="#">App</a>
+      <span class="sep" aria-hidden="true">&middot;</span>
+      <a href="#">GitHub</a>
+    </nav>
+    <button class="toggle" type="button" id="l5-toggle" aria-label="Toggle theme" aria-pressed="false">
+      <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true" focusable="false" fill="currentColor">
+        <path d="M0 0h6v6H0z"/>
+        <path d="M0 6h6v6H0z"/>
+        <path d="M6 6h6v6H6z"/>
+      </svg>
+    </button>
+  </div>
+</header>
+
+<main>
+
+  <!-- hero: the dither band sits behind the headline and nowhere else -->
+  <section class="hero">
+    <div class="wrap">
+      <p class="hero-eyebrow">Built on Sibyl Memory, under it. Live on Base mainnet.</p>
+
+      <div class="h1-band">
+        <div class="band">
+          <canvas id="l5-dither" role="img"
+            aria-label="An ordered dither of the epoch 1 ciphertext exactly as it sits on Base."></canvas>
+        </div>
+        <h1>Sibyl Memory that <span class="hl">outlives</span> the laptop.</h1>
+      </div>
+
+      <p class="field-note mono">
+        <span class="cell" aria-hidden="true"></span>
+        <span>the field above is epoch 1 as it sits on Base: 900 bytes of ciphertext, one cell per byte</span>
+      </p>
+
+      <p class="lede">Wipe the machine, connect the wallet, and the agent comes back knowing
+        what it knew, and proves it was not tampered with.</p>
+
+      <div class="cta-row">
+        <a class="btn btn-primary" href="#">Open the app</a>
+        <a class="btn btn-ghost" href="#">Read the README</a>
+      </div>
+
+      <p class="install-row"><code class="install">uv tool install kint</code></p>
+    </div>
+  </section>
+
+  <!-- proof strip: label over value, every cell opens the fact it states -->
+  <div class="proof">
+    <div class="proof-in">
+      <a class="fact w4 lead is-link"
+        href="https://basescan.org/address/0xa22E03f7a4145Bf4909a83595C90a38E14d79600">
+        <span class="k">EpochAnchor</span>
+        <span class="v">0xa22E03f7a4145Bf4909a83595C90a38E14d79600</span></a>
+
+      <a class="fact is-link"
+        href="https://basescan.org/address/0xa22E03f7a4145Bf4909a83595C90a38E14d79600">
+        <span class="k">head seq</span>
+        <span class="v">2</span></a>
+
+      <a class="fact is-link"
+        href="https://basescan.org/address/0xa22E03f7a4145Bf4909a83595C90a38E14d79600">
+        <span class="k">block</span>
+        <span class="v">51,081,880</span></a>
+
+      <a class="fact is-link"
+        href="https://basescan.org/address/0xa22E03f7a4145Bf4909a83595C90a38E14d79600">
+        <span class="k">digest</span>
+        <span class="v">7df5378a8c4fa866</span></a>
+
+      <a class="fact is-link"
+        href="https://basescan.org/address/0xa22E03f7a4145Bf4909a83595C90a38E14d79600">
+        <span class="k">rows</span>
+        <span class="v">15</span></a>
+
+      <a class="fact r2 lead is-link"
+        href="https://basescan.org/address/0xa22E03f7a4145Bf4909a83595C90a38E14d79600">
+        <span class="k">bucket</span>
+        <span class="v">4 KB</span></a>
+
+      <a class="fact r2 is-link"
+        href="https://basescan.org/address/0xa22E03f7a4145Bf4909a83595C90a38E14d79600">
+        <span class="k">network</span>
+        <span class="v">Base mainnet</span></a>
+
+      <a class="fact w4 r2 is-link"
+        href="https://basescan.org/tx/0xbe9bb8596c825a8891c3eafe4381e0c6522d647641735c635ca58fcf4bbe4455"
+        title="epoch 1 tx 0xbe9bb8596c825a8891c3eafe4381e0c6522d647641735c635ca58fcf4bbe4455">
+        <span class="k">epoch 1 tx</span>
+        <span class="v">0xbe9bb859&#8230;be4455</span></a>
+
+      <a class="fact w4 r2 is-link"
+        href="https://basescan.org/tx/0x369907fb1bccc3222365b2e07b4d6d831642831d481a5f7cb99357823e2a9729"
+        title="epoch 2 tx 0x369907fb1bccc3222365b2e07b4d6d831642831d481a5f7cb99357823e2a9729">
+        <span class="k">epoch 2 tx</span>
+        <span class="v">0x369907fb&#8230;2a9729</span></a>
+    </div>
+  </div>
+
+  <!-- the three actors -->
+  <section>
+    <div class="wrap">
+      <header class="sec-head">
+        <span class="idx">01</span>
+        <h2 class="sec-title">The three actors</h2>
+      </header>
+
+      <div class="actors">
+        <article class="actor">
+          <span class="n">01</span>
+          <h3>The wallet owns.</h3>
+          <p>One frozen message, signed once per machine, derives the key. Nothing decrypted
+            ever leaves the machine.</p>
+        </article>
+        <article class="actor">
+          <span class="n">02</span>
+          <h3>The passphrase or the signature unlocks.</h3>
+          <p>A Base Account owner types a passphrase. An EOA owner signs. Either opens the same
+            vault, and a recovery code covers the day both are gone.</p>
+        </article>
+        <article class="actor">
+          <span class="n">03</span>
+          <h3>kint does the rest.</h3>
+          <p>Every change is packed, padded, encrypted and written to Base as calldata under a
+            small contract. On any machine you connect, kint pulls, verifies every epoch against
+            the chain, and replays the rows through Sibyl&#8217;s own write methods.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- the beat: a real terminal transcript, verbatim, on the one lifted sheet -->
+  <section>
+    <div class="wrap">
+      <header class="sec-head">
+        <span class="idx">02</span>
+        <h2 class="sec-title">The beat</h2>
+      </header>
+
+      <figure class="term">
+        <div class="scroller" tabindex="0" role="group"
+          aria-label="Terminal transcript, scrolls sideways">
+<pre><span class="cmd">$ kint status</span>
+tenant kint-demo  space bd2a3b5b8f3fb4c8  store ~/.sibyl-memory/memory.db
+owner 0xC635e6Eb223aE14143E23cEEa9440bC773dc87Ec  data key cached
+last anchored on this machine: seq 2 block 51081880 rows 15
+chain head: seq 2 digest 7df5378a8c4fa866 block 51081880 (in step)
+
+<span class="cmd">$ kint verify "release rule"</span>
+sibyl verdict: ok  hits: 3
+  <span class="ok">verified</span>   entity rules/release-gate: stored text matches the leaf anchored on Base
+  <span class="ok">verified</span>   reference runbook-release: stored text matches the leaf anchored on Base
+DECISION: PROCEED: verified against rows_root 390336ff71dbcb85 anchored at epoch 2, block 51081880
+
+<span class="cmd">$ sqlite3 ~/.sibyl-memory/memory.db "update entities set body = replace(body, 'never', 'always') where name = 'release-gate'"</span>
+<span class="cmd">$ kint verify "release rule"</span>
+  <span class="bad">REFUSED</span>    entity rules/release-gate: stored text does not match the leaf anchored at epoch 2, block 51081880
+DECISION: REFUSE: refusal written back as entity kint_refusal/release-gate
+
+<span class="cmd">$ kint history entity release-gate --category rules</span>
+epoch 1 block &lt;= 51081867 leaf f406bb0919d23360: {"rule":"never ship on a Friday; every release needs a green deadlift test and a second reviewer", ...}
+epoch 2 block &lt;= 51081880 leaf 4ac605528bbb00e7: {"rule":"never ship on a Friday; every release needs a green deadlift test, a second reviewer, AND a passing kint verify", ...}</pre>
+        </div>
+        <figcaption class="caption">A row&#8217;s block height is an upper bound: it existed no
+          later than that block.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- what Sibyl does -->
+  <section class="sibyl-band">
+    <div class="wrap">
+      <div class="sibyl">
+        <header class="sec-head">
+          <span class="idx">03</span>
+          <h2 class="sec-title">What Sibyl does</h2>
+        </header>
+
+        <h3>Delete the Sibyl Memory layer and what breaks.</h3>
+
+        <p>The decision beat reaches the row through Sibyl&#8217;s <code>memory_search</code> (four
+          FTS5 indexes plus the shadow fallback) and keys on the typed verdict from
+          <code>verdicts.py</code>. Without Sibyl there is no ranked candidate and no verdict to
+          key on: the epoch is a decrypted blob with no query surface, so a fresh session neither
+          refuses nor proceeds. Base holds the ciphertext; Sibyl is what turns it back into an
+          answerable store.</p>
+
+        <p class="close">Their eight tools ship unmodified; kint adds six.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- honest limits -->
+  <section>
+    <div class="wrap">
+      <header class="sec-head">
+        <span class="idx">04</span>
+        <h2 class="sec-title">Honest limits</h2>
+      </header>
+
+      <ul class="limits">
+        <li>
+          <span class="n">01</span>
+          <p>One wallet owns one memory; many machines may write under it, one at a time. Two
+            machines writing at once is a fork: kint refuses and tells you.</p>
+        </li>
+        <li>
+          <span class="n">02</span>
+          <p>Base holds ciphertext, but the row count and the size bucket are public.</p>
+        </li>
+        <li>
+          <span class="n">03</span>
+          <p>A phished derive signature is a permanent key. The EIP-712 message says so in the one
+            field every wallet renders. kint never accepts that signature as a login and never
+            sends it anywhere.</p>
+        </li>
+        <li>
+          <span class="n">04</span>
+          <p>A cold start stops at the newest snapshot epoch, so restore cost is bounded by the
+            size of the memory, not its history.</p>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <div class="foot-in">
+    <span class="wm">k<span class="i">&#305;</span>nt</span>
+    <p class="mono">MIT &middot; Built for the Sibyl Labs Hackathon, September 2026 &middot;
+      s0nderlabs &middot; on Base</p>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var root = document.documentElement;
+  var btn  = document.getElementById('l5-toggle');
+  var cv   = document.getElementById('l5-dither');
+  var mq   = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+  var rm   = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
+
+  /* ---- theme ---- */
+  function current(){
+    var a = root.getAttribute('data-theme');
+    if(a === 'dark' || a === 'light') return a;
+    return (mq && mq.matches) ? 'dark' : 'light';
+  }
+  function markToggle(){
+    if(btn) btn.setAttribute('aria-pressed', current() === 'dark' ? 'true' : 'false');
+  }
+  markToggle();
+  if(btn){
+    btn.addEventListener('click', function(){
+      var next = current() === 'dark' ? 'light' : 'dark';
+      root.setAttribute('data-theme', next);
+      try{ localStorage.setItem('kint-theme', next); }catch(e){}
+      markToggle();
+      draw();
+    });
+  }
+  if(mq && mq.addEventListener){
+    mq.addEventListener('change', function(){ markToggle(); draw(); });
+  }
+
+  /* ---- the one behaviour: 900 real bytes of epoch 1 ciphertext, ordered dither
+     through a 4x4 Bayer matrix, one 6px cell per byte, the field shifted one cell
+     left every 400ms. It stops for a hidden tab and for reduced motion. ---- */
+  var HEX = "01007527910534a3aa26ff4b01e935dad19ac4a47aa50bb372012733cbe54c2ecda187a94a057b09ee1d5ff2d8e2c1a7f89cccca5a8a000010000101890e2b49056a139fa59ff990e7229a4f1576bdec536fb742ce089248eeccca1d9a1cf10ecaa1d60946c9e32930c7a79dfd22715229bb6fe04c331ca2e6a017d40305a294b68f8cc7705400ef121f9ea296a8e822f988f93d83548baa6b9edb5806a3a94978a5a96893c50525f33c668bd1a3fb5833cd3fc08234673c3d6e5360fcd31df7194df61428904036e46cdac6c5e4c2950b5a2e331cf3bb61c00010acd858ad520bc9acddcf8a1c9068ef78b3c6ff323e1443adab6a64c5d152a002ecbf95c3ad6c4ab71905a2d2fa25f4f8f87ac24369c79449590b6278d7590d28024ad025b574ebe804f62b929b3eff93e53784ca54be21066906a67accf374e612247d623e8658796e471de128fcddd1a5ed5c550222b83928ef04ed08041b588b3f84e349996b533e82bc4c17f85ac94c310e091c45a250d08d5670fabf5077565de7dd5d40c96c4513f58a91e12a583066fa4a61985bcfab5faa8b169757219133863b9027249f4c165c38606f9ce76c016e9260b4e9261d5f7c8da9e8bfeccca631b472e93f3a4a52d0ca14edc9759d86741cde6b277f5948e68158b565a185bb0d2c4ee38d0919186d90359aff41f9ffcaf8a45e5c41589393066fe303cda1eed2d40b30b7569d22cde9a0302815bc98877ffd65783dc30bcbf07ca38c6e5a210055230e1c5a3e9210833ae83ea343db51f89a30bb8c7cf978c5f7ea13ef5259928c1c817afdaefd5f9ae565ee2c54575e6dcd02e898e3d745c50ae230449d321de4ba0c5cc5347a2c4d88fbd03c81a959fe9c1996a6044553a0c77edbbcdb22fde52898318d6c8c91d482a88c6a8104cccb2b1e0ab9ed01c95084789e4125d1f4b3edd42b2b0ff47f887b24a51cdef7ecb4ac06cc269f0a5c5c187ab99a0ca32937b618f5100627695ae2ef69655b9acb2f68742a2fe8ef27eca2795d194a7b1d11fc4a6f1cf4fa1db50d1f466eda4a6dd8540e7c13600b666963bbac4fa407524bc98e7614c524ff58779cff275de88eb46fdd130f04e054aa962240c70ea4b2a5186fc37469e6fd4030838a9a079fa64d85d6a4f57814e88466754c3efb4772bd1e10c65b9410cda56b8f45899198b4e20fc722d755b9846f341c04a4607c424cc180e7b3a87f3e6e5dff8f460c23e9cfd8b7aa014386bf61987877fe8c8ac653a7d805ce94";
+  var bytes = new Uint8Array(HEX.length / 2);
+  for(var i = 0; i < bytes.length; i++) bytes[i] = parseInt(HEX.substr(i * 2, 2), 16);
+
+  var BAYER = [0,8,2,10, 12,4,14,6, 3,11,1,9, 15,7,13,5];
+  var CELL = 6, cols = 0, rows = 0, dpr = 1, offset = 0, ctx = null, timer = null;
+
+  function ink(){
+    var v = getComputedStyle(root).getPropertyValue('--ink');
+    return (v && v.trim()) || '#111111';
+  }
+  function measure(){
+    if(!cv || !cv.parentNode) return false;
+    var w = cv.parentNode.clientWidth, h = cv.parentNode.clientHeight;
+    if(w < 2 || h < 2) return false;
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    cv.width  = Math.round(w * dpr);
+    cv.height = Math.round(h * dpr);
+    cols = Math.ceil(w / CELL);
+    rows = Math.ceil(h / CELL);
+    return true;
+  }
+  function draw(){
+    if(!ctx || !cols) return;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, cv.width / dpr, cv.height / dpr);
+    ctx.fillStyle = ink();
+    var n = bytes.length, y, x, b, t;
+    for(y = 0; y < rows; y++){
+      for(x = 0; x < cols; x++){
+        b = bytes[(y * cols + x + offset) % n] / 255;
+        t = (BAYER[(y % 4) * 4 + (x % 4)] + 0.5) / 16;
+        if(b > t) ctx.fillRect(x * CELL, y * CELL, CELL - 1, CELL - 1);
+      }
+    }
+  }
+  function relayout(){ if(measure()) draw(); }
+
+  function stop(){ if(timer){ clearInterval(timer); timer = null; } }
+  function start(){
+    if(timer || (rm && rm.matches) || document.hidden) return;
+    timer = setInterval(function(){ offset += 1; draw(); }, 400);
+  }
+
+  if(cv && cv.getContext){
+    ctx = cv.getContext('2d');
+    relayout();
+    window.addEventListener('load', relayout);
+    if(document.fonts && document.fonts.ready && document.fonts.ready.then){
+      document.fonts.ready.then(relayout);
+    }
+    var rz = null;
+    window.addEventListener('resize', function(){
+      if(rz) clearTimeout(rz);
+      rz = setTimeout(relayout, 150);
+    });
+    document.addEventListener('visibilitychange', function(){
+      if(document.hidden) stop(); else start();
+    });
+    if(rm && rm.addEventListener){
+      rm.addEventListener('change', function(){ if(rm.matches) stop(); else start(); });
+    }
+    start();
+  }
+})();
+</script>
+
+</body>
+</html>

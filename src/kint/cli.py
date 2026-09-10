@@ -13,23 +13,24 @@ import argparse
 import getpass
 import json
 import os
-import shutil
-import subprocess
 import sys
 import time
 from pathlib import Path
 
-from . import crypto, keys, paths, store
-from .chain import Anchor, authorization_typed_data, sign_authorization
+from . import crypto, keys, paths, setup, store
+from .chain import Anchor, authorization_typed_data, redact, sign_authorization
 from .connect import (ConnectError, connect_eoa, connect_recovery, connect_smart_account, doctor,
                       read_secret, rekey, session_key_info)
 from .epoch import Mirror
+from .join import JoinError, JoinOptions, tenant_source
+from .join import run as join_run
 from .push import ChainMoved, KeyExpired, PushError, push, unanchored_changes
 from .pull import Fork, NotFresh, PullError, pull
 from .verify import at_block, history, verify
 
 
 def _err(msg: str, code: int = 2) -> None:
+    sys.stdout.flush()   # keep the error after the progress lines when stdout is a pipe
     print(f"kint: {msg}", file=sys.stderr)
     sys.exit(code)
 
@@ -143,6 +144,8 @@ def cmd_authorize(args):
         if not pk:
             _err("kint authorize burn-nonce reads the owner key from KINT_OWNER_KEY (env), never argv")
         acct = Account.from_key(pk)
+        if acct.address.lower() != owner.lower():
+            _err(f"KINT_OWNER_KEY is {acct.address}, not the owner {owner}")
         tx = a.set_session_key(acct, key, a.session_key_expiry(owner, key))
         a.wait(tx)
         print(f"nonce consumed: authNonce({owner}) is now {a.auth_nonce(owner)}")
@@ -208,7 +211,8 @@ def cmd_compact(args):
     owner = _owner(args, tenant)
     try:
         rep = push(owner=owner, tenant=tenant, db_path=_db(args), dry_run=args.dry_run,
-                   confirmations=args.confirmations, snapshot=True)
+                   confirmations=args.confirmations, snapshot=True,
+                   override_skipped=getattr(args, "over_skipped", False))
     except KeyExpired as e:
         _err(str(e), 3)
     except ChainMoved as e:
@@ -246,8 +250,8 @@ def cmd_rekey(args):
         if args.add_passphrase:
             add = getpass.getpass("extra passphrase wrap (empty to skip): ") or None
         r = rekey(owner, tenant, signature=sig, passphrase=pw, smart_account_passphrase=sa,
-                  extra_passphrase=add, drop_missing=args.drop_missing, db_path=_db(args),
-                  confirmations=args.confirmations)
+                  extra_passphrase=add, drop_missing=args.drop_missing, over_skipped=args.over_skipped,
+                  db_path=_db(args), confirmations=args.confirmations)
     except (ConnectError, crypto.KintCryptoError) as e:
         _err(str(e))
     except KeyExpired as e:
@@ -289,11 +293,30 @@ def cmd_pull(args):
     if rep.rpcs_agreed is not None:
         print(f"cold start: two RPCs agreed on the head: {rep.rpcs_agreed}")
     for s in rep.skipped:
-        print(f"  SKIPPED epoch {s.get('seq')} block {s.get('block')}: {s.get('reason')}")
+        print(f"  SKIPPED epoch {s.get('seq')} block {s.get('block')}: {s.get('reason')}"
+              + (f" (snapshot epoch {s['superseded_by']} carries the whole state, the pull carried on)"
+                 if s.get("superseded_by") else ""))
     for u in rep.unopenable:
         print(f"  CLOSED epoch {u.get('seq')} block {u.get('block')}: {u.get('reason')}")
     if rep.backfilled:
         print(f"  {rep.backfilled} older epoch(s) cached for history")
+
+
+def _chain_head(tenant: str) -> dict | None:
+    """The chain head for this space, best effort: a verify against a mirror the chain has moved
+    past is a verify against a stale picture. Never a verdict, never fatal."""
+    if os.environ.get("KINT_OFFLINE") == "1":
+        return None
+    e = keys.Enrolment.load(crypto.space_id(tenant).hex())
+    if not e:
+        return None
+    try:
+        h = Anchor().head(e.owner, crypto.space_id(tenant))
+        return {"seq": h.seq, "digest": h.digest.hex(), "block": h.block_number}
+    except Exception as ex:  # noqa: BLE001
+        print(f"kint: chain head unavailable ({redact(str(ex))}); verifying against the local mirror only",
+              file=sys.stderr)
+        return None
 
 
 def cmd_verify(args):
@@ -301,7 +324,7 @@ def cmd_verify(args):
     db = _db(args)
     client = store.open_client(db, tenant)
     res = verify(client, query=args.query, limit=args.limit, space_hex=crypto.space_id(tenant).hex(), db_path=db,
-                 tenant=tenant, write_refusal=not args.no_write)
+                 tenant=tenant, write_refusal=not args.no_write, chain_head=_chain_head(tenant))
     if args.json:
         print(json.dumps(res.to_dict(), indent=1))
         return
@@ -341,7 +364,7 @@ def cmd_status(args):
         c, d = unanchored_changes(tenant, db)
         print(f"unanchored: {c} changed, {d} deleted")
     except Exception as ex:  # noqa: BLE001
-        print(f"unanchored: ? ({ex})")
+        print(f"unanchored: ? ({redact(str(ex))})")
     if e:
         try:
             a = Anchor()
@@ -353,7 +376,7 @@ def cmd_status(args):
             if sk["exists"]:
                 print(f"session key {sk['address']} balance {sk.get('balance_eth', '?')} ETH authorized {sk.get('authorized')}")
         except Exception as ex:  # noqa: BLE001
-            print(f"chain: unavailable ({ex})")
+            print(f"chain: unavailable ({redact(str(ex))})")
     n = store.cap_numbers(db)
     print("cap accounting (the same 5 MiB free cap Sibyl enforces):")
     print(f"  sibyl stores      {_fmt_bytes(n['sibyl_bytes'])}")
@@ -388,67 +411,58 @@ def cmd_export(args):
         print(json.dumps(r.to_wire(), ensure_ascii=False))
 
 
-def _server_bin() -> str:
-    p = Path(sys.argv[0]).resolve().parent / "kint-server"
-    if p.exists():
-        return str(p)
-    w = shutil.which("kint-server")
-    if w:
-        return str(Path(w).resolve())
-    _err("kint-server not found next to kint or on PATH")
-
-
 def cmd_setup(args):
-    binpath = _server_bin()
+    try:
+        binpath = setup.server_bin()
+    except setup.SetupError as e:
+        _err(str(e))
     extra_env = dict(kv.split("=", 1) for kv in (args.env or []))
-    targets = ["claude", "codex", "hermes", "openclaw"] if args.target == "all" else [args.target]
-    for t in targets:
-        try:
-            if t == "claude":
-                if not shutil.which("claude"):
-                    print("claude: CLI not found, skipped")
-                    continue
-                subprocess.run(["claude", "mcp", "remove", "-s", "user", "kint"], capture_output=True)
-                cmd = ["claude", "mcp", "add", "--scope", "user", "kint", "-e", "PYTHONPATH=x"]
-                for k, v in extra_env.items():
-                    cmd += ["-e", f"{k}={v}"]
-                # PYTHONPATH=x: a non-empty dummy so the user's polluting PYTHONPATH is replaced, never inherited
-                r = subprocess.run(cmd + ["--", "/usr/bin/env", "-u", "PYTHONPATH", binpath], capture_output=True, text=True)
-                print(f"claude: {'registered kint (user scope)' if r.returncode == 0 else 'failed: ' + (r.stderr or r.stdout)[:200]}")
-                print("  claude: `claude mcp remove -s user sibyl-memory` if Sibyl's own server is also registered (one store, one server)")
-            elif t == "codex":
-                cfg = Path.home() / ".codex" / "config.toml"
-                cfg.parent.mkdir(parents=True, exist_ok=True)
-                text = cfg.read_text() if cfg.exists() else ""
-                if "[mcp_servers.kint]" in text:
-                    print("codex: already configured")
-                    continue
-                if cfg.exists():
-                    shutil.copy(cfg, cfg.with_suffix(f".toml.bak-{int(time.time())}"))
-                env_lines = "".join(f'{k} = "{v}"\n' for k, v in extra_env.items())
-                block = f'\n[mcp_servers.kint]\ncommand = "{binpath}"\nargs = []\n\n[mcp_servers.kint.env]\nPYTHONPATH = ""\n{env_lines}'
-                cfg.write_text(text.rstrip("\n") + "\n" + block)
-                print(f"codex: wrote [mcp_servers.kint] to {cfg}")
-            elif t == "hermes":
-                if not shutil.which("hermes"):
-                    print("hermes: CLI not found, skipped")
-                    continue
-                hcmd = ["hermes", "mcp", "add", "kint", "--command", "/usr/bin/env"]
-                hargs = ["PYTHONPATH="] + [f"{k}={v}" for k, v in extra_env.items()] + [binpath]
-                r = subprocess.run(hcmd + ["--args"] + hargs, capture_output=True, text=True, timeout=60)
-                print(f"hermes: {'registered kint' if r.returncode == 0 else 'failed: ' + (r.stderr or r.stdout)[:200]}")
-                print("  hermes: SDK-direct alternative: `kint pull` before launch, `kint push` after, store at $SIBYL_MEMORY_DB")
-            elif t == "openclaw":
-                if not shutil.which("openclaw"):
-                    print("openclaw: CLI not found, skipped")
-                    continue
-                spec = json.dumps({"command": "/usr/bin/env",
-                                   "args": ["PYTHONPATH="] + [f"{k}={v}" for k, v in extra_env.items()] + [binpath]})
-                r = subprocess.run(["openclaw", "mcp", "set", "kint", spec], capture_output=True, text=True, timeout=120)
-                out = "\n".join(l for l in (r.stdout + r.stderr).splitlines() if "string-bridge" not in l)
-                print(f"openclaw: {'saved MCP server kint (openclaw mcp set)' if r.returncode == 0 else 'failed: ' + out[:200]}")
-        except Exception as e:  # noqa: BLE001
-            print(f"{t}: failed: {e}")
+    for _t, _st, lines in setup.register(setup.expand_targets(args.target), extra_env, binpath):
+        for line in lines:
+            print(line)
+
+
+def cmd_join(args):
+    """One command for the read half: session key, connect, restore, harnesses. No chain writes."""
+    tenant, source = tenant_source(args.tenant_sub or args.tenant)
+    if not args.owner:
+        _err("--owner 0x... is required")
+    chosen = [f for f, v in (("--base-account", args.base_account), ("--signature", args.signature),
+                             ("--signature-file", args.signature_file), ("--recovery-code-stdin", args.recovery_code_stdin)) if v]
+    if len(chosen) != 1:
+        _err("choose exactly one of --base-account, --signature -, --signature-file PATH, --recovery-code-stdin")
+    eoa_pw = None
+    try:
+        if args.base_account:
+            method = "passphrase"
+            secret = read_secret("-", "passphrase") if args.passphrase_stdin else getpass.getpass("vault passphrase: ")
+        elif args.recovery_code_stdin:
+            method = "recovery"
+            secret = read_secret("-", "recovery code")
+        else:
+            method = "signature"
+            src = args.signature or args.signature_file
+            if args.passphrase_stdin and args.signature == "-":
+                _err("--passphrase-stdin and --signature - cannot share stdin: use --passphrase-prompt, or --signature-file")
+            secret = read_secret(src, "signature")
+            if args.passphrase_stdin:
+                eoa_pw = read_secret("-", "passphrase")
+            elif args.passphrase_prompt:
+                eoa_pw = getpass.getpass("vault passphrase (salts the wallet key): ")
+    except ConnectError as e:
+        _err(str(e))
+    if not secret:
+        _err("empty secret")
+    db = Path(args.db_sub).expanduser() if args.db_sub else _db(args)
+    targets = [] if args.no_setup else setup.expand_targets(args.setup)
+    opts = JoinOptions(owner=args.owner, tenant=tenant, tenant_source=source, db_path=db, method=method,
+                       secret=secret, eoa_passphrase=eoa_pw, new_vault=args.new_vault,
+                       discard_local=args.discard_local, full=args.full, setup_targets=targets,
+                       extra_env=dict(kv.split("=", 1) for kv in (args.env or [])))
+    try:
+        join_run(opts)
+    except JoinError as e:
+        _err(f"join stopped at {e.step}: {e}", e.code)
 
 
 def main(argv=None) -> None:
@@ -495,6 +509,9 @@ def main(argv=None) -> None:
     s = sub.add_parser("compact", help="anchor ONE snapshot epoch with the whole state (a cold start stops there)")
     s.add_argument("--owner")
     s.add_argument("--dry-run", action="store_true")
+    s.add_argument("--over-skipped", action="store_true",
+                   help="anchor the snapshot on the chain head even though the last pull stopped at an epoch this "
+                        "machine could not apply (the owner's recovery path past an epoch that will never open)")
     s.add_argument("--confirmations", type=int, default=2)
     s.set_defaults(fn=cmd_compact)
 
@@ -510,6 +527,9 @@ def main(argv=None) -> None:
     s.add_argument("--add-passphrase", action="store_true", help="also carry over the extra passphrase wrap")
     s.add_argument("--drop-missing", action="store_true",
                    help="rotate even though a key that opens the vault today was not supplied (it stops opening new epochs)")
+    s.add_argument("--over-skipped", action="store_true",
+                   help="rotate even though the last pull stopped at an epoch this machine could not apply: the new "
+                        "snapshot chains on the chain head")
     s.add_argument("--confirmations", type=int, default=2)
     s.set_defaults(fn=cmd_rekey)
 
@@ -552,6 +572,24 @@ def main(argv=None) -> None:
     s.add_argument("target", choices=["all", "claude", "codex", "hermes", "openclaw"])
     s.add_argument("--env", action="append", help="KEY=VALUE for the server process (repeatable), e.g. KINT_TENANT=kint-demo")
     s.set_defaults(fn=cmd_setup)
+
+    s = sub.add_parser("join", help="one command for the read half: session key, connect, restore, harnesses; writes nothing to the chain")
+    s.add_argument("--owner", help="the wallet that owns the memory")
+    s.add_argument("--tenant", dest="tenant_sub", help="Sibyl tenant id (same as the global --tenant)")
+    s.add_argument("--db", dest="db_sub", help="Sibyl store path (same as the global --db)")
+    s.add_argument("--base-account", action="store_true", help="owner is a Base Account: the vault passphrase is the key (prompted)")
+    s.add_argument("--passphrase-stdin", action="store_true", help="read the passphrase from stdin instead of prompting")
+    s.add_argument("--passphrase-prompt", action="store_true", help="EOA mode: the passphrase that salts the wallet key")
+    s.add_argument("--signature", help="EOA owners: '-' reads the 65-byte hex derive signature from stdin")
+    s.add_argument("--signature-file", help="EOA owners: file holding the signature, read then unlinked")
+    s.add_argument("--recovery-code-stdin", action="store_true", help="either owner: the recovery code on stdin")
+    s.add_argument("--new-vault", action="store_true", help="allowed to start a vault when the chain holds no epochs for this owner and tenant")
+    s.add_argument("--discard-local", action="store_true", help="move a local store aside and restore from the chain")
+    s.add_argument("--full", action="store_true", help="walk past snapshot epochs for the older versions")
+    s.add_argument("--setup", default="all", choices=["all", "claude", "codex", "hermes", "openclaw"], help="which harnesses to register (default all)")
+    s.add_argument("--no-setup", action="store_true", help="register no harness")
+    s.add_argument("--env", action="append", help="KEY=VALUE for the server process (repeatable); KINT_TENANT is always set")
+    s.set_defaults(fn=cmd_join)
 
     args = p.parse_args(argv)
     args.fn(args)

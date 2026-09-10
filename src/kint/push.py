@@ -14,7 +14,7 @@ from eth_utils import keccak
 
 from . import crypto, keys, paths
 from .canon import Row, leaf, leaves_of, merkle_root, row_id
-from .chain import Anchor, ChainError
+from .chain import Anchor, ChainError, redact
 from .epoch import Mirror, build_plaintext, cache_epoch, head_lock, write_watermark
 from .export import export_rows
 
@@ -82,24 +82,45 @@ def _chunk(rows: list[Row], deleted: list[list[str]]) -> list[tuple[list[Row], l
     return chunks
 
 
+def _head_bucket(anchor: Anchor, owner: str, space: bytes, head) -> int | None:
+    """The head epoch's published size bucket, or None when the head is not a kint epoch at all
+    (junk appended by a leaked key carries no bucket to ratchet from)."""
+    try:
+        evs = anchor.epoch_at_block(owner, space, head.block_number)
+        ev = next(e for e in evs if e.seq == head.seq)
+        _, _, _, blob = anchor.epoch_ciphertext(ev.tx_hash)
+    except Exception as e:  # noqa: BLE001
+        raise PushError(f"cannot read the head epoch to chain on it: {redact(str(e))}") from e
+    try:
+        return crypto.peek_header(blob).bucket
+    except Exception:  # noqa: BLE001
+        return None
+
+
 def push(*, owner: str, tenant: str, db_path, anchor: Anchor | None = None, dek: bytes | None = None,
          wraps: list[crypto.Wrap] | None = None, confirmations: int = 2, dry_run: bool = False,
-         snapshot: bool = False, log=print) -> PushReport:
+         snapshot: bool = False, override_skipped: bool = False, log=print) -> PushReport:
     """Anchor the diff since the last epoch, or (snapshot=True) the whole state as ONE epoch.
 
     A snapshot re-anchors every row under the current data key and carries FLAG_SNAPSHOT, so a
     cold start can stop there instead of replaying the whole history. It is written even when
     the diff is empty (that is the point of `kint compact` and of a key rotation).
+
+    `override_skipped` (snapshots only, and only from the owner's own terminal) anchors that
+    snapshot on top of the CHAIN head even though this machine could not apply the epoch(s) it
+    stopped at: the recovery path when an epoch that will never open sits between the mirror and
+    the head.
     """
     space_hex = crypto.space_id(tenant).hex()
     with head_lock(space_hex):
         return _push_locked(owner=owner, tenant=tenant, db_path=db_path, anchor=anchor, dek=dek, wraps=wraps,
-                            confirmations=confirmations, dry_run=dry_run, snapshot=snapshot, log=log)
+                            confirmations=confirmations, dry_run=dry_run, snapshot=snapshot,
+                            override_skipped=override_skipped, log=log)
 
 
 def _push_locked(*, owner: str, tenant: str, db_path, anchor: Anchor | None = None, dek: bytes | None = None,
                  wraps: list[crypto.Wrap] | None = None, confirmations: int = 2, dry_run: bool = False,
-                 snapshot: bool = False, log=print) -> PushReport:
+                 snapshot: bool = False, override_skipped: bool = False, log=print) -> PushReport:
     """push() with the head lock already held by the caller (rekey keeps it across its local
     writes so no other process can seal an epoch under the retired key in between)."""
     space = crypto.space_id(tenant)
@@ -120,9 +141,14 @@ def _push_locked(*, owner: str, tenant: str, db_path, anchor: Anchor | None = No
     if not wraps:
         raise PushError("no key wraps recorded for this space; connect again")
     mirror = Mirror.load(space_hex) or Mirror.empty(space_hex, tenant)
-    if mirror.skipped:
+    # the override is scoped to exactly the wedge it exists for: a snapshot, asked for by the owner,
+    # on a machine whose last pull reported an epoch it could not apply
+    override = bool(override_skipped and snapshot and mirror.skipped)
+    if mirror.skipped and not override:
         raise PushError(f"refusing to push: this machine could not apply epoch(s) {mirror.skipped} on its last pull, "
-                        "so its picture of the memory is incomplete. Pull again (or connect with a key that opens them).")
+                        "so its picture of the memory is incomplete. Pull again (or connect with a key that opens them). "
+                        "If that epoch can never be applied (a leaked session key wrote it), the owner can anchor a "
+                        "snapshot over it from this machine's own store: `kint compact --over-skipped`.")
     rows = export_rows(db_path, tenant)
     if snapshot:
         # the full state in one epoch, whatever the diff says. The deletions since the last
@@ -148,11 +174,19 @@ def _push_locked(*, owner: str, tenant: str, db_path, anchor: Anchor | None = No
             return rep
     anchor = anchor or Anchor()
     head = anchor.head(owner, space)
-    if head.seq != mirror.seq or head.digest.hex() != mirror.digest:
+    if (head.seq != mirror.seq or head.digest.hex() != mirror.digest) and override:
+        # the owner said so: chain this snapshot on the head digest, whatever sits between the
+        # mirror and the head. The snapshot carries the whole local state, so a machine that
+        # pulls afterwards stops there and never needs the epoch this one could not apply.
+        log(f"push: OVERRIDE, anchoring a snapshot on top of chain head seq {head.seq} "
+            f"({head.digest.hex()[:12]}) although this machine stopped at seq {mirror.seq}"
+            + (f" and could not apply epoch(s) {mirror.skipped}" if mirror.skipped else ""))
+    elif head.seq != mirror.seq or head.digest.hex() != mirror.digest:
         raise ChainMoved(
             f"the chain head for this space is seq {head.seq} ({head.digest.hex()[:12]}) but this machine "
             f"last saw seq {mirror.seq} ({mirror.digest[:12]}): another machine pushed. Run `kint pull` first "
-            "(refuses over unanchored local changes; `kint pull --rebase` replays them on top)."
+            "to take the chain's state (it refuses over unanchored local changes; `kint pull --discard-local` "
+            "drops this machine's unanchored changes and takes the chain's state anyway)."
         )
     if dry_run:
         rep.message = (f"dry run: one snapshot epoch carrying all {len(changed)} rows would be anchored"
@@ -167,9 +201,15 @@ def _push_locked(*, owner: str, tenant: str, db_path, anchor: Anchor | None = No
     # must be the root of exactly those rows and nothing carried over
     state = (Mirror(space=space_hex, tenant=tenant) if snapshot else
              Mirror(space=space_hex, tenant=tenant, rows=dict(mirror.rows), leaves=dict(mirror.leaves)))
-    prev = bytes.fromhex(mirror.digest)
-    seq = mirror.seq
+    prev = head.digest if override else bytes.fromhex(mirror.digest)
+    seq = head.seq if override else mirror.seq
     bucket = mirror.bucket
+    if override and head.seq > 0:
+        # the published bucket never shrinks: chaining on the head means ratcheting from ITS bucket,
+        # not from the older epoch this machine stopped at
+        head_bucket = _head_bucket(anchor, owner, space, head)
+        if head_bucket:
+            bucket = max(bucket, head_bucket)
     for chunk_rows, chunk_deleted in ([(changed, deleted)] if snapshot else _chunk(changed, deleted)):
         seq += 1
         state.apply(chunk_rows, chunk_deleted)

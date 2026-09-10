@@ -1,0 +1,825 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script>(function(){try{var t=localStorage.getItem('kint-theme');if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>kint navbar sheet</title>
+<style>
+/* ---------- faces: two voices only ---------- */
+@font-face{
+  font-family:"Satoshi";
+  src:url("fonts/Satoshi-Variable.woff2") format("woff2");
+  font-weight:300 900;font-style:normal;font-display:swap;
+}
+@font-face{
+  font-family:"Fragment Mono";
+  src:url("fonts/FragmentMono-Regular.ttf") format("truetype");
+  font-weight:400;font-style:normal;font-display:swap;
+}
+
+/* ---------- tokens: COMPLETE light palette on bare :root ---------- */
+:root{
+  --page:#F1EFE9;          /* the desk the frames lie on */
+  --card:#F7F6F2;          /* the frame: the real landing paper */
+  --ink:#1A1916;
+  --ink-2:#4F4C46;
+  --muted:#6B675F;
+  --hair:rgba(26,25,22,.12);
+  --hair-2:rgba(26,25,22,.22);
+  --dim:rgba(26,25,22,.06);
+  --stub:rgba(26,25,22,.10);
+  --stub-2:rgba(26,25,22,.06);
+  --island:rgba(26,25,22,.06);
+  --accent:#0000FF;
+  --accent-ink:#FFFFFF;
+  --accent-soft:rgba(0,0,255,.16);
+  --ok:#17705A;
+  --tip:#1A1916;
+  --tip-ink:#F7F6F2;
+  --grain:.03;
+  --sans:"Satoshi","Helvetica Neue",Arial,sans-serif;
+  --mono:"Fragment Mono",ui-monospace,Menlo,monospace;
+  /* four type sizes, nothing under 12px */
+  --s1:12px;
+  --s2:14px;
+  --s3:16px;
+  --s4:clamp(32px,5.2vw,48px);
+  --ease-out-expo:cubic-bezier(0.16,1,0.3,1);
+  --kd:.52;                /* 1180 frame scale, stepped by viewport below */
+  --km:1;                  /* 390 frame scale */
+  --gap:40px;
+  color-scheme:light;
+}
+/* ---------- tokens only: dark, unstamped viewer ---------- */
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --page:#100F0E;
+    --card:#161513;
+    --ink:#ECEAE4;
+    --ink-2:#C9C6BE;
+    --muted:#8F8B82;
+    --hair:rgba(236,234,228,.14);
+    --hair-2:rgba(236,234,228,.26);
+    --dim:rgba(236,234,228,.07);
+    --stub:rgba(236,234,228,.12);
+    --stub-2:rgba(236,234,228,.07);
+    --island:rgba(236,234,228,.07);
+    --accent:#4D7CFF;
+    --accent-ink:#101014;
+    --accent-soft:rgba(77,124,255,.22);
+    --ok:#48C9A4;
+    --tip:#ECEAE4;
+    --tip-ink:#161513;
+    --grain:.035;
+    color-scheme:dark;
+  }
+}
+/* ---------- tokens only: dark, explicit choice ---------- */
+:root[data-theme="dark"]{
+  --page:#100F0E;
+  --card:#161513;
+  --ink:#ECEAE4;
+  --ink-2:#C9C6BE;
+  --muted:#8F8B82;
+  --hair:rgba(236,234,228,.14);
+  --hair-2:rgba(236,234,228,.26);
+  --dim:rgba(236,234,228,.07);
+  --stub:rgba(236,234,228,.12);
+  --stub-2:rgba(236,234,228,.07);
+  --island:rgba(236,234,228,.07);
+  --accent:#4D7CFF;
+  --accent-ink:#101014;
+  --accent-soft:rgba(77,124,255,.22);
+  --ok:#48C9A4;
+  --tip:#ECEAE4;
+  --tip-ink:#161513;
+  --grain:.035;
+  color-scheme:dark;
+}
+
+/* ---------- base ---------- */
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--page);color:var(--ink);
+  font-family:var(--sans);font-weight:400;font-size:var(--s2);line-height:1.5;
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
+  font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
+.v-nav h1,.v-nav h2,.v-nav p{margin:0}
+.v-nav a{color:inherit;text-decoration:none}
+.v-nav button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+
+/* the house grain */
+.v-nav::before{
+  content:"";position:fixed;inset:0;z-index:9999;pointer-events:none;opacity:var(--grain);
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size:256px 256px;
+}
+
+/* uncommon care: one focus ring, soft, at the hairline weight */
+.v-nav :focus-visible{
+  outline:1px solid var(--accent);outline-offset:3px;border-radius:3px;
+  box-shadow:0 0 0 4px var(--accent-soft);
+}
+
+/* ---------- the wordmark trick (measured top, do not retune) ---------- */
+.v-nav .wm{font-family:var(--sans);font-weight:700;line-height:1;letter-spacing:-.02em;
+  color:var(--ink);display:inline-block}
+.v-nav .wm .i{position:relative}
+.v-nav .wm .i::after{content:"";position:absolute;left:50%;transform:translateX(-50%);
+  top:0.253em;width:.18em;height:.18em;background:var(--accent)}
+.v-nav .wm-nav{font-size:var(--s3)}
+.v-nav .wm-rail{font-size:var(--s3)}
+.v-nav .wm-big{font-size:48px;letter-spacing:-.035em;display:block}
+.v-nav .wm.accent{color:var(--accent)}
+
+/* ---------- the sheet shell ---------- */
+.v-nav .sp{flex:1 1 auto;min-width:0}
+
+/* ---------- sheet header: the one dominant element ---------- */
+.v-nav .sheethead{padding:56px 0 44px}
+.v-nav .shrow{display:flex;align-items:center;gap:16px;padding-bottom:38px}
+.v-nav .eyeb{font-family:var(--mono);font-size:var(--s1);letter-spacing:.12em;
+  text-transform:uppercase;color:var(--muted)}
+.v-nav .h1{font-family:var(--sans);font-weight:700;font-size:var(--s4);line-height:1.04;
+  letter-spacing:-.035em;text-wrap:balance;max-width:16ch}
+.v-nav .h1 em{font-style:normal;color:var(--accent)}
+.v-nav .lede{margin-top:20px;font-size:var(--s3);line-height:1.55;color:var(--ink-2);
+  max-width:66ch;text-wrap:pretty}
+.v-nav .meta{margin-top:14px;font-family:var(--mono);font-size:var(--s1);color:var(--muted);
+  max-width:74ch;line-height:1.6}
+
+/* ---------- the concept row ---------- */
+.v-nav .row{
+  display:grid;
+  grid-template-columns:calc(1180px * var(--kd)) calc(390px * var(--km));
+  grid-template-areas:"head head" "dframe mframe" "copy mframe";
+  grid-template-rows:auto auto 1fr;
+  column-gap:var(--gap);
+  padding:34px 0 46px;
+}
+.v-nav .rhead{grid-area:head;display:flex;align-items:baseline;gap:14px;
+  padding:16px 0 26px;box-shadow:inset 0 1px 0 var(--hair)}
+.v-nav .ix{font-family:var(--mono);font-size:var(--s1);color:var(--muted);
+  letter-spacing:.06em;flex:0 0 auto}
+.v-nav .rname{font-family:var(--sans);font-weight:500;font-size:var(--s3);
+  letter-spacing:-.015em;color:var(--ink)}
+.v-nav .col-d{grid-area:dframe}
+.v-nav .col-m{grid-area:mframe}
+.v-nav .rcopy{grid-area:copy;align-self:start;padding-top:26px;max-width:62ch}
+.v-nav .why{font-size:var(--s2);line-height:1.55;color:var(--ink-2);text-wrap:pretty}
+.v-nav .note{margin-top:10px;font-family:var(--mono);font-size:var(--s1);line-height:1.6;
+  color:var(--muted);text-wrap:pretty}
+
+/* ---------- the frames ---------- */
+.v-nav .fscroll{max-width:100%;overflow-x:auto;overflow-y:hidden;scrollbar-width:none}
+.v-nav .fscroll::-webkit-scrollbar{display:none}
+.v-nav .frame{position:relative;overflow:hidden;border-radius:12px;background:var(--card)}
+.v-nav .frame::after{content:"";position:absolute;inset:0;border-radius:inherit;
+  box-shadow:inset 0 0 0 1px var(--hair);pointer-events:none;z-index:8}
+.v-nav .frame-d{width:calc(1180px * var(--kd));height:calc(var(--dh) * var(--kd))}
+.v-nav .frame-d .stage{position:absolute;left:0;top:0;width:1180px;height:var(--dh);
+  transform:scale(var(--kd));transform-origin:0 0}
+.v-nav .frame-m{width:calc(390px * var(--km));height:calc(640px * var(--km))}
+.v-nav .frame-m .stage{position:absolute;left:0;top:0;width:390px;height:640px;
+  transform:scale(var(--km));transform-origin:0 0}
+.v-nav .frame-s{width:calc(1180px * var(--kd));height:calc(var(--sh) * var(--kd));margin-top:18px}
+.v-nav .frame-s .stage{position:absolute;left:0;top:0;width:1180px;height:var(--sh);
+  transform:scale(var(--kd));transform-origin:0 0}
+.v-nav .cap{margin-top:10px;font-family:var(--mono);font-size:var(--s1);color:var(--muted);
+  letter-spacing:.02em}
+
+/* ---------- the greyed hero stub inside every frame ---------- */
+.v-nav .stage{--pad:40px;--navh:64px;background:var(--card)}
+.v-nav .stage-m{--pad:20px}
+.v-nav .stub{position:absolute;left:0;right:0;top:var(--navh);bottom:0;
+  padding:34px var(--pad) 0;display:flex;flex-direction:column;align-items:flex-start;
+  gap:16px;pointer-events:none}
+.v-nav .sb{display:block;height:18px;border-radius:999px;background:var(--stub)}
+.v-nav .sb.a{width:58%}
+.v-nav .sb.b{width:41%}
+.v-nav .sb.c{width:66%;height:11px;background:var(--stub-2)}
+.v-nav .sb.d{width:52%;height:11px;background:var(--stub-2)}
+.v-nav .sb.pill{width:148px;height:38px;background:var(--stub-2);margin-top:10px}
+
+/* ---------- nav atoms: one control language per cluster ---------- */
+.v-nav .nv{position:absolute;left:0;right:0;top:0;height:var(--navh);
+  display:flex;align-items:center;gap:24px;padding:0 var(--pad);
+  background:var(--card);box-shadow:inset 0 -1px 0 var(--hair);z-index:3}
+.v-nav .n-link{display:inline-block;font-family:var(--sans);font-weight:500;
+  font-size:var(--s2);letter-spacing:-.005em;color:var(--ink-2);white-space:nowrap;
+  transition:color .16s var(--ease-out-expo),transform .16s var(--ease-out-expo)}
+.v-nav .n-link.dash{border-bottom:1px dashed var(--hair-2);padding-bottom:1px}
+.v-nav .n-cta{display:inline-flex;align-items:center;justify-content:center;
+  height:40px;padding:0 20px;border-radius:999px;background:var(--accent);
+  color:var(--accent-ink);font-family:var(--sans);font-weight:500;font-size:var(--s2);
+  letter-spacing:-.005em;white-space:nowrap;
+  transition:opacity .16s var(--ease-out-expo),transform .16s var(--ease-out-expo)}
+.v-nav .n-tgl{display:inline-flex;align-items:center;justify-content:center;
+  width:30px;height:30px;border-radius:999px;color:var(--ink-2);flex:0 0 auto;
+  box-shadow:inset 0 0 0 1px var(--hair);
+  transition:color .16s var(--ease-out-expo),box-shadow .16s var(--ease-out-expo),
+    transform .16s var(--ease-out-expo)}
+.v-nav .n-tgl svg{display:block}
+.v-nav .n-tgl.big{width:36px;height:36px}
+.v-nav .n-tgl.big svg{width:16px;height:16px}
+
+/* the live chain fact */
+.v-nav .fact{display:inline-flex;align-items:center;gap:9px;font-family:var(--mono);
+  font-size:var(--s1);color:var(--ink-2);white-space:nowrap;letter-spacing:.01em}
+.v-nav .fact a{box-shadow:inset 0 -1px 0 var(--hair-2);
+  transition:box-shadow .16s var(--ease-out-expo),color .16s var(--ease-out-expo)}
+.v-nav .fact .ok{font-weight:400;color:var(--ok)}
+.v-nav .sq{display:inline-block;width:6px;height:6px;background:var(--accent);flex:0 0 auto;
+  animation:sqPulse 900ms var(--ease-out-expo) 1 both}
+
+/* ---------- craft floor: hover gated, press feedback everywhere ---------- */
+@media (hover:hover) and (pointer:fine){
+  .v-nav .n-link:hover{color:var(--ink)}
+  .v-nav .n-cta:hover{opacity:.88}
+  .v-nav .n-tgl:hover{color:var(--ink);box-shadow:inset 0 0 0 1px var(--hair-2)}
+  .v-nav .fact a:hover{color:var(--ink);box-shadow:inset 0 -1px 0 var(--ink)}
+  .v-nav .g:hover{color:var(--ink);background:var(--dim)}
+  .v-nav .foot a:hover{color:var(--ink);box-shadow:inset 0 -1px 0 var(--ink)}
+}
+.v-nav .n-link:active,.v-nav .n-cta:active,.v-nav .n-tgl:active,
+.v-nav .g:active,.v-nav .fact a:active,.v-nav .foot a:active{transform:scale(.97)}
+
+@keyframes sqPulse{
+  0%{transform:scale(.35);opacity:0}
+  58%{transform:scale(1.35);opacity:1}
+  100%{transform:scale(1);opacity:1}
+}
+@keyframes sqFade{from{opacity:0}to{opacity:1}}
+
+/* ---------- 01 hairline bar ---------- */
+.v-nav .r1{--dh:96px}
+.v-nav .r1 .stage-d{--navh:64px}
+.v-nav .r1 .stage-m{--navh:56px}
+
+/* ---------- 02 centred trio ---------- */
+.v-nav .r2{--dh:96px}
+.v-nav .r2 .stage-d{--navh:72px}
+.v-nav .r2 .stage-m{--navh:60px}
+.v-nav .mid{position:absolute;left:50%;top:0;height:100%;transform:translateX(-50%);
+  display:flex;align-items:center;gap:28px}
+.v-nav .stub-links{display:flex;align-items:center;gap:18px;margin-top:6px}
+.v-nav .stub-links .n-link{color:var(--muted)}
+
+/* ---------- 03 floating island ---------- */
+.v-nav .r3{--dh:96px;--sh:60px}
+.v-nav .r3 .stage{--navh:0px}
+.v-nav .r3 .stub{padding-top:14px}
+.v-nav .island{position:absolute;top:16px;left:50%;transform:translateX(-50%);
+  height:56px;display:flex;align-items:center;gap:22px;padding:0 8px 0 22px;
+  border-radius:999px;background:var(--island);z-index:4;
+  -webkit-backdrop-filter:blur(16px) saturate(1.4);backdrop-filter:blur(16px) saturate(1.4);
+  box-shadow:inset 0 0 0 1px var(--hair)}
+.v-nav .island.sm{top:8px;height:44px;gap:18px;padding:0 6px 0 18px}
+.v-nav .island .n-cta{height:34px;padding:0 16px}
+.v-nav .r3 .stage-m .island{gap:14px;padding:0 6px 0 18px}
+
+/* ---------- 04 proof bar ---------- */
+.v-nav .r4{--dh:96px}
+.v-nav .r4 .stage-d{--navh:64px}
+.v-nav .r4 .stage-m{--navh:80px}
+.v-nav .r4 .fact{position:absolute;left:50%;top:0;height:100%;transform:translateX(-50%)}
+.v-nav .factstrip{position:absolute;left:0;right:0;top:48px;height:32px;z-index:3;
+  display:flex;align-items:center;padding:0 var(--pad);background:var(--card);
+  box-shadow:inset 0 1px 0 var(--hair),inset 0 -1px 0 var(--hair)}
+.v-nav .r4 .stage-m .nv{height:48px}
+
+/* ---------- 05 left rail (app chrome) ---------- */
+.v-nav .r5{--dh:280px}
+.v-nav .r5 .stage-d{--navh:0px}
+.v-nav .r5 .stage-m{--navh:48px}
+.v-nav .rail{position:absolute;left:0;top:0;bottom:0;width:56px;z-index:4;
+  display:flex;flex-direction:column;align-items:center;padding:15px 0 14px;
+  background:var(--card);box-shadow:inset -1px 0 0 var(--hair)}
+.v-nav .rnav{margin-top:26px;display:flex;flex-direction:column;gap:6px}
+.v-nav .rfoot{margin-top:auto;display:flex;flex-direction:column;align-items:center;gap:10px}
+.v-nav .rfoot .n-tgl{width:36px;height:36px}
+.v-nav .rfoot .n-tgl svg{width:16px;height:16px}
+.v-nav .g{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;
+  border-radius:999px;color:var(--muted);
+  transition:color .16s var(--ease-out-expo),background .16s var(--ease-out-expo),
+    transform .16s var(--ease-out-expo)}
+.v-nav .g.on{color:var(--ink);background:var(--dim)}
+.v-nav .g svg{display:block}
+.v-nav .avatar{position:relative;display:inline-flex;width:24px;height:24px;
+  color:var(--ink-2)}
+.v-nav .avatar svg{display:block}
+.v-nav .avatar::after{content:attr(data-addr);position:absolute;left:36px;top:50%;
+  transform:translateY(-50%) translateX(-5px);padding:6px 10px;border-radius:999px;
+  background:var(--tip);color:var(--tip-ink);font-family:var(--mono);font-size:var(--s1);
+  white-space:nowrap;opacity:0;pointer-events:none;
+  transition:opacity .18s var(--ease-out-expo),transform .18s var(--ease-out-expo)}
+@media (hover:hover) and (pointer:fine){
+  .v-nav .avatar:hover::after{opacity:1;transform:translateY(-50%) translateX(0)}
+}
+.v-nav .rmain{position:absolute;left:56px;right:0;top:0;bottom:0;min-height:0;overflow:auto;
+  scrollbar-width:none}
+.v-nav .rmain::-webkit-scrollbar{display:none}
+.v-nav .rmain .stub{position:static;padding:30px var(--pad) 40px;height:520px}
+.v-nav .mhead{position:absolute;left:0;right:0;top:0;height:48px;z-index:4;
+  display:flex;align-items:center;gap:14px;padding:0 var(--pad);background:var(--card);
+  box-shadow:inset 0 -1px 0 var(--hair)}
+.v-nav .mhead .n-cta{height:32px;padding:0 15px}
+.v-nav .tabbar{position:absolute;left:0;right:0;bottom:0;height:60px;z-index:4;
+  display:flex;align-items:center;background:var(--card);
+  box-shadow:inset 0 1px 0 var(--hair)}
+.v-nav .tab{flex:1 1 0;display:flex;flex-direction:column;align-items:center;gap:4px;
+  color:var(--muted);font-family:var(--mono);font-size:var(--s1);letter-spacing:.02em;
+  transition:color .16s var(--ease-out-expo),transform .16s var(--ease-out-expo)}
+.v-nav .tab.on{color:var(--ink)}
+.v-nav .tab:active{transform:scale(.97)}
+.v-nav .r5 .stage-m .stub{bottom:60px}
+
+/* ---------- 06 sticky shrink ---------- */
+.v-nav .r6{--dh:200px;--sh:48px}
+.v-nav .r6 .stage-d{--navh:152px}
+.v-nav .r6 .stage-m{--navh:112px}
+.v-nav .mast{position:absolute;left:0;right:0;top:0;height:var(--navh);z-index:4;
+  display:flex;flex-direction:column;padding:0 var(--pad);background:var(--card);
+  box-shadow:inset 0 -1px 0 var(--hair)}
+.v-nav .mtop{height:52px;display:flex;align-items:center;gap:22px;flex:0 0 auto}
+.v-nav .mtop .eyeb{text-transform:none;letter-spacing:.01em}
+.v-nav .mbig{flex:1 1 auto;display:flex;align-items:flex-end;padding-bottom:20px}
+.v-nav .mast-sm{height:48px;flex-direction:row;align-items:center;gap:24px}
+.v-nav .mast-sm .wm{font-size:var(--s3);letter-spacing:-.02em}
+.v-nav .mscroll{overflow-y:auto;overflow-x:hidden;scrollbar-width:none}
+.v-nav .mscroll::-webkit-scrollbar{display:none}
+.v-nav .mast-m{position:sticky;top:0;height:112px}
+.v-nav .mast-m .mtop{height:44px}
+.v-nav .mast-m .mbig{padding-bottom:14px}
+.v-nav .mpage{padding:30px var(--pad) 60px;display:flex;flex-direction:column;
+  align-items:flex-start;gap:16px;height:1180px}
+
+/* ---------- 07 inline sentence ---------- */
+.v-nav .r7{--dh:176px}
+.v-nav .r7 .stage-d{--navh:132px}
+.v-nav .r7 .stage-m{--navh:172px}
+.v-nav .inline-nav{position:absolute;left:0;right:0;top:0;z-index:3;
+  padding:28px var(--pad) 0}
+.v-nav .sentence{font-family:var(--sans);font-weight:500;font-size:var(--s3);
+  line-height:1.45;letter-spacing:-.015em;color:var(--ink);max-width:52ch;text-wrap:pretty}
+.v-nav .sentence .wm{vertical-align:baseline}
+.v-nav .line2{margin-top:16px;display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.v-nav .r7 .stage-m .line2{gap:16px}
+
+/* ---------- 08 toggle only ---------- */
+.v-nav .r8{--dh:96px}
+.v-nav .r8 .stage-d{--navh:64px}
+.v-nav .r8 .stage-m{--navh:56px}
+.v-nav .pfoot{position:absolute;left:0;right:0;bottom:0;height:56px;z-index:3;
+  display:flex;align-items:center;gap:20px;padding:0 var(--pad);background:var(--card);
+  box-shadow:inset 0 1px 0 var(--hair)}
+.v-nav .pfoot .fm{font-family:var(--mono);font-size:var(--s1);color:var(--muted)}
+.v-nav .r8 .stage-m .stub{bottom:56px}
+
+/* ---------- sheet footer: quiet, base layer, no card ---------- */
+.v-nav .foot{margin-top:24px;padding:34px 0 0;box-shadow:inset 0 1px 0 var(--hair);
+  display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 16px;
+  font-family:var(--mono);font-size:var(--s1);line-height:1.8;color:var(--muted)}
+.v-nav .foot a{display:inline-block;color:var(--ink-2);
+  box-shadow:inset 0 -1px 0 var(--hair-2);
+  transition:color .16s var(--ease-out-expo),box-shadow .16s var(--ease-out-expo),
+    transform .16s var(--ease-out-expo)}
+.v-nav .foot .dot{color:var(--hair-2)}
+
+/* ---------- the 1180 frame scale, stepped so both judge widths land clean ---------- */
+.v-nav{--sx:24px;--tx:0px;--kd:.46}
+.v-nav .sheet{max-width:1706px;margin-inline:auto;
+  padding-left:var(--sx);padding-right:var(--sx);padding-bottom:96px}
+.v-nav .sheethead,.v-nav .rhead,.v-nav .rcopy,.v-nav .cap,.v-nav .foot{
+  padding-left:var(--tx);padding-right:var(--tx)}
+@media (min-width:1200px){.v-nav{--sx:48px;--kd:.55}}
+@media (min-width:1280px){.v-nav{--kd:.63}}
+@media (min-width:1440px){.v-nav{--kd:.77}}
+@media (min-width:1610px){.v-nav{--kd:.90}}
+@media (min-width:1810px){.v-nav{--kd:1}}
+
+/* ---------- mobile is designed, not collapsed: 390 frame first ---------- */
+@media (max-width:1039px){
+  .v-nav{--kd:.66}
+  .v-nav .row{display:flex;flex-direction:column;padding:26px 0 42px}
+  .v-nav .rhead{order:1;padding-top:16px;padding-bottom:22px}
+  .v-nav .col-m{order:2}
+  .v-nav .rcopy{order:3;padding-top:24px}
+  .v-nav .col-d{order:4;padding-top:26px}
+  .v-nav .sheethead{padding-top:44px}
+}
+@media (max-width:859px){.v-nav{--kd:.55}}
+@media (max-width:699px){
+  .v-nav{--sx:0px;--tx:18px;--kd:.40}
+  .v-nav .sheethead{padding-top:38px;padding-bottom:34px}
+  .v-nav .h1{max-width:14ch}
+}
+@media (max-width:479px){.v-nav{--kd:.32}}
+
+/* ---------- reduced motion: gentler, not zero ---------- */
+@media (prefers-reduced-motion:reduce){
+  .v-nav .sq{animation:sqFade 420ms linear 1 both}
+  .v-nav *,.v-nav *::after{transition-duration:80ms !important}
+}
+</style>
+</head>
+<body class="v-nav">
+
+<div class="sheet">
+
+<header class="sheethead">
+  <div class="shrow">
+    <span class="wm wm-nav">k<span class="i">ı</span>nt</span>
+    <span class="eyeb">navbar sheet · 8 concepts</span>
+    <span class="sp"></span>
+    <button class="n-tgl big" type="button" data-tt aria-label="Toggle theme"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="6.3" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 1.7a6.3 6.3 0 0 0 0 12.6z" fill="currentColor"/></svg></button>
+  </div>
+  <h1 class="h1">The nav, <em>eight</em> ways.</h1>
+  <p class="lede">One wordmark, two links, one action, one live chain fact. Each concept is drawn
+    twice: the desktop grammar at 1180 and its own mobile grammar at 390, over the same greyed
+    page stub, in both themes.</p>
+  <p class="meta">the 1180 frames are 1:1 above 1810px and scaled to fit below it · the 390 frames
+    are always 1:1 · every toggle on this sheet is live</p>
+</header>
+
+<!-- ============ 01 hairline bar ============ -->
+<section class="row r1">
+  <header class="rhead"><span class="ix">01</span><h2 class="rname">Hairline bar</h2></header>
+  <div class="col-d">
+    <div class="fscroll"><div class="frame frame-d"><div class="stage stage-d">
+      <div class="stub" aria-hidden="true"><i class="sb a"></i><i class="sb b"></i><i class="sb c"></i><i class="sb pill"></i></div>
+      <div class="nv">
+        <span class="wm wm-nav">k<span class="i">ı</span>nt</span>
+        <span class="sp"></span>
+        <span class="n-link">App</span>
+        <span class="n-link">GitHub</span>
+        <button class="n-tgl" type="button" data-tt aria-label="Toggle theme"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="6.3" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 1.7a6.3 6.3 0 0 0 0 12.6z" fill="currentColor"/></svg></button>
+      </div>
+    </div></div></div>
+    <p class="cap">1180 × 96 · desktop</p>
+  </div>
+  <div class="rcopy">
+    <p class="why">The default done properly. Two words fit at 390, so nothing has to hide behind
+      a burger and the reader never has to open anything to see where they are.</p>
+    <p class="note">on scroll: sticky at 0; the hairline arrives only after 8px of travel.</p>
+  </div>
+  <div class="col-m">
+    <div class="fscroll"><div class="frame frame-m"><div class="stage stage-m">
+      <div class="stub" aria-hidden="true"><i class="sb a"></i><i class="sb b"></i><i class="sb c"></i><i class="sb d"></i><i class="sb pill"></i></div>
+      <div class="nv">
+        <span class="wm wm-nav">k<span class="i">ı</span>nt</span>
+        <span class="sp"></span>
+        <span class="n-link">App</span>
+        <span class="n-link">GitHub</span>
+        <button class="n-tgl" type="button" data-tt aria-label="Toggle theme"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="6.3" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 1.7a6.3 6.3 0 0 0 0 12.6z" fill="currentColor"/></svg></button>
+      </div>
+    </div></div></div>
+    <p class="cap">390 × 640 · mobile</p>
+  </div>
+</section>
+
+<!-- ============ 02 centred trio ============ -->
+<section class="row r2">
+  <header class="rhead"><span class="ix">02</span><h2 class="rname">Centred trio</h2></header>
+  <div class="col-d">
+    <div class="fscroll"><div class="frame frame-d"><div class="stage stage-d">
+      <div class="stub" aria-hidden="true"><i class="sb a"></i><i class="sb b"></i><i class="sb c"></i><i class="sb pill"></i></div>
+      <div class="nv">
+        <span class="wm wm-nav">k<span class="i">ı</span>nt</span>
+        <span class="mid"><span class="n-link">App</span><span class="n-link">GitHub</span></span>
+        <span class="sp"></span>
+        <span class="n-cta">Open the app</span>
+        <button class="n-tgl" type="button" data-tt aria-label="Toggle theme"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="6.3" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 1.7a6.3 6.3 0 0 0 0 12.6z" fill="currentColor"/></svg></button>
+      </div>
+    </div></div></div>
+    <p class="cap">1180 × 96 · desktop</p>
+  </div>
+  <div class="rcopy">
+    <p class="why">Hierarchy by fill, not by size: one action carries the colour, the links stay
+      quiet in the middle where nobody has to hunt for them.</p>
+    <p class="note">on scroll: sticky, the page colour holds, no shadow and no shrink.</p>
+  </div>
+  <div class="col-m">
+    <div class="fscroll"><div class="frame frame-m"><div class="stage stage-m">
+      <div class="stub" aria-hidden="true"><i class="sb a"></i><i class="sb b"></i><i class="sb c"></i><i class="sb pill"></i><span class="stub-links"><span class="n-link">App</span><span class="n-link">GitHub</span></span></div>
+      <div class="nv">
+        <span class="wm wm-nav">k<span class="i">ı</span>nt</span>
+        <span class="sp"></span>
+        <span class="n-cta">Open the app</span>
+        <button class="n-tgl" type="button" data-tt aria-label="Toggle theme"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="6.3" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 1.7a6.3 6.3 0 0 0 0 12.6z" fill="currentColor"/></svg></button>
+      </div>
+    </div></div></div>
+    <p class="cap">390 × 640 · mobile, the links move into the hero</p>
+  </div>
+</section>
+
+<!-- ============ 03 floating island ============ -->
+<section class="row r3">
+  <header class="rhead"><span class="ix">03</span><h2 class="rname">Floating island</h2></header>
+  <div class="col-d">
+    <div class="fscroll"><div class="frame frame-d"><div class="stage stage-d">
+      <div class="stub" aria-hidden="true"><i class="sb a"></i><i class="sb b"></i><i class="sb c"></i><i class="sb pill"></i></div>
+      <div class="island">
+        <span class="wm wm-nav">k<span class="i">ı</span>nt</span>
+        <span class="n-link">App</span>
+        <span class="n-link">GitHub</span>
+        <button class="n-tgl" type="button" data-tt aria-label="Toggle theme"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="6.3" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 1.7a6.3 6.3 0 0 0 0 12.6z" fill="currentColor"/></svg></button>
+      </div>
+    </div></div></div>
+    <p class="cap">1180 × 96 · desktop, at rest</p>
+    <div class="fscroll"><div class="frame frame-s"><div class="stage stage-d">
+      <div class="stub" aria-hidden="true"><i class="sb a"></i><i class="sb b"></i></div>
+      <div class="island sm">
+        <span class="wm wm-nav">k<span class="i">ı</span>nt</span>
+        <span class="n-link">App</span>
+        <span class="n-link">GitHub</span>
+        <button class="n-tgl" type="button" data-tt aria-label="Toggle theme"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="6.3" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 1.7a6.3 6.3 0 0 0 0 12.6z" fill="currentColor"/></svg></button>
+      </div>
+    </div></div></div>
+    <p class="cap">1180 × 60 · desktop, after 80px of scroll</p>
+  </div>
+  <div class="rcopy">
+    <p class="why">Chrome that floats over the page and then gets out of the way once the reader
+      is moving. The fill is ink at six percent, so it borrows the page instead of covering it.</p>
+    <p class="note">on scroll: 56px to 44px across the first 80px, transform only, once.</p>
+  </div>
+  <div class="col-m">
+    <div class="fscroll"><div class="frame frame-m"><div class="stage stage-m">
+      <div class="stub" aria-hidden="true"><i class="sb a"></i><i class="sb b"></i><i class="sb c"></i><i class="sb d"></i><i class="sb pill"></i></div>
+      <div class="island">
+        <span class="wm wm-nav">k<span class="i">ı</span>nt</span>
+        <span class="sp"></span>
+        <span class="n-cta">Open the app</span>
+      </div>
+    </div></div></div>
+    <p class="cap">390 × 640 · mobile, the island holds the mark and one action</p>
+  </div>
+</section>
+
+<!-- ============ 04 proof bar ============ -->
+<section class="row r4">
+  <header class="rhead"><span class="ix">04</span><h2 class="rname">Proof bar</h2></header>
+  <div class="col-d">
+    <div class="fscroll"><div class="frame frame-d"><div class="stage stage-d">
+      <div class="stub" aria-hidden="true"><i class="sb a"></i><i class="sb b"></i><i class="sb c"></i><i class="sb pill"></i></div>
+      <div class="nv">
+        <span class="wm wm-nav">k<span class="i">ı</span>nt</span>
+        <span class="fact"><i class="sq"></i>head seq 2 · block <a href="https://basescan.org/tx/0x369907fb1bccc3222365b2e07b4d6d831642831d481a5f7cb99357823e2a9729">51,081,880</a> · <b class="ok">in step</b></span>
+        <span class="sp"></span>
+        <span class="n-link">App</span>
+        <span class="n-link">GitHub</span>
+        <button class="n-tgl" type="button" data-tt aria-label="Toggle theme"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="6.3" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 1.7a6.3 6.3 0 0 0 0 12.6z" fill="currentColor"/></svg></button>
+      </div>
+    </div></div></div>
+    <p class="cap">1180 × 96 · desktop</p>
+  </div>
+  <div class="rcopy">
+    <p class="why">The bar carries the one fact the page is about, so the chain is visible above
+      the hero and the block height is a link, not a claim.</p>
+    <p class="note">on scroll: sticky; the fact keeps its place and the square never fires twice.</p>
+  </div>
+  <div class="col-m">
+    <div class="fscroll"><div class="frame frame-m"><div class="stage stage-m">
+      <div class="stub" aria-hidden="true"><i class="sb a"></i><i class="sb b"></i><i class="sb c"></i><i class="sb d"></i><i class="sb pill"></i></div>
+      <div class="nv">
+        <span class="wm wm-nav">k<span class="i">ı</span>nt</span>
+        <span class="sp"></span>
+        <span class="n-link">App</span>
+        <button class="n-tgl" type="button" data-tt aria-label="Toggle theme"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="6.3" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 1.7a6.3 6.3 0 0 0 0 12.6z" fill="currentColor"/></svg></button>
+      </div>
+      <div class="factstrip"><span class="fact"><i class="sq"></i>head seq 2 · block <a href="https://basescan.org/tx/0x369907fb1bccc3222365b2e07b4d6d831642831d481a5f7cb99357823e2a9729">51,081,880</a> · <b class="ok">in step</b></span></div>
+    </div></div></div>
+    <p class="cap">390 × 640 · mobile, the fact drops to a 32px strip</p>
+  </div>
+</section>
+
+<!-- ============ 05 left rail (app chrome) ============ -->
+<section class="row r5">
+  <header class="rhead"><span class="ix">05</span><h2 class="rname">Left rail</h2></header>
+  <div class="col-d">
+    <div class="fscroll"><div class="frame frame-d"><div class="stage stage-d">
+      <div class="rail">
+        <span class="wm wm-rail">k<span class="i">ı</span>nt</span>
+        <div class="rnav">
+          <button class="g on" type="button" aria-label="memory"><svg viewBox="0 0 20 20" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="2.75" y="3.75" width="14.5" height="12.5" rx="2.5"/><path d="M6 8h8M6 11h8M6 13.9h5"/></svg></button>
+          <button class="g" type="button" aria-label="history"><svg viewBox="0 0 20 20" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="10" cy="10" r="6.75"/><path d="M10 6.1V10l2.9 1.8"/></svg></button>
+          <button class="g" type="button" aria-label="verify"><svg viewBox="0 0 20 20" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M10 2.9l6 2.1v4.9c0 3.2-2.4 5.6-6 6.8-3.6-1.2-6-3.6-6-6.8V5z"/><path d="M7.4 10.1l1.9 1.9 3.4-3.8"/></svg></button>
+        </div>
+        <div class="rfoot">
+          <button class="n-tgl" type="button" data-tt aria-label="Toggle theme"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="6.3" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 1.7a6.3 6.3 0 0 0 0 12.6z" fill="currentColor"/></svg></button>
+          <span class="avatar" data-addr="0xC635e6Eb223aE14143E23cEEa9440bC773dc87Ec" title="0xC635e6Eb223aE14143E23cEEa9440bC773dc87Ec"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false"><rect width="24" height="24" fill="currentColor" opacity=".10"/><rect x="3" y="3" width="6" height="6" fill="currentColor" opacity=".85"/><rect x="15" y="3" width="6" height="6" fill="currentColor" opacity=".5"/><rect x="9" y="9" width="6" height="6" fill="currentColor" opacity=".7"/><rect x="3" y="15" width="6" height="6" fill="currentColor" opacity=".4"/><rect x="15" y="15" width="6" height="6" fill="currentColor" opacity=".85"/></svg></span>
+        </div>
+      </div>
+      <main class="rmain">
+        <div class="stub" aria-hidden="true"><i class="sb a"></i><i class="sb b"></i><i class="sb c"></i><i class="sb d"></i><i class="sb pill"></i></div>
+      </main>
+    </div></div></div>
+    <p class="cap">1180 × 280 · desktop, the rail is fixed and only the content region scrolls</p>
+  </div>
+  <div class="rcopy">
+    <p class="why">App chrome, not landing chrome. The three peers (memory, history, verify) sit
+      together; the theme and the owner sit apart at the foot, where the address shows on hover.</p>
+    <p class="note">on scroll: the rail never moves; main is the scroll region, min-height 0.</p>
+  </div>
+  <div class="col-m">
+    <div class="fscroll"><div class="frame frame-m"><div class="stage stage-m">
+      <div class="mhead">
+        <span class="wm wm-nav">k<span class="i">ı</span>nt</span>
+        <span class="sp"></span>
+        <span class="n-cta">Connect</span>
+        <button class="n-tgl" type="button" data-tt aria-label="Toggle theme"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="6.3" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 1.7a6.3 6.3 0 0 0 0 12.6z" fill="currentColor"/></svg></button>
+      </div>
+      <div class="stub" aria-hidden="true"><i class="sb a"></i><i class="sb b"></i><i class="sb c"></i><i class="sb d"></i><i class="sb pill"></i></div>
+      <div class="tabbar">
+        <button class="tab on" type="button"><svg viewBox="0 0 20 20" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="2.75" y="3.75" width="14.5" height="12.5" rx="2.5"/><path d="M6 8h8M6 11h8M6 13.9h5"/></svg>memory</button>
+        <button class="tab" type="button"><svg viewBox="0 0 20 20" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="10" cy="10" r="6.75"/><path d="M10 6.1V10l2.9 1.8"/></svg>history</button>
+        <button class="tab" type="button"><svg viewBox="0 0 20 20" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M10 2.9l6 2.1v4.9c0 3.2-2.4 5.6-6 6.8-3.6-1.2-6-3.6-6-6.8V5z"/><path d="M7.4 10.1l1.9 1.9 3.4-3.8"/></svg>verify</button>
+      </div>
+    </div></div></div>
+    <p class="cap">390 × 640 · mobile, only the three peers get the bottom bar</p>
+  </div>
+</section>
+
+<!-- ============ 06 sticky shrink ============ -->
+<section class="row r6">
+  <header class="rhead"><span class="ix">06</span><h2 class="rname">Sticky shrink</h2></header>
+  <div class="col-d">
+    <div class="fscroll"><div class="frame frame-d"><div class="stage stage-d">
+      <div class="stub" aria-hidden="true"><i class="sb a"></i><i class="sb b"></i></div>
+      <div class="mast">
+        <div class="mtop">
+          <span class="eyeb">Built on Sibyl Memory, under it. Live on Base mainnet.</span>
+          <span class="sp"></span>
+          <span class="n-link">App</span>
+          <span class="n-link">GitHub</span>
+          <button class="n-tgl" type="button" data-tt aria-label="Toggle theme"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="6.3" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 1.7a6.3 6.3 0 0 0 0 12.6z" fill="currentColor"/></svg></button>
+        </div>
+        <div class="mbig"><span class="wm wm-big">k<span class="i">ı</span>nt</span></div>
+      </div>
+    </div></div></div>
+    <p class="cap">1180 × 200 · desktop, at rest</p>
+    <div class="fscroll"><div class="frame frame-s"><div class="stage stage-d">
+      <div class="mast mast-sm">
+        <span class="wm wm-nav">k<span class="i">ı</span>nt</span>
+        <span class="sp"></span>
+        <span class="n-link">App</span>
+        <span class="n-link">GitHub</span>
+        <button class="n-tgl" type="button" data-tt aria-label="Toggle theme"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="6.3" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 1.7a6.3 6.3 0 0 0 0 12.6z" fill="currentColor"/></svg></button>
+      </div>
+    </div></div></div>
+    <p class="cap">1180 × 48 · desktop, after 128px of scroll</p>
+  </div>
+  <div class="rcopy">
+    <p class="why">The masthead is the page's title until the reader needs the room back. The 390
+      frame is a real scroll container: scroll inside it and the wordmark shrinks as you go.</p>
+    <p class="note">on scroll: the wordmark maps 48px to 16px across the first 128px, clamped.</p>
+  </div>
+  <div class="col-m">
+    <div class="fscroll"><div class="frame frame-m"><div class="stage stage-m mscroll" data-shrink>
+      <div class="mast mast-m">
+        <div class="mtop">
+          <span class="sp"></span>
+          <span class="n-link">App</span>
+          <span class="n-link">GitHub</span>
+          <button class="n-tgl" type="button" data-tt aria-label="Toggle theme"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="6.3" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 1.7a6.3 6.3 0 0 0 0 12.6z" fill="currentColor"/></svg></button>
+        </div>
+        <div class="mbig"><span class="wm wm-big">k<span class="i">ı</span>nt</span></div>
+      </div>
+      <div class="mpage" aria-hidden="true"><i class="sb a"></i><i class="sb b"></i><i class="sb c"></i><i class="sb d"></i><i class="sb pill"></i><i class="sb a"></i><i class="sb c"></i><i class="sb b"></i><i class="sb d"></i><i class="sb c"></i></div>
+    </div></div></div>
+    <p class="cap">390 × 640 · mobile, live: scroll inside the frame</p>
+  </div>
+</section>
+
+<!-- ============ 07 inline sentence ============ -->
+<section class="row r7">
+  <header class="rhead"><span class="ix">07</span><h2 class="rname">Inline sentence</h2></header>
+  <div class="col-d">
+    <div class="fscroll"><div class="frame frame-d"><div class="stage stage-d">
+      <div class="stub" aria-hidden="true"><i class="sb a"></i><i class="sb b"></i></div>
+      <div class="inline-nav">
+        <p class="sentence"><span class="wm wm-nav accent">k<span class="i">ı</span>nt</span> is Sibyl Memory that outlives the laptop.</p>
+        <div class="line2">
+          <span class="n-cta">Open the app</span>
+          <span class="n-link dash">App</span>
+          <span class="n-link dash">GitHub</span>
+          <span class="sp"></span>
+          <button class="n-tgl" type="button" data-tt aria-label="Toggle theme"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="6.3" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 1.7a6.3 6.3 0 0 0 0 12.6z" fill="currentColor"/></svg></button>
+        </div>
+      </div>
+    </div></div></div>
+    <p class="cap">1180 × 176 · desktop</p>
+  </div>
+  <div class="rcopy">
+    <p class="why">No bar at all. The first sentence of the page is the nav, which is about the
+      calmest thing a page can do and still tell you where you are.</p>
+    <p class="note">on scroll: nothing is fixed; both lines leave with the page.</p>
+  </div>
+  <div class="col-m">
+    <div class="fscroll"><div class="frame frame-m"><div class="stage stage-m">
+      <div class="stub" aria-hidden="true"><i class="sb a"></i><i class="sb b"></i><i class="sb c"></i><i class="sb pill"></i></div>
+      <div class="inline-nav">
+        <p class="sentence"><span class="wm wm-nav accent">k<span class="i">ı</span>nt</span> is Sibyl Memory that outlives the laptop.</p>
+        <div class="line2">
+          <span class="n-cta">Open the app</span>
+          <span class="n-link dash">App</span>
+          <span class="n-link dash">GitHub</span>
+          <button class="n-tgl" type="button" data-tt aria-label="Toggle theme"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="6.3" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 1.7a6.3 6.3 0 0 0 0 12.6z" fill="currentColor"/></svg></button>
+        </div>
+      </div>
+    </div></div></div>
+    <p class="cap">390 × 640 · mobile, the same two lines, wrapped</p>
+  </div>
+</section>
+
+<!-- ============ 08 toggle only ============ -->
+<section class="row r8">
+  <header class="rhead"><span class="ix">08</span><h2 class="rname">Toggle only</h2></header>
+  <div class="col-d">
+    <div class="fscroll"><div class="frame frame-d"><div class="stage stage-d">
+      <div class="stub" aria-hidden="true"><i class="sb a"></i><i class="sb b"></i><i class="sb c"></i><i class="sb pill"></i></div>
+      <div class="nv">
+        <span class="wm wm-nav">k<span class="i">ı</span>nt</span>
+        <span class="sp"></span>
+        <button class="n-tgl" type="button" data-tt aria-label="Toggle theme"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="6.3" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 1.7a6.3 6.3 0 0 0 0 12.6z" fill="currentColor"/></svg></button>
+      </div>
+    </div></div></div>
+    <p class="cap">1180 × 96 · desktop</p>
+  </div>
+  <div class="rcopy">
+    <p class="why">One control, one hairline. Everything else is deferred to the footer, which is
+      where a reader who wants the repository is already looking.</p>
+    <p class="note">on scroll: sticky at 0, no hairline until the page has moved.</p>
+  </div>
+  <div class="col-m">
+    <div class="fscroll"><div class="frame frame-m"><div class="stage stage-m">
+      <div class="stub" aria-hidden="true"><i class="sb a"></i><i class="sb b"></i><i class="sb c"></i><i class="sb d"></i><i class="sb pill"></i></div>
+      <div class="nv">
+        <span class="wm wm-nav">k<span class="i">ı</span>nt</span>
+        <span class="sp"></span>
+        <button class="n-tgl" type="button" data-tt aria-label="Toggle theme"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="6.3" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 1.7a6.3 6.3 0 0 0 0 12.6z" fill="currentColor"/></svg></button>
+      </div>
+      <div class="pfoot">
+        <span class="n-link">App</span>
+        <span class="n-link">GitHub</span>
+        <span class="sp"></span>
+        <span class="fm">MIT</span>
+      </div>
+    </div></div></div>
+    <p class="cap">390 × 640 · mobile, identical; the links live in the footer</p>
+  </div>
+</section>
+
+<footer class="foot">
+  <span>EpochAnchor <a href="https://basescan.org/address/0xa22E03f7a4145Bf4909a83595C90a38E14d79600" title="0xa22E03f7a4145Bf4909a83595C90a38E14d79600">0xa22E03f7…14d79600</a></span>
+  <span class="dot">·</span>
+  <span>epoch 1 block <a href="https://basescan.org/tx/0xbe9bb8596c825a8891c3eafe4381e0c6522d647641735c635ca58fcf4bbe4455">51,081,867</a></span>
+  <span class="dot">·</span>
+  <span>epoch 2 block <a href="https://basescan.org/tx/0x369907fb1bccc3222365b2e07b4d6d831642831d481a5f7cb99357823e2a9729">51,081,880</a></span>
+  <span class="dot">·</span>
+  <span>head seq 2 · digest 7df5378a8c4fa866 · 15 rows · Base mainnet</span>
+  <span class="dot">·</span>
+  <span>MIT · Built for the Sibyl Labs Hackathon, September 2026 · s0nderlabs</span>
+</footer>
+
+</div>
+
+<script>
+(function(){
+  /* the theme: every toggle on the sheet, the header one and the eight inside the frames */
+  document.addEventListener('click',function(e){
+    var b=e.target.closest?e.target.closest('[data-tt]'):null;
+    if(!b){return;}
+    var r=document.documentElement;
+    var cur=r.getAttribute('data-theme');
+    if(cur!=='dark'&&cur!=='light'){
+      cur=(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';
+    }
+    var next=(cur==='dark')?'light':'dark';
+    r.setAttribute('data-theme',next);
+    try{localStorage.setItem('kint-theme',next);}catch(e2){}
+  });
+
+  /* the one named behaviour: concept 06, the wordmark mapped across the first 128px */
+  var sc=document.querySelector('[data-shrink]');
+  if(sc){
+    var wm=sc.querySelector('.wm-big');
+    var mast=sc.querySelector('.mast-m');
+    var mapRange=function(v,a,b,c,d){
+      var t=(v-a)/(b-a);
+      if(t<0){t=0;} if(t>1){t=1;}
+      return c+(d-c)*t;
+    };
+    var apply=function(){
+      var y=sc.scrollTop;
+      wm.style.fontSize=mapRange(y,0,128,48,16).toFixed(2)+'px';
+      mast.style.height=mapRange(y,0,128,112,48).toFixed(2)+'px';
+    };
+    sc.addEventListener('scroll',apply,{passive:true});
+    apply();
+  }
+})();
+</script>
+</body>
+</html>

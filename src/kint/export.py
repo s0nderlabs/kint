@@ -7,7 +7,10 @@ that goes through the SDK's write methods (kint.restore).
 
 Not exported (documented): entity_relations, revenue_events, error_events,
 archived_entities, flagged_actors, skill_proposals, learning_runs. The SDK
-writes none of them on a normal store.
+writes none of them on a normal store EXCEPT archived_entities, which Sibyl's
+memory_forget writes: the row leaves the entities table (so the anchored state
+is right) but the archived copy is not carried, and a restore replays the
+forget as a plain delete.
 """
 
 from __future__ import annotations

@@ -1,0 +1,718 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script>(function(){try{var t=localStorage.getItem('kint-theme');if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>kint, the memory viewer</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800&display=swap" rel="stylesheet">
+<style>
+/* A4 Sheet: the app as sheets on a desk. Faces: Bricolage Grotesque + Geist Mono. */
+
+@font-face{
+  font-family:"Geist Mono";
+  src:url("fonts/geist-mono-var.ttf") format("truetype");
+  font-weight:100 900; font-style:normal; font-display:swap;
+}
+
+/* (a) bare :root carries the COMPLETE light palette */
+:root{
+  --page:#F4F1EA;
+  --desk:#EBE6DA;
+  --card:#FFFFFF;
+  --card-2:#F7F4EC;
+  --ink:#171512;
+  --ink-2:#453F38;
+  --muted:#6E6960;
+  --hair:rgba(23,21,18,.12);
+  --hair-2:rgba(23,21,18,.06);
+  --accent:#1F3FD6;
+  --on-accent:#FFFFFF;
+  --ok:#186A4E;
+  --ok-bg:rgba(24,106,78,.10);
+  --bad:#A3323C;
+  --bad-bg:rgba(163,50,60,.10);
+  --hex:rgba(23,21,18,.32);
+  --sheet-shadow:0 18px 48px -28px rgba(0,0,0,.35);
+  --field:#FBF9F4;
+
+  --t-mono:12px;
+  --t-body:15px;
+  --t-lead:20px;
+  --t-h1:clamp(2.6rem,5vw,3.6rem);
+  --ease-out-expo:cubic-bezier(0.16,1,0.3,1);
+  --sheet:680px;
+}
+
+/* (b) system dark, only when no explicit light choice is stamped */
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --page:#0F1424;
+    --desk:#0B1020;
+    --card:#171D2E;
+    --card-2:#141A2A;
+    --ink:#ECEAE4;
+    --ink-2:#C6C9D4;
+    --muted:#8D95AB;
+    --hair:rgba(236,234,228,.14);
+    --hair-2:rgba(236,234,228,.07);
+    --accent:#7A93FF;
+    --on-accent:#0F1424;
+    --ok:#3AD1A6;
+    --ok-bg:rgba(58,209,166,.08);
+    --bad:#EE8295;
+    --bad-bg:rgba(238,130,149,.08);
+    --hex:rgba(236,234,228,.28);
+    --sheet-shadow:0 18px 48px -28px rgba(0,0,0,.80);
+    --field:#121828;
+  }
+}
+
+/* (c) the explicit dark choice wins in both directions */
+:root[data-theme="dark"]{
+  --page:#0F1424;
+  --desk:#0B1020;
+  --card:#171D2E;
+  --card-2:#141A2A;
+  --ink:#ECEAE4;
+  --ink-2:#C6C9D4;
+  --muted:#8D95AB;
+  --hair:rgba(236,234,228,.14);
+  --hair-2:rgba(236,234,228,.07);
+  --accent:#7A93FF;
+  --on-accent:#0F1424;
+  --ok:#3AD1A6;
+  --ok-bg:rgba(58,209,166,.08);
+  --bad:#EE8295;
+  --bad-bg:rgba(238,130,149,.08);
+  --hex:rgba(236,234,228,.28);
+  --sheet-shadow:0 18px 48px -28px rgba(0,0,0,.80);
+  --field:#121828;
+}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+
+/* (d) body paints its ground from the tokens */
+body.v-a4{
+  margin:0;
+  background:var(--page);
+  color:var(--ink);
+  font-family:"Bricolage Grotesque","Helvetica Neue",Arial,sans-serif;
+  font-variation-settings:"opsz" 14,"wdth" 100,"wght" 400;
+  font-weight:400;
+  font-size:var(--t-body);
+  line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* the house grain */
+body.v-a4::before{
+  content:"";
+  position:fixed; inset:0;
+  pointer-events:none; z-index:9999; opacity:.03;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size:256px 256px;
+}
+
+.v-a4 .mono{
+  font-family:"Geist Mono",ui-monospace,Menlo,monospace;
+  font-size:var(--t-mono);
+  font-weight:400;
+  line-height:1.5;
+  letter-spacing:.01em;
+  font-variation-settings:normal;
+}
+
+.v-a4 a{color:inherit;text-decoration:underline;text-decoration-color:var(--muted);text-underline-offset:3px;text-decoration-thickness:1px}
+.v-a4 a:hover{text-decoration-color:currentColor}
+.v-a4 :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:2px}
+
+/* the wordmark trick */
+.v-a4 .wm{font-weight:600;font-variation-settings:"opsz" 14,"wdth" 100,"wght" 600;letter-spacing:-.01em}
+.v-a4 .wm .i{position:relative}
+.v-a4 .wm .i::after{
+  content:"";position:absolute;left:50%;transform:translateX(-50%);
+  top:0.202em;width:.18em;height:.18em;background:var(--accent);
+}
+
+/* ---------- top bar ---------- */
+.v-a4 .bar{
+  position:sticky;top:0;z-index:50;
+  display:flex;align-items:center;gap:0;
+  min-height:48px;padding:0 20px;
+  background:var(--page);border-bottom:1px solid var(--hair);
+}
+.v-a4 .bar-wm{text-decoration:none;padding-right:16px;font-size:var(--t-body)}
+.v-a4 .bar-facts{display:flex;align-items:center;flex:1;min-width:0;overflow-x:auto;color:var(--ink-2);white-space:nowrap}
+.v-a4 .bar-facts span{padding:0 14px;border-left:1px solid var(--hair)}
+.v-a4 .bar-facts span:first-child{border-left:0}
+.v-a4 .bar-facts .k{padding:0;border:0;color:var(--muted)}
+.v-a4 .bar-right{display:flex;align-items:center;gap:10px;padding-left:14px}
+
+.v-a4 .tgl{
+  font-family:"Geist Mono",ui-monospace,Menlo,monospace;font-size:var(--t-mono);
+  height:26px;padding:0 11px;border-radius:999px;
+  background:transparent;color:var(--muted);border:1px solid var(--hair);
+  cursor:pointer;line-height:1;
+}
+.v-a4 .tgl:hover{color:var(--ink);border-color:var(--ink-2)}
+
+/* ---------- pills ---------- */
+.v-a4 .pill{
+  display:inline-flex;align-items:center;gap:7px;height:22px;padding:0 10px;
+  border-radius:999px;border:1px solid var(--hair);color:var(--muted);
+  font-family:"Geist Mono",ui-monospace,Menlo,monospace;font-size:var(--t-mono);
+  line-height:1;white-space:nowrap;
+}
+.v-a4 .pill .g{width:6px;height:6px;background:currentColor;flex:none}
+.v-a4 .pill--ok{color:var(--ok);background:var(--ok-bg);border-color:transparent}
+.v-a4 .pill--bad{color:var(--bad);background:var(--bad-bg);border-color:transparent}
+.v-a4 .pill--bad .g{transform:rotate(45deg)}
+.v-a4 .pill--closed .g{background:none;border:1.5px solid currentColor;border-radius:999px}
+.v-a4 .pill--gone .g{opacity:.55}
+.v-a4 .pill--corner{position:absolute;top:14px;right:14px}
+
+/* ---------- screens and label strips ---------- */
+.v-a4 .screen{min-height:100vh;min-height:100svh;display:flex;flex-direction:column;scroll-margin-top:48px}
+.v-a4 .strip{
+  display:flex;align-items:baseline;justify-content:space-between;gap:16px;
+  padding:11px 20px;background:var(--desk);
+  border-top:1px solid var(--hair);border-bottom:1px solid var(--hair);
+  color:var(--muted);
+}
+.v-a4 .strip .lab{color:var(--ink-2);letter-spacing:.12em}
+.v-a4 .strip .note{text-align:right}
+.v-a4 .screen-body{flex:1;display:flex;flex-direction:column;justify-content:center;padding:clamp(40px,7vh,88px) 0}
+.v-a4 .screen-body.top{justify-content:flex-start}
+
+/* ---------- sheets ---------- */
+.v-a4 .stage{display:flex;justify-content:center;padding:0 20px}
+.v-a4 .deck{position:relative;width:100%;max-width:var(--sheet)}
+.v-a4 .deck::before,.v-a4 .deck::after{
+  content:"";position:absolute;border:1px solid var(--hair-2);
+  background:var(--card-2);border-radius:12px;z-index:0;
+}
+.v-a4 .deck::before{left:16px;right:16px;top:-11px;height:44px}
+.v-a4 .deck::after{left:32px;right:32px;top:-21px;height:44px}
+.v-a4 .sheet{
+  position:relative;z-index:1;
+  background:var(--card);border:1px solid var(--hair-2);border-radius:12px;
+  box-shadow:var(--sheet-shadow);
+}
+.v-a4 .sheet-pad{padding:clamp(28px,4vw,44px)}
+
+/* ---------- screen 1 ---------- */
+.v-a4 .sheet-pad>.card-top{margin-bottom:24px}
+.v-a4 h1{
+  margin:0;
+  font-size:var(--t-h1);
+  font-variation-settings:"opsz" 96,"wdth" 100,"wght" 500;
+  font-weight:500;line-height:1.04;letter-spacing:-.025em;
+}
+.v-a4 h1 .em{color:var(--accent)}
+.v-a4 .s1-lede{margin:14px 0 0;color:var(--ink-2);max-width:44ch}
+.v-a4 .fields{display:grid;grid-template-columns:1fr 1fr;gap:1px;margin-top:30px;background:var(--hair);border:1px solid var(--hair);border-radius:8px;overflow:hidden}
+.v-a4 .field{background:var(--field);padding:12px 14px;min-width:0}
+.v-a4 .field .k{display:block;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:5px}
+.v-a4 .field .v{display:block;color:var(--ink);overflow-wrap:anywhere}
+
+.v-a4 .paths{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:28px}
+.v-a4 .path h2{margin:0;font-size:var(--t-body);font-weight:600;font-variation-settings:"opsz" 14,"wdth" 100,"wght" 600}
+.v-a4 .path .who{color:var(--muted);font-weight:400}
+.v-a4 .path p{margin:8px 0 0;color:var(--ink-2)}
+.v-a4 .btn{
+  display:inline-flex;align-items:center;justify-content:center;
+  height:40px;padding:0 18px;margin-top:14px;border-radius:999px;
+  font-family:inherit;font-size:var(--t-body);font-weight:500;
+  font-variation-settings:"opsz" 14,"wdth" 100,"wght" 500;
+  border:1px solid transparent;cursor:pointer;text-decoration:none;line-height:1;
+}
+.v-a4 .btn--primary{background:var(--accent);color:var(--on-accent)}
+.v-a4 .btn--primary:hover{filter:brightness(1.08)}
+.v-a4 .btn--quiet{background:transparent;color:var(--ink);border-color:var(--hair)}
+.v-a4 .btn--quiet:hover{border-color:var(--ink-2)}
+.v-a4 .pass{
+  display:block;width:100%;height:40px;margin-top:14px;padding:0 14px;
+  border-radius:8px;border:1px solid var(--hair);background:var(--field);color:var(--ink);
+  font-family:"Geist Mono",ui-monospace,Menlo,monospace;font-size:var(--t-body);
+}
+.v-a4 .pass::placeholder{color:var(--muted)}
+.v-a4 .pass:hover{border-color:var(--ink-2)}
+.v-a4 .under{margin:26px 0 0;color:var(--muted)}
+
+/* the ciphertext printed faintly as the sheet's body */
+.v-a4 .hexwrap{margin-top:26px;border-top:1px solid var(--hair);padding-top:16px}
+.v-a4 .hexcap{color:var(--muted);letter-spacing:.1em;text-transform:uppercase}
+.v-a4 .hex{
+  margin:12px 0 0;color:var(--hex);
+  font-family:"Geist Mono",ui-monospace,Menlo,monospace;font-size:var(--t-mono);
+  line-height:1.55;letter-spacing:.02em;word-break:break-all;
+}
+
+/* ---------- screen 2: the hex resolving into rows ---------- */
+.v-a4{--pad:clamp(28px,4vw,44px)}
+.v-a4 .sheet--flush{overflow:hidden}
+.v-a4 .edge{
+  padding:11px var(--pad);background:var(--card-2);color:var(--ink-2);
+  border-bottom:1px solid var(--hair);
+}
+.v-a4 .edge--foot{border-bottom:0;border-top:1px solid var(--hair);color:var(--muted)}
+.v-a4 .edge .dim{color:var(--muted)}
+
+.v-a4 .resolve{position:relative;padding:var(--pad);min-height:340px}
+.v-a4 .rows{
+  position:absolute;inset:0;padding:var(--pad);background:var(--card);
+  clip-path:inset(0 0 44% 0);
+  animation:a4-resolve 1.4s var(--ease-out-expo) .25s 1 backwards;
+}
+@keyframes a4-resolve{from{clip-path:inset(0 0 100% 0)}to{clip-path:inset(0 0 44% 0)}}
+@media (prefers-reduced-motion:reduce){
+  .v-a4 .rows{animation:none}
+}
+.v-a4 .ep{display:flex;flex-wrap:wrap;gap:0 10px;color:var(--ink);padding:7px 0}
+.v-a4 .ep .dim{color:var(--muted)}
+.v-a4 .rowline{padding:7px 0;border-top:1px solid var(--hair-2);display:flex;gap:12px;align-items:baseline}
+.v-a4 .rowline .k{flex:none;color:var(--ink);min-width:170px}
+.v-a4 .rowline .b{color:var(--ink-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.v-a4 .rowsep{margin:14px 0 6px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase}
+
+/* ---------- screen 3: the memory as short sheets ---------- */
+.v-a4 .wrap{max-width:1120px;margin:0 auto;padding:0 20px;width:100%}
+.v-a4 .tabs{display:flex;flex-wrap:wrap;color:var(--muted);margin:0 0 24px}
+.v-a4 .tabs .tab{padding:0 14px;border-left:1px solid var(--hair)}
+.v-a4 .tabs .tab:first-child{padding-left:0;border-left:0}
+.v-a4 .tabs .n{color:var(--ink-2)}
+.v-a4 .tabs .is-on{color:var(--ink);text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:6px}
+.v-a4 .tabs .is-on .n{color:var(--ink)}
+
+.v-a4 .masonry{columns:2;column-gap:20px}
+.v-a4 .card{
+  break-inside:avoid;margin:0 0 20px;position:relative;
+  background:var(--card);border:1px solid var(--hair-2);border-radius:12px;
+  box-shadow:var(--sheet-shadow);padding:16px 18px 13px;
+}
+.v-a4 .card-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.v-a4 .cat{color:var(--muted);letter-spacing:.1em;text-transform:uppercase}
+.v-a4 .card .key{
+  margin:10px 0 0;font-family:"Geist Mono",ui-monospace,Menlo,monospace;
+  font-size:var(--t-body);font-weight:500;letter-spacing:0;color:var(--ink);
+  font-variation-settings:"wght" 500;
+}
+.v-a4 .card .txt{margin:7px 0 0;color:var(--ink-2)}
+.v-a4 .card .foot{margin:14px 0 0;padding-top:11px;border-top:1px solid var(--hair-2);color:var(--muted)}
+.v-a4 .card--gone{background:var(--card-2);box-shadow:none}
+.v-a4 .card--gone .key{color:var(--muted)}
+.v-a4 .card--gone .txt{color:var(--muted);text-decoration:line-through}
+.v-a4 .tally{margin:8px 0 0;padding-top:18px;border-top:1px solid var(--hair);color:var(--muted)}
+
+/* ---------- screen 4: two versions, stacked ---------- */
+.v-a4 .hist{max-width:760px;margin:0 auto;padding:0 20px;width:100%}
+.v-a4 .hist-head{display:flex;align-items:baseline;justify-content:space-between;gap:16px;color:var(--ink)}
+.v-a4 .hist-head .dim{color:var(--muted)}
+.v-a4 .vstack{margin-top:26px}
+.v-a4 .ver{
+  position:relative;background:var(--card);border:1px solid var(--hair-2);
+  border-radius:12px;box-shadow:var(--sheet-shadow);padding:24px 26px;
+}
+.v-a4 .ver--now{z-index:2}
+.v-a4 .ver--past{z-index:1;margin-top:-22px;padding-top:44px;transform:rotate(-1.5deg) translate(12px,0);transform-origin:100% 0}
+.v-a4 .ver .stamp{color:var(--muted);display:flex;flex-wrap:wrap;gap:0 10px;padding-right:96px}
+.v-a4 .ver .stamp .on{color:var(--ink-2)}
+.v-a4 .ver .rule{margin:12px 0 0;font-size:var(--t-lead);line-height:1.4;color:var(--ink)}
+.v-a4 .ver .since{margin:14px 0 0;color:var(--muted)}
+.v-a4 .diff{color:var(--accent)}
+.v-a4 .links{display:flex;flex-wrap:wrap;gap:8px 20px;margin:22px 0 0;color:var(--ink-2)}
+.v-a4 .cap{margin:10px 0 0;color:var(--muted)}
+
+/* ---------- slips: refusals and empty states ---------- */
+.v-a4 .slips{max-width:760px;margin:38px auto 0;padding:0 20px;width:100%}
+.v-a4 .slip{
+  background:var(--card);border:1px solid var(--hair-2);border-radius:12px;
+  box-shadow:var(--sheet-shadow);padding:22px 24px;margin-top:14px;
+}
+.v-a4 .banner{display:flex;align-items:flex-start;gap:14px}
+.v-a4 .banner p{margin:0;color:var(--ink-2);max-width:56ch}
+.v-a4 .legend{display:flex;flex-wrap:wrap;gap:12px 20px;margin-top:20px;padding-top:18px;border-top:1px solid var(--hair-2)}
+.v-a4 .legend .li{display:flex;align-items:center;gap:9px;color:var(--muted)}
+.v-a4 .errs{display:grid;gap:10px;margin-top:18px;padding-top:18px;border-top:1px solid var(--hair-2)}
+.v-a4 .err{color:var(--ink-2)}
+.v-a4 .err b{color:var(--bad);font-weight:400}
+.v-a4 .slip-lab{margin:0;color:var(--muted);letter-spacing:.1em;text-transform:uppercase}
+.v-a4 .dim{color:var(--muted)}
+.v-a4 .err{margin:0}
+.v-a4 .hexcap{margin:0}
+
+/* the two unlock paths keep their controls on one baseline */
+.v-a4 .path{display:flex;flex-direction:column}
+.v-a4 .paths p{margin-bottom:18px}
+.v-a4 .path .btn,.v-a4 .path .pass{margin-top:auto}
+
+/* ---------- footer ---------- */
+.v-a4 .foot-bar{
+  display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px 20px;
+  padding:22px 20px;background:var(--desk);border-top:1px solid var(--hair);color:var(--muted);
+}
+
+/* ---------- narrow ---------- */
+@media (max-width:900px){
+  .v-a4 .masonry{columns:1}
+}
+@media (max-width:760px){
+  .v-a4 .bar{flex-wrap:wrap;padding:9px 16px}
+  .v-a4 .bar-facts{order:3;flex-basis:100%;padding-top:9px;margin-top:9px;border-top:1px solid var(--hair-2)}
+  .v-a4 .bar-right{margin-left:auto;padding-left:0}
+  .v-a4 .strip{flex-direction:column;align-items:flex-start;gap:3px}
+  .v-a4 .strip .note{text-align:left}
+  .v-a4 .fields{grid-template-columns:1fr}
+  .v-a4 .paths{grid-template-columns:1fr;gap:28px}
+  .v-a4 .deck::before{left:10px;right:10px;top:-9px}
+  .v-a4 .deck::after{left:20px;right:20px;top:-17px}
+  .v-a4 .rowline{flex-direction:column;gap:2px}
+  .v-a4 .rowline .b{white-space:normal}
+  .v-a4 .resolve{min-height:400px}
+  .v-a4 .ver--past{transform:rotate(-1.5deg) translate(0,0);margin-top:-18px}
+  .v-a4 .ver .stamp{padding-right:0}
+  .v-a4 .pill--corner{position:static;margin-top:10px}
+  .v-a4 .hist-head{flex-direction:column;gap:4px}
+}
+</style>
+</head>
+<body class="v-a4">
+
+<header class="bar">
+  <a class="bar-wm" href="#s1" aria-label="kint, screen one"><span class="wm">k<span class="i">&#305;</span>nt</span></a>
+  <div class="bar-facts mono">
+    <span><span class="k">owner</span> 0xC635&#8230;87Ec</span>
+    <span><span class="k">tenant</span> kint-demo</span>
+    <span><span class="k">head seq</span> 2</span>
+    <span><span class="k">block</span> 51,081,880</span>
+  </div>
+  <div class="bar-right">
+    <span class="pill"><span class="g" aria-hidden="true"></span>unlocked</span>
+    <button class="tgl" type="button" id="themeToggle" aria-label="Toggle theme">theme</button>
+  </div>
+</header>
+
+<main>
+
+<!-- ============ screen 1 ============ -->
+<section class="screen" id="s1" aria-labelledby="s1lab">
+  <div class="strip mono">
+    <span class="lab" id="s1lab">screen 1 &#183; connect</span>
+    <span class="note">lock state &#183; locked</span>
+  </div>
+  <div class="screen-body">
+    <div class="stage">
+      <div class="deck">
+        <div class="sheet sheet-pad">
+
+          <div class="card-top">
+            <span class="mono cat">connect</span>
+            <span class="pill"><span class="g" aria-hidden="true"></span>locked</span>
+          </div>
+
+          <h1>Unlock the <span class="em">memory</span></h1>
+
+          <div class="fields mono">
+            <div class="field">
+              <span class="k">Owner address</span>
+              <span class="v">0xC635e6Eb223aE14143E23cEEa9440bC773dc87Ec</span>
+            </div>
+            <div class="field">
+              <span class="k">Tenant</span>
+              <span class="v">kint-demo</span>
+            </div>
+          </div>
+
+          <div class="paths">
+            <div class="path">
+              <h2>Sign with the wallet <span class="who">(EOA owners)</span></h2>
+              <p>One frozen message. Signing it reveals your memory encryption key. Only sign it in a kint page you opened yourself.</p>
+              <button class="btn btn--primary" type="button">Sign with the wallet</button>
+            </div>
+            <div class="path">
+              <h2>Type the passphrase <span class="who">(Base Account owners)</span></h2>
+              <p>Never leaves this page.</p>
+              <input class="pass" type="password" placeholder="passphrase" aria-label="Passphrase" autocomplete="off">
+            </div>
+          </div>
+
+          <p class="under">Nothing decrypted leaves the browser. Reads never send a transaction.</p>
+
+          <div class="hexwrap">
+            <p class="hexcap mono">epoch 1 ciphertext &#183; 4 KB bucket &#183; as it sits on Base</p>
+            <p class="hex" aria-hidden="true">
+01007527910534a3aa26ff4b01e935dad19ac4a47aa50bb372012733cbe54c2ecda187a94a057b09ee1d5ff2d8e2c1a7f89cccca5a8a000010000101890e2b49056a139fa59ff990e7229a4f1576bdec536fb742ce089248eeccca1d9a1cf10ecaa1d60946c9e32930c7a79dfd22715229bb6fe04c331ca2e6a017d40305a294b68f8cc7705400ef121f9ea296a8e822f988f93d83548baa6b9edb5806a3a94978a5a96893c50525f33c668bd1a3fb5833cd3fc08234673c3d6e5360fcd31df7194df61428904036e46cdac6c5e4c2950b5a2e331cf3bb61c00010acd858ad520bc9acddcf8a1c9068ef78b3c6ff323e1443adab6a64c5d152a002ecbf95c3ad6c4ab71905a2d2fa25f4f8f87ac24369c79449590b6278d7590d28024ad025b574ebe804f62b929b3eff93e53784ca54be21066906a67accf374e612247d623e8658796e471de128fcddd1a5ed5c550222b83928ef04ed08041b588b3f84e349996b533e82bc4c17f85ac94c310e091c45a250d08d5670fabf5077565de7dd5d40c96c4513f58a91e12a583066fa4a61985bcfab5faa8b169757219133863b9027249f4c165c38606f9ce76c016e9260b4e9261d5f7c8da9e8bfeccca631b472e93f3a4a52d0ca14edc9759d86741cde6b277f5948e68158b565a185bb0d2c4ee38d0919186d90359aff41f9ffcaf8a45e5c41589393066fe303cda1eed2d40b30b7569d22cde9a0302815bc98877ffd65783dc30bcbf07ca38c6e5a
+
+            </p>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ screen 2 ============ -->
+<section class="screen" id="s2" aria-labelledby="s2lab">
+  <div class="strip mono">
+    <span class="lab" id="s2lab">screen 2 &#183; cold start</span>
+    <span class="note">walking epoch 2 of 2</span>
+  </div>
+  <div class="screen-body">
+    <div class="stage">
+      <div class="deck">
+        <div class="sheet sheet--flush">
+
+          <div class="edge mono">walking epoch 2 of 2 <span class="dim">&#183;</span> block 51,081,880 <span class="dim">&#183;</span> 15 rows</div>
+
+          <div class="resolve">
+            <p class="hex" aria-hidden="true">
+01007527910534a3aa26ff4b01e935dad19ac4a47aa50bb372012733cbe54c2ecda187a94a057b09ee1d5ff2d8e2c1a7f89cccca5a8a000010000101890e2b49056a139fa59ff990e7229a4f1576bdec536fb742ce089248eeccca1d9a1cf10ecaa1d60946c9e32930c7a79dfd22715229bb6fe04c331ca2e6a017d40305a294b68f8cc7705400ef121f9ea296a8e822f988f93d83548baa6b9edb5806a3a94978a5a96893c50525f33c668bd1a3fb5833cd3fc08234673c3d6e5360fcd31df7194df61428904036e46cdac6c5e4c2950b5a2e331cf3bb61c00010acd858ad520bc9acddcf8a1c9068ef78b3c6ff323e1443adab6a64c5d152a002ecbf95c3ad6c4ab71905a2d2fa25f4f8f87ac24369c79449590b6278d7590d28024ad025b574ebe804f62b929b3eff93e53784ca54be21066906a67accf374e612247d623e8658796e471de128fcddd1a5ed5c550222b83928ef04ed08041b588b3f84e349996b533e82bc4c17f85ac94c310e091c45a250d08d5670fabf5077565de7dd5d40c96c4513f58a91e12a583066fa4a61985bcfab5faa8b169757219133863b9027249f4c165c38606f9ce76c016e9260b4e9261d5f7c8da9e8bfeccca631b472e93f3a4a52d0ca14edc9759d86741cde6b277f5948e68158b565a185bb0d2c4ee38d0919186d90359aff41f9ffcaf8a45e5c41589393066fe303cda1eed2d40b30b7569d22cde9a0302815bc98877ffd65783dc30bcbf07ca38c6e5a210055230e1c5a3e9210833ae83ea343db51f89a30bb8c7cf978c5f7ea13ef5259928c1c817afdaefd5f9ae565ee2c54575e6dcd02e898e3d745c50ae230449d321de4ba0c5cc5347a2c4d88fbd03c81a959fe9c1996a6044553a0c77edbbcdb22fde52898318d6c8c91d482a88c6a8104cccb2b1e0ab9ed01c95084789e4125d1f4b3edd42b2b0ff47f887b24a51cdef7ecb4ac06cc269f0a5c5c187ab99a0ca32937b618f5100627695ae2ef69655b9acb2f68742a2fe8ef27eca2795d194a7b1d11fc4a6f1cf4fa1db50d1f466eda4a6dd8540e7c13600b666963bbac4fa407524bc98e7614c524ff58779cff275de88eb46fdd130f04e054aa962240c70ea4b2a5186fc37469e6fd4030838a9a079fa64d85d6a4f57814e88466754c3efb4772bd1e10c65b9410cda56b8f45899198b4e20fc722d755b9846f341c04a4607c424cc180e7b3a87f3e6e5dff8f460c23e9cfd8b7aa014386bf61987877fe8c8ac653a7d805ce94
+            </p>
+            <div class="rows">
+              <div class="ep mono"><span>epoch 1</span><span class="dim">&#183;</span><span>block 51,081,867</span><span class="dim">&#183;</span><span>14 rows</span><span class="dim">&#183;</span><span>tx 0xbe9bb859&#8230;bbe4455</span><span class="dim">&#183;</span><span>opened</span></div>
+              <div class="ep mono"><span>epoch 2</span><span class="dim">&#183;</span><span>block 51,081,880</span><span class="dim">&#183;</span><span>+2 rows, 1 deleted</span><span class="dim">&#183;</span><span>tx 0x369907fb&#8230;9a729</span><span class="dim">&#183;</span><span>opened</span></div>
+              <p class="rowsep mono">restored rows</p>
+              <div class="rowline"><span class="mono k">rules/release-gate</span><span class="b">never ship on a Friday; every release needs a green deadlift test, a second reviewer, AND a passing kint verify</span></div>
+              <div class="rowline"><span class="mono k">rules/destructive-commands</span><span class="b">never rm -rf a shared path; ask what processes anchor there first</span></div>
+              <div class="rowline"><span class="mono k">people/elpabl0</span><span class="b">role founder &#183; tz WIB &#183; prefers short answers, no walls of text</span></div>
+              <div class="rowline"><span class="mono k">people/reviewer-a</span><span class="b">role second reviewer &#183; reachable attn</span></div>
+              <div class="rowline"><span class="mono k">people/reviewer-b</span><span class="b">role second reviewer &#183; reachable attn</span></div>
+              <div class="rowline"><span class="mono k">projects/kint</span><span class="b">Sibyl Memory that outlives the laptop &#183; chain Base &#183; status hackathon build</span></div>
+            </div>
+          </div>
+
+          <div class="edge edge--foot mono">restored 15 rows <span class="dim">&#183;</span> rows_root 390336ff71dbcb85 matches the chain <span class="dim">&#183;</span> in 1.2 s</div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ screen 3 ============ -->
+<section class="screen" id="s3" aria-labelledby="s3lab">
+  <div class="strip mono">
+    <span class="lab" id="s3lab">screen 3 &#183; the memory</span>
+    <span class="note">15 rows &#183; 2 epochs</span>
+  </div>
+  <div class="screen-body top">
+    <div class="wrap">
+
+      <div class="tabs mono">
+        <span class="tab is-on">entities <span class="n">7</span></span>
+        <span class="tab">state <span class="n">2</span></span>
+        <span class="tab">reference <span class="n">2</span></span>
+        <span class="tab">journal <span class="n">4</span></span>
+      </div>
+
+      <div class="masonry">
+
+        <article class="card">
+          <div class="card-top"><span class="mono cat">entity &#183; rules</span><span class="pill pill--ok"><span class="g" aria-hidden="true"></span>verified</span></div>
+          <h3 class="key">release-gate</h3>
+          <p class="txt">never ship on a Friday; every release needs a green deadlift test, a second reviewer, AND a passing kint verify</p>
+          <p class="foot mono">no later than block 51,081,880</p>
+        </article>
+
+        <article class="card">
+          <div class="card-top"><span class="mono cat">entity &#183; rules</span><span class="pill pill--ok"><span class="g" aria-hidden="true"></span>verified</span></div>
+          <h3 class="key">destructive-commands</h3>
+          <p class="txt">never rm -rf a shared path; ask what processes anchor there first</p>
+          <p class="foot mono">no later than block 51,081,867</p>
+        </article>
+
+        <article class="card">
+          <div class="card-top"><span class="mono cat">entity &#183; people</span><span class="pill pill--ok"><span class="g" aria-hidden="true"></span>verified</span></div>
+          <h3 class="key">elpabl0</h3>
+          <p class="txt">role founder &#183; tz WIB &#183; prefers short answers, no walls of text</p>
+          <p class="foot mono">no later than block 51,081,867</p>
+        </article>
+
+        <article class="card">
+          <div class="card-top"><span class="mono cat">entity &#183; people</span><span class="pill pill--ok"><span class="g" aria-hidden="true"></span>verified</span></div>
+          <h3 class="key">reviewer-a</h3>
+          <p class="txt">role second reviewer &#183; reachable attn</p>
+          <p class="foot mono">no later than block 51,081,867</p>
+        </article>
+
+        <article class="card">
+          <div class="card-top"><span class="mono cat">entity &#183; people</span><span class="pill pill--ok"><span class="g" aria-hidden="true"></span>verified</span></div>
+          <h3 class="key">reviewer-b</h3>
+          <p class="txt">role second reviewer &#183; reachable attn</p>
+          <p class="foot mono">no later than block 51,081,880</p>
+        </article>
+
+        <article class="card">
+          <div class="card-top"><span class="mono cat">entity &#183; projects</span><span class="pill pill--ok"><span class="g" aria-hidden="true"></span>verified</span></div>
+          <h3 class="key">kint</h3>
+          <p class="txt">Sibyl Memory that outlives the laptop &#183; chain Base &#183; status hackathon build</p>
+          <p class="foot mono">no later than block 51,081,867</p>
+        </article>
+
+        <article class="card">
+          <div class="card-top"><span class="mono cat">entity &#183; facts</span><span class="pill pill--ok"><span class="g" aria-hidden="true"></span>verified</span></div>
+          <h3 class="key">deploy-window</h3>
+          <p class="txt">Tue to Thu, 09:00 to 17:00 WIB &#183; why: support coverage</p>
+          <p class="foot mono">no later than block 51,081,867</p>
+        </article>
+
+        <article class="card">
+          <div class="card-top"><span class="mono cat">state</span><span class="pill pill--ok"><span class="g" aria-hidden="true"></span>verified</span></div>
+          <h3 class="key">priorities</h3>
+          <p class="txt">top: kint submission, sigil audit &#183; updated 2026-09-09</p>
+          <p class="foot mono">no later than block 51,081,867</p>
+        </article>
+
+        <article class="card">
+          <div class="card-top"><span class="mono cat">state</span><span class="pill pill--ok"><span class="g" aria-hidden="true"></span>verified</span></div>
+          <h3 class="key">session</h3>
+          <p class="txt">last_task: wire the harnesses to kint-server</p>
+          <p class="foot mono">no later than block 51,081,867</p>
+        </article>
+
+        <article class="card">
+          <div class="card-top"><span class="mono cat">reference</span><span class="pill pill--ok"><span class="g" aria-hidden="true"></span>verified</span></div>
+          <h3 class="key">runbook-release</h3>
+          <p class="txt"># Release runbook &#183; 1. Green tests. 2. Second reviewer signs off. 3. Never on a Friday. 4. Tag, seal, announce.</p>
+          <p class="foot mono">no later than block 51,081,867</p>
+        </article>
+
+        <article class="card">
+          <div class="card-top"><span class="mono cat">reference</span><span class="pill pill--ok"><span class="g" aria-hidden="true"></span>verified</span></div>
+          <h3 class="key">glossary</h3>
+          <p class="txt">epoch: one anchored change set. space: keccak of the tenant id. leaf: hash of a stored row.</p>
+          <p class="foot mono">no later than block 51,081,867</p>
+        </article>
+
+        <article class="card">
+          <div class="card-top"><span class="mono cat">journal</span><span class="pill pill--ok"><span class="g" aria-hidden="true"></span>verified</span></div>
+          <h3 class="key">2026-05-01 09:00</h3>
+          <p class="txt">decision: adopted the Friday release rule after the May 19 incident</p>
+          <p class="foot mono">no later than block 51,081,867</p>
+        </article>
+
+        <article class="card">
+          <div class="card-top"><span class="mono cat">journal</span><span class="pill pill--ok"><span class="g" aria-hidden="true"></span>verified</span></div>
+          <h3 class="key">2026-08-28 15:30</h3>
+          <p class="txt">refusal: ship the hotfix tonight? why: Friday &#183; next: Monday 09:00 WIB</p>
+          <p class="foot mono">no later than block 51,081,867</p>
+        </article>
+
+        <article class="card">
+          <div class="card-top"><span class="mono cat">journal</span><span class="pill pill--ok"><span class="g" aria-hidden="true"></span>verified</span></div>
+          <h3 class="key">2026-09-09 18:25</h3>
+          <p class="txt">observation: kura send --wallet is ignored; switch the default wallet first</p>
+          <p class="foot mono">no later than block 51,081,880</p>
+        </article>
+
+        <article class="card card--gone">
+          <div class="card-top"><span class="mono cat">entity &#183; projects</span><span class="pill pill--gone"><span class="g" aria-hidden="true"></span>gone</span></div>
+          <h3 class="key">sigil</h3>
+          <p class="txt">compliance layer for the agentic economy &#183; status paused</p>
+          <p class="foot mono">gone at block 51,081,880</p>
+        </article>
+
+      </div>
+
+      <p class="tally mono">verified 15 of 15 rows against block 51,081,880 in 1.2 s <span class="dim">&#183;</span> 2 epochs <span class="dim">&#183;</span> 4 KB each</p>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============ screen 4 ============ -->
+<section class="screen" id="s4" aria-labelledby="s4lab">
+  <div class="strip mono">
+    <span class="lab" id="s4lab">screen 4 &#183; history</span>
+    <span class="note">2 versions</span>
+  </div>
+  <div class="screen-body top">
+    <div class="hist">
+
+      <div class="hist-head mono">
+        <span>rules / release-gate</span>
+        <span class="dim">2 versions</span>
+      </div>
+
+      <div class="vstack">
+        <article class="ver ver--now">
+          <span class="pill pill--ok pill--corner"><span class="g" aria-hidden="true"></span>verified</span>
+          <div class="stamp mono">
+            <span class="on">epoch 2</span><span>block &lt;= 51,081,880</span><span>leaf 4ac605528bbb00e7</span><span class="on">current</span>
+          </div>
+          <p class="rule">never ship on a Friday; every release needs a green deadlift test, a second reviewer<span class="diff">, AND a passing kint verify</span></p>
+          <p class="since mono">since 2026-09-09 <span class="dim">&#183;</span> source: kint hackathon build, supersedes the May rule</p>
+        </article>
+
+        <article class="ver ver--past">
+          <div class="stamp mono">
+            <span class="on">epoch 1</span><span>block &lt;= 51,081,867</span><span>leaf f406bb0919d23360</span>
+          </div>
+          <p class="rule">never ship on a Friday; every release needs a green deadlift test <span class="diff">and</span> a second reviewer</p>
+          <p class="since mono">since 2026-05-01 <span class="dim">&#183;</span> source: postmortem of the May 19 incident</p>
+        </article>
+      </div>
+
+      <p class="links mono">
+        <a href="https://basescan.org/address/0xa22E03f7a4145Bf4909a83595C90a38E14d79600">tx on basescan</a>
+        <a href="#s3">open the memory at this block</a>
+      </p>
+      <p class="cap mono">existed no later than block 51,081,880</p>
+
+    </div>
+
+    <div class="slips">
+      <p class="slip-lab mono">refusals and empty states</p>
+
+      <div class="slip">
+        <div class="banner">
+          <span class="pill pill--bad"><span class="g" aria-hidden="true"></span>refused</span>
+          <p>epoch 3 claims to be a snapshot its plaintext does not back up; the history was read the long way round.</p>
+        </div>
+
+        <div class="legend mono">
+          <span class="li"><span class="pill pill--ok"><span class="g" aria-hidden="true"></span>verified</span></span>
+          <span class="li"><span class="pill pill--bad"><span class="g" aria-hidden="true"></span>refused</span></span>
+          <span class="li"><span class="pill pill--closed"><span class="g" aria-hidden="true"></span>closed</span> an epoch sealed under a retired key</span>
+        </div>
+
+        <div class="errs mono">
+          <p class="err"><b>wrong passphrase:</b> refused by the key tag before any decrypt</p>
+          <p class="err"><b>chain unreadable:</b> two RPC operators disagree on the head; refusing to restore</p>
+          <p class="err"><b>fork:</b> another machine wrote epoch 3 first; this machine's 2 unanchored rows are refused</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+</main>
+
+<footer class="foot-bar mono">
+  <span>MIT <span class="dim">&#183;</span> Built for the Sibyl Labs Hackathon, September 2026 <span class="dim">&#183;</span> s0nderlabs <span class="dim">&#183;</span> on Base</span>
+  <span>EpochAnchor <a href="https://basescan.org/address/0xa22E03f7a4145Bf4909a83595C90a38E14d79600">0xa22E03f7a4145Bf4909a83595C90a38E14d79600</a></span>
+</footer>
+
+<script>
+(function(){
+  var b=document.getElementById('themeToggle');
+  if(!b){return;}
+  b.addEventListener('click',function(){
+    var r=document.documentElement;
+    var cur=r.getAttribute('data-theme');
+    if(cur!=='dark'&&cur!=='light'){
+      cur=(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';
+    }
+    var next=(cur==='dark')?'light':'dark';
+    r.setAttribute('data-theme',next);
+    try{localStorage.setItem('kint-theme',next);}catch(e){}
+  });
+})();
+</script>
+
+</body>
+</html>

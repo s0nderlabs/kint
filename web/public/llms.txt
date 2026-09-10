@@ -1,0 +1,45 @@
+# kint
+
+> Sibyl Memory that outlives the laptop. kint wraps Sibyl Memory's MCP server untouched (their eight tools as shipped, six added), encrypts the memory to the owner's wallet, keeps it on Base as calldata under a small contract, restores it on any machine by wallet connect, and verifies every recalled row against the chain before the agent acts on it.
+
+## Install
+
+kint is not on PyPI yet. Install from the tagged release (Python 3.10+):
+
+```
+uv tool install git+https://github.com/s0nderlabs/kint@v0.3.0
+```
+
+If the shell sets PYTHONPATH, run the binaries with it unset (`env -u PYTHONPATH kint ...`); `kint setup` bakes `/usr/bin/env -u PYTHONPATH` into every harness registration.
+
+## For AI agents
+
+Never ask the human for the derive signature, the vault passphrase or the recovery code in a chat: the signature only travels on stdin (`kint connect --signature -`), and the other two are typed in a terminal (`--passphrase-stdin`, `--recovery-code-stdin`). Call `memory_verify` before acting on anything recalled; on `refuse`, do not act and tell the human which block anchored the last good value. Full guide: https://kint.s0nderlabs.xyz/docs/md/agents.md
+
+- Every page as markdown: https://kint.s0nderlabs.xyz/docs/md/<slug>.md
+- Everything in one file: https://kint.s0nderlabs.xyz/llms-full.txt
+
+## Docs
+
+- [Introduction](https://kint.s0nderlabs.xyz/docs/md/introduction.md): Sibyl Memory that outlives the laptop: wallet-owned, kept on Base, verified before the agent acts on it.
+- [Quickstart](https://kint.s0nderlabs.xyz/docs/md/quickstart.md): Install kint, connect the wallet, authorize this machine's session key, and anchor the first epoch.
+- [Restore on a new machine](https://kint.s0nderlabs.xyz/docs/md/new-machine.md): Wipe the machine, connect the wallet, pull: every step a restore takes and every check it makes.
+- [How it works](https://kint.s0nderlabs.xyz/docs/md/how-it-works.md): The four paths a Sibyl row takes through kint, and the state on disk that each path leans on.
+- [Keys and custody](https://kint.s0nderlabs.xyz/docs/md/keys.md): The owner wallet, the per-machine session key, the frozen vault message, the data key and its rotation.
+- [Epochs on Base](https://kint.s0nderlabs.xyz/docs/md/epochs.md): What one epoch carries, how it is sealed, where it lives on Base, and what it costs.
+- [Verify before acting](https://kint.s0nderlabs.xyz/docs/md/verify.md): memory_verify checks a recalled row against Base before the agent acts; memory_history reads old versions.
+- [MCP tools](https://kint.s0nderlabs.xyz/docs/md/tools.md): The fourteen tools kint-server serves: Sibyl's eight unmodified, kint's six, every parameter and error.
+- [CLI](https://kint.s0nderlabs.xyz/docs/md/cli.md): Every kint command and flag with its default, which ones need the owner key, and the kint-server binary.
+- [Configuration](https://kint.s0nderlabs.xyz/docs/md/configuration.md): Every environment variable kint reads, the files it keeps, and how to hand the settings to kint-server.
+- [EpochAnchor contract](https://kint.s0nderlabs.xyz/docs/md/contract.md): Every function, event and error of EpochAnchor on Base mainnet, who may call it, and what it costs.
+- [Browser core](https://kint.s0nderlabs.xyz/docs/md/kint-core.md): The TypeScript package a page uses to read a wallet's epochs off Base and open them locally.
+- [Harnesses](https://kint.s0nderlabs.xyz/docs/md/harnesses.md): The two doors into kint, what kint setup writes for each harness, and what was verified on each one.
+- [For agents](https://kint.s0nderlabs.xyz/docs/md/agents.md): How an AI agent installs and drives kint for a human, and what must always go back to that human.
+- [Built on Sibyl Memory](https://kint.s0nderlabs.xyz/docs/md/sibyl.md): What Sibyl decides, what kint decides, and every part of Sibyl that kint relies on.
+- [Limits and threat model](https://kint.s0nderlabs.xyz/docs/md/limits.md): What kint does not do, what each attacker gets, and what anyone reading Base can see.
+
+## Reference
+
+- Repository: https://github.com/s0nderlabs/kint (MIT, v0.3.0)
+- EpochAnchor on Base mainnet (chain id 8453): 0xa22E03f7a4145Bf4909a83595C90a38E14d79600 (verified on Basescan)
+- Sibyl Memory: https://github.com/Sibyl-Labs/Sibyl-Memory

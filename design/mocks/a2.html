@@ -1,0 +1,847 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script>(function(){try{var t=localStorage.getItem('kint-theme');if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>kint app, A2 Timeline</title>
+<link href="https://fonts.googleapis.com/css2?family=Martian+Mono:wght@300..700&display=swap" rel="stylesheet">
+<style>/* ---------------------------------------------------------------- faces */
+
+@font-face{
+  font-family:"Instrument Sans";
+  src:url("fonts/instrument-sans-var.ttf") format("truetype");
+  font-weight:400 700;font-style:normal;font-display:swap;
+}/* --------------------------------------------------------------- tokens *//* bare :root carries the COMPLETE light palette (cream and terracotta) */
+
+
+
+:root{
+  --page:#F3EEE3;
+  --card:#FBF8F1;
+  --sunk:#EFE7D8;
+  --ink:#14110D;
+  --ink-2:#4A423A;
+  --muted:#6F675C;
+  --hair:rgba(20,17,13,.12);
+  --hair-soft:rgba(20,17,13,.07);
+  --rail:rgba(20,17,13,.18);
+  --accent:#E07A5F;
+  --accent-hover:#CE6A50;
+  --accent-text:#A34526;
+  --accent-tint:rgba(224,122,95,.14);
+  --on-accent:#14110D;
+  --ok:#0F6E52;
+  --ok-tint:rgba(15,110,82,.12);
+  --bad:#97202A;
+  --bad-tint:rgba(151,32,42,.10);
+  --mute-tint:rgba(20,17,13,.07);
+  --sans:"Instrument Sans",Helvetica,Arial,sans-serif;
+  --mono:"Martian Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  --col:760px;
+  --ease-out-expo:cubic-bezier(0.16,1,0.3,1);
+}/* default viewer state: nothing stamped, only the OS speaks */
+
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --page:#171410;
+    --card:#1F1B16;
+    --sunk:#262119;
+    --ink:#EFE9DD;
+    --ink-2:#CFC7B9;
+    --muted:#968D80;
+    --hair:rgba(239,233,221,.14);
+    --hair-soft:rgba(239,233,221,.08);
+    --rail:rgba(239,233,221,.20);
+    --accent:#F08C74;
+    --accent-hover:#F79E88;
+    --accent-text:#F5A48E;
+    --accent-tint:rgba(240,140,116,.16);
+    --on-accent:#191410;
+    --ok:#4FCFA4;
+    --ok-tint:rgba(79,207,164,.14);
+    --bad:#F0868C;
+    --bad-tint:rgba(240,134,140,.14);
+    --mute-tint:rgba(239,233,221,.09);
+  }
+}/* explicit choice wins in both directions */
+
+:root[data-theme="dark"]{
+  --page:#171410;
+  --card:#1F1B16;
+  --sunk:#262119;
+  --ink:#EFE9DD;
+  --ink-2:#CFC7B9;
+  --muted:#968D80;
+  --hair:rgba(239,233,221,.14);
+  --hair-soft:rgba(239,233,221,.08);
+  --rail:rgba(239,233,221,.20);
+  --accent:#F08C74;
+  --accent-hover:#F79E88;
+  --accent-text:#F5A48E;
+  --accent-tint:rgba(240,140,116,.16);
+  --on-accent:#191410;
+  --ok:#4FCFA4;
+  --ok-tint:rgba(79,207,164,.14);
+  --bad:#F0868C;
+  --bad-tint:rgba(240,134,140,.14);
+  --mute-tint:rgba(239,233,221,.09);
+}/* ----------------------------------------------------------------- base */
+
+
+.v-a2,.v-a2 *{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body.v-a2{
+  margin:0;
+  background:var(--page);
+  color:var(--ink);
+  font-family:var(--sans);
+  font-weight:400;
+  font-size:15px;
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+.v-a2 h1,.v-a2 h2,.v-a2 h3,.v-a2 p,.v-a2 ul,.v-a2 ol,.v-a2 dl,.v-a2 dd,.v-a2 dt{margin:0}
+.v-a2 ul,.v-a2 ol{list-style:none;padding:0}
+.v-a2 a{color:var(--ink);text-decoration-color:var(--hair);text-underline-offset:3px}
+.v-a2 a:hover{color:var(--accent-text);text-decoration-color:currentColor}
+.v-a2 a:focus-visible,.v-a2 button:focus-visible,.v-a2 input:focus-visible,.v-a2 [tabindex]:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+.v-a2 button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}/* the house grain */
+
+
+.v-a2::before{
+  content:"";position:fixed;inset:0;z-index:9999;pointer-events:none;opacity:.03;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='256' height='256' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size:256px 256px;
+}/* ------------------------------------------------------------- wordmark */
+
+
+.v-a2 .wm{font-weight:600;font-size:20px;letter-spacing:-.015em;line-height:1}
+.v-a2 .wm .i{position:relative}/* the tittle, drawn by hand in the accent (top tuned for Instrument Sans) */
+
+.v-a2 .wm .i::after{
+  content:"";position:absolute;left:50%;transform:translateX(-50%);
+  top:0.215em;width:.18em;height:.18em;background:var(--accent);
+}
+.v-a2 a.wm-link{text-decoration:none;color:var(--ink);display:inline-flex}
+.v-a2 a.wm-link:hover{color:var(--ink)}/* ---------------------------------------------------------------- mono  */
+
+
+.v-a2 .mono{font-family:var(--mono);font-weight:400;letter-spacing:-.03em;overflow-wrap:break-word}
+.v-a2 .eyebrow{
+  font-family:var(--mono);font-weight:500;font-size:12px;line-height:1.4;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
+}/* --------------------------------------------------------------- screen */
+
+
+.v-a2 .screen{min-height:100svh;display:flex;flex-direction:column;border-bottom:1px solid var(--hair)}
+.v-a2 .screen:last-of-type{border-bottom:0}
+.v-a2 .stage{flex:1;width:100%;max-width:var(--col);margin:0 auto;padding:clamp(28px,5vh,64px) 20px 88px}
+.v-a2 .stage.centred{display:flex;flex-direction:column;justify-content:center;padding-top:40px;padding-bottom:64px}/* the mono label strip that separates the four screens */
+
+
+.v-a2 .strip{
+  display:flex;align-items:center;gap:12px;padding:14px 20px;background:var(--page);
+  font-family:var(--mono);font-weight:400;font-size:12px;letter-spacing:.06em;color:var(--muted);
+}
+.v-a2 .strip b{font-weight:500;color:var(--ink-2)}
+.v-a2 .strip::after{content:"";flex:1;height:1px;background:var(--hair)}/* -------------------------------------------------------------- top bar */
+
+
+.v-a2 .bar{
+  display:flex;align-items:center;gap:14px;height:48px;padding:0 20px;
+  background:var(--card);border-top:1px solid var(--hair);border-bottom:1px solid var(--hair);
+}
+.v-a2 .facts{
+  flex:1;min-width:0;display:flex;align-items:center;overflow-x:auto;white-space:nowrap;
+  font-family:var(--mono);font-weight:400;font-size:12px;letter-spacing:-.03em;color:var(--muted);
+  scrollbar-width:none;
+}
+.v-a2 .facts::-webkit-scrollbar{display:none}
+.v-a2 .facts span{padding:0 14px}
+.v-a2 .facts span+span{border-left:1px solid var(--hair)}
+.v-a2 .facts b{font-weight:500;color:var(--ink-2)}
+.v-a2 .lock{
+  display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 10px 0 8px;
+  border:1px solid var(--hair);border-radius:999px;background:var(--page);
+  font-size:12px;font-weight:500;color:var(--ink-2);white-space:nowrap;
+}
+.v-a2 .tgl{
+  width:30px;height:30px;border-radius:999px;display:inline-flex;align-items:center;
+  justify-content:center;color:var(--muted);border:1px solid transparent;flex:none;
+}
+.v-a2 .tgl:hover{color:var(--ink);border-color:var(--hair);background:var(--page)}/* ----------------------------------------------------------------- icons */
+
+
+.v-a2 .ico{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.4;
+  stroke-linecap:round;stroke-linejoin:round;display:block}
+.v-a2 .ico.sm{width:10px;height:10px;stroke-width:1.8}
+.v-a2 .ico.md{width:16px;height:16px}
+.v-a2 .icn{
+  width:28px;height:28px;border-radius:8px;display:inline-flex;align-items:center;
+  justify-content:center;color:var(--muted);flex:none;
+}
+.v-a2 .icn:hover{color:var(--ink);background:var(--mute-tint)}/* ----------------------------------------------------------------- rail */
+
+
+.v-a2 .rail{position:relative;padding-left:36px}
+.v-a2 .node{position:relative;padding-bottom:34px}
+.v-a2 .node:last-child{padding-bottom:0}
+.v-a2 .node::before{
+  content:"";position:absolute;z-index:1;left:-36px;top:4px;width:12px;height:12px;
+  border-radius:999px;border:2px solid var(--ink-2);background:var(--page);
+}
+/* the rail itself: one segment per node, ending under the next node's dot */
+.v-a2 .node::after{
+  content:"";position:absolute;left:-31px;top:15px;bottom:-9px;width:2px;
+  background:var(--rail);border-radius:2px;
+}
+.v-a2 .node:last-child::after{display:none}
+.v-a2 .node.hollow::before{border-color:var(--muted)}
+.v-a2 .node.term::before{
+  border:0;border-radius:0;left:-40px;top:9px;width:20px;height:2px;background:var(--rail);
+}
+.v-a2 .nlabel{font-family:var(--mono);font-weight:500;font-size:15px;letter-spacing:-.04em;
+  line-height:1.4;color:var(--ink);overflow-wrap:break-word}
+.v-a2 .nsub{font-family:var(--mono);font-weight:400;font-size:12px;letter-spacing:-.03em;
+  color:var(--muted);margin-top:4px;display:flex;flex-wrap:wrap;align-items:center;gap:8px;
+  overflow-wrap:break-word}/* ---------------------------------------------------------------- cards */
+
+
+.v-a2 .card{background:var(--card);border:1px solid var(--hair);border-radius:16px}
+.v-a2 .ecard{background:var(--card);border:1px solid var(--hair);border-radius:14px;
+  margin-top:12px;overflow:hidden}
+.v-a2 .row{display:flex;gap:14px;align-items:flex-start;padding:13px 16px}
+.v-a2 .row+.row,.v-a2 .row+.efoot,.v-a2 .ver+.ver{border-top:1px solid var(--hair-soft)}
+.v-a2 .row:hover{background:var(--mute-tint)}
+.v-a2 .row-main{flex:1;min-width:0}
+.v-a2 .row-body{
+  font-size:15px;font-weight:500;line-height:1.45;color:var(--ink);
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+}
+.v-a2 .prov{
+  font-family:var(--mono);font-weight:400;font-size:12px;letter-spacing:-.03em;
+  color:var(--muted);margin-top:5px;overflow-wrap:break-word;
+}
+.v-a2 .prov .key{color:var(--ink-2);font-weight:500}
+.v-a2 .row-side{display:flex;align-items:center;gap:4px;flex:none}
+.v-a2 .chip{
+  display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:6px;
+  background:var(--accent-tint);color:var(--ink-2);
+  font-family:var(--mono);font-weight:500;font-size:12px;letter-spacing:-.03em;
+}
+.v-a2 .efoot{
+  padding:11px 16px;font-family:var(--mono);font-weight:400;font-size:12px;
+  letter-spacing:-.03em;color:var(--muted);overflow-wrap:break-word;
+}
+.v-a2 .row.gone .row-body{text-decoration:line-through;color:var(--muted);font-weight:400}
+.v-a2 .row.gone .chip{background:var(--mute-tint)}/* --------------------------------------------------------------- pills */
+
+
+.v-a2 .pill{
+  display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 10px;
+  border-radius:999px;font-size:12px;font-weight:600;line-height:1;white-space:nowrap;
+  font-family:var(--sans);letter-spacing:0;
+}
+.v-a2 .pill.ok{background:var(--ok-tint);color:var(--ok)}
+.v-a2 .pill.bad{background:var(--bad-tint);color:var(--bad)}
+.v-a2 .pill.closed,.v-a2 .pill.mute{background:var(--mute-tint);color:var(--muted)}/* ------------------------------------------------------------- controls */
+
+
+.v-a2 .btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;height:42px;
+  padding:0 22px;border-radius:999px;font-size:15px;font-weight:600;
+  transition:background .18s var(--ease-out-expo),color .18s var(--ease-out-expo);
+}
+.v-a2 .btn.primary{background:var(--accent);color:var(--on-accent)}
+.v-a2 .btn.primary:hover{background:var(--accent-hover)}
+.v-a2 .btn.ghost{border:1px solid var(--hair);color:var(--ink);background:var(--card)}
+.v-a2 .btn.ghost:hover{background:var(--sunk)}
+.v-a2 .field{display:flex;align-items:center;gap:8px;height:44px;padding:0 6px 0 14px;
+  border:1px solid var(--hair);border-radius:999px;background:var(--page)}
+.v-a2 .field:focus-within{border-color:var(--accent)}
+.v-a2 .field input{
+  flex:1;min-width:0;border:0;background:none;outline:none;color:var(--ink);
+  font-family:var(--mono);font-weight:400;font-size:15px;letter-spacing:.1em;
+}
+.v-a2 .field input::placeholder{color:var(--muted);letter-spacing:.2em}
+.v-a2 .go{width:32px;height:32px;border-radius:999px;background:var(--sunk);color:var(--ink-2);
+  display:inline-flex;align-items:center;justify-content:center;flex:none}
+.v-a2 .go:hover{background:var(--accent);color:var(--on-accent)}/* ------------------------------------------------------- screen 1, card */
+
+
+.v-a2 .connect{width:100%;max-width:600px;margin:0 auto;padding:28px}
+.v-a2 .h-lg{font-size:clamp(1.6rem,3.4vw,2rem);font-weight:500;line-height:1.15;
+  letter-spacing:-.025em;color:var(--ink)}
+.v-a2 .fields{margin-top:22px;border-top:1px solid var(--hair-soft)}
+.v-a2 .fields div{display:flex;gap:16px;align-items:baseline;padding:11px 0;
+  border-bottom:1px solid var(--hair-soft)}
+.v-a2 .fields dt{flex:none;width:126px;font-size:12px;font-weight:500;color:var(--muted)}
+.v-a2 .fields dd{flex:1;min-width:0;font-family:var(--mono);font-weight:400;font-size:12px;
+  letter-spacing:-.03em;color:var(--ink);overflow-wrap:anywhere}
+.v-a2 .paths{margin-top:26px;display:flex;flex-direction:column;gap:26px}
+.v-a2 .path .eyebrow{margin-bottom:12px}
+.v-a2 .quiet{
+  margin-top:14px;padding:13px 15px;background:var(--sunk);border-radius:12px;
+  border-left:2px solid var(--rail);font-size:15px;line-height:1.5;color:var(--ink-2);
+}
+.v-a2 .lbl{display:block;font-size:15px;font-weight:600;color:var(--ink);margin-bottom:10px}
+.v-a2 .help{margin-top:10px;font-size:12px;color:var(--muted)}
+.v-a2 .fine{margin-top:26px;padding-top:18px;border-top:1px solid var(--hair-soft);
+  font-family:var(--mono);font-weight:400;font-size:12px;letter-spacing:-.03em;color:var(--muted)}/* --------------------------------------------------- screens 2, 3 and 4 */
+
+
+.v-a2 .prog{
+  display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:26px;padding:12px 16px;
+  background:var(--card);border:1px solid var(--hair);border-radius:12px;
+  font-family:var(--mono);font-weight:400;font-size:12px;letter-spacing:-.03em;color:var(--ink-2);
+}
+.v-a2 .tiers{
+  display:flex;flex-wrap:wrap;align-items:center;gap:6px 4px;margin-bottom:24px;
+  font-family:var(--mono);font-weight:400;font-size:12px;letter-spacing:-.03em;color:var(--muted);
+}
+.v-a2 .tiers .t{padding:4px 9px;border-radius:8px}
+.v-a2 .tiers .t.on{color:var(--ink);font-weight:500;background:var(--mute-tint)}
+.v-a2 .tiers .sep{opacity:.5}
+.v-a2 .h-md{font-family:var(--mono);font-weight:500;font-size:20px;letter-spacing:-.05em;
+  line-height:1.25;color:var(--ink);overflow-wrap:break-word}
+.v-a2 .h-md .mut{color:var(--muted);font-weight:400}
+.v-a2 .cap{margin-top:10px;font-size:15px;line-height:1.5;color:var(--ink-2);max-width:56ch}
+.v-a2 .head4{margin-bottom:28px}
+.v-a2 .ver{padding:16px}
+.v-a2 .ver .row-body{-webkit-line-clamp:unset;display:block;overflow:visible}
+.v-a2 .diff{color:var(--accent-text);font-weight:600}
+.v-a2 .acts{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;margin-top:14px}
+.v-a2 .acts a,.v-a2 .acts .lk{
+  font-family:var(--mono);font-weight:400;font-size:12px;letter-spacing:-.03em;
+  color:var(--ink-2);text-decoration:underline;text-decoration-color:var(--hair);
+}
+.v-a2 .acts .lk:hover,.v-a2 .acts a:hover{color:var(--accent-text);text-decoration-color:currentColor}
+.v-a2 .acts .txt{font-family:var(--mono);font-weight:400;font-size:12px;letter-spacing:-.03em;
+  color:var(--muted)}
+.v-a2 .endline{font-size:15px;color:var(--muted);padding-top:1px}
+.v-a2 .footline{
+  margin-top:30px;padding-top:16px;border-top:1px solid var(--hair);
+  font-family:var(--mono);font-weight:400;font-size:12px;letter-spacing:-.03em;color:var(--muted);
+}
+.v-a2 .banner{
+  display:flex;gap:12px;align-items:flex-start;margin-top:44px;padding:14px 16px;
+  background:var(--bad-tint);border-left:2px solid var(--bad);border-radius:12px;
+}
+.v-a2 .banner p{font-size:15px;line-height:1.45;color:var(--ink)}
+.v-a2 .errs{margin-top:26px;padding:18px;border:1px solid var(--hair);border-radius:14px;
+  background:var(--card)}
+.v-a2 .errs ul{margin-top:12px;display:flex;flex-direction:column;gap:9px}
+.v-a2 .errs li{font-family:var(--mono);font-weight:400;font-size:12px;letter-spacing:-.03em;
+  line-height:1.6;color:var(--ink-2);overflow-wrap:break-word}
+.v-a2 .errs li b{font-weight:500;color:var(--bad)}
+.v-a2 .legend{margin-top:26px;display:flex;flex-direction:column;gap:10px}
+.v-a2 .legend li{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.v-a2 .legend .gloss{font-size:12px;color:var(--muted)}/* --------------------------------------------------------------- motion *//* the one beat: the rail on screen 2 draws down once on load */
+
+
+
+@media (prefers-reduced-motion: no-preference){
+  .v-a2 #s2 .node::after{transform-origin:top center;animation:raildraw .6s var(--ease-out-expo) both}
+  .v-a2 #s2 .node:nth-child(2)::after{animation-delay:.6s}
+}
+@keyframes raildraw{from{transform:scaleY(0)}to{transform:scaleY(1)}}/* ----------------------------------------------------------- narrow: 390 */
+
+
+@media (max-width:640px){
+  .v-a2 .bar{height:auto;flex-wrap:wrap;padding:9px 14px;gap:8px 10px}
+  .v-a2 .wm-link{margin-right:auto}
+  .v-a2 .facts{order:3;flex-basis:100%;flex:none;width:100%}
+  .v-a2 .facts span:first-child{padding-left:0}
+  .v-a2 .strip{padding:12px 14px}
+  .v-a2 .stage{padding-left:14px;padding-right:14px}
+  .v-a2 .rail{padding-left:26px}
+  .v-a2 .node::before{left:-26px;width:10px;height:10px}
+  .v-a2 .node::after{left:-22px;top:13px}
+  .v-a2 .node.term::before{left:-30px;width:16px}
+  .v-a2 .row{flex-wrap:wrap;padding:13px 14px}
+  .v-a2 .row-side{width:100%;justify-content:flex-start;margin-left:-6px}
+  .v-a2 .connect{padding:22px 18px}
+  .v-a2 .fields div{flex-direction:column;gap:4px}
+  .v-a2 .fields dt{width:auto}
+  .v-a2 .ver{padding:14px}
+}
+</style>
+</head>
+<body class="v-a2">
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <symbol id="i-copy" viewBox="0 0 16 16">
+    <rect x="5.6" y="5.6" width="7.8" height="7.8" rx="1.6"/>
+    <path d="M10.4 3.4H4.2A1.6 1.6 0 0 0 2.6 5v6.2"/>
+  </symbol>
+  <symbol id="i-open" viewBox="0 0 16 16">
+    <path d="M9.4 3.2h3.4v3.4"/><path d="M12.8 3.2 7.6 8.4"/>
+    <path d="M12.8 9.6v2.1a1.4 1.4 0 0 1-1.4 1.4H4.6a1.4 1.4 0 0 1-1.4-1.4V4.9a1.4 1.4 0 0 1 1.4-1.4h2.1"/>
+  </symbol>
+  <symbol id="i-check" viewBox="0 0 12 12"><path d="M2.4 6.2 4.7 8.5 9.6 3.6"/></symbol>
+  <symbol id="i-x" viewBox="0 0 12 12"><path d="M3.2 3.2 8.8 8.8M8.8 3.2 3.2 8.8"/></symbol>
+  <symbol id="i-dot" viewBox="0 0 12 12"><circle cx="6" cy="6" r="2.4"/></symbol>
+  <symbol id="i-theme" viewBox="0 0 16 16">
+    <circle cx="8" cy="8" r="5.2"/><path d="M8 2.8a5.2 5.2 0 0 0 0 10.4z" fill="currentColor" stroke="none"/>
+  </symbol>
+  <symbol id="i-arrow" viewBox="0 0 16 16"><path d="M3.4 8h9.2M9 4.4 12.6 8 9 11.6"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 16 16">
+    <rect x="3.4" y="7" width="9.2" height="6.2" rx="1.8"/><path d="M5.8 7V5.4a2.2 2.2 0 0 1 4.4 0V7"/>
+  </symbol>
+  <symbol id="i-unlock" viewBox="0 0 16 16">
+    <rect x="3.4" y="7" width="9.2" height="6.2" rx="1.8"/><path d="M5.8 7V5.4a2.2 2.2 0 0 1 4.2-.8"/>
+  </symbol>
+</svg>
+
+<!-- =============================================== screen 1 · connect -->
+<section class="screen" id="s1">
+  <p class="strip"><b>screen 1</b> · connect</p>
+  <header class="bar">
+    <a class="wm-link" href="#s1" aria-label="kint, top of the app"><span class="wm">k<span class="i">ı</span>nt</span></a>
+    <div class="facts">
+      <span>owner <b>0xC635…87Ec</b></span>
+      <span>tenant <b>kint-demo</b></span>
+      <span>head seq <b>2</b></span>
+      <span>block <b>51,081,880</b></span>
+    </div>
+    <span class="lock"><svg class="ico sm" aria-hidden="true" focusable="false"><use href="#i-lock"/></svg>Locked</span>
+    <button class="tgl" type="button" aria-label="Toggle theme"><svg class="ico md" aria-hidden="true" focusable="false"><use href="#i-theme"/></svg></button>
+  </header>
+
+  <div class="stage centred">
+    <div class="card connect">
+      <h1 class="h-lg">Connect and unlock</h1>
+
+      <dl class="fields">
+        <div>
+          <dt>Owner address</dt>
+          <dd>0xC635e6Eb223aE14143E23cEEa9440bC773dc87Ec</dd>
+        </div>
+        <div>
+          <dt>Tenant</dt>
+          <dd>kint-demo</dd>
+        </div>
+      </dl>
+
+      <div class="paths">
+        <section class="path">
+          <p class="eyebrow">EOA owners</p>
+          <button class="btn primary" type="button">Sign with the wallet</button>
+          <p class="quiet">One frozen message. Signing it reveals your memory encryption key. Only sign it in a kint page you opened yourself.</p>
+        </section>
+
+        <section class="path">
+          <p class="eyebrow">Base Account owners</p>
+          <label class="lbl" for="pp">Type the passphrase</label>
+          <div class="field">
+            <input id="pp" type="password" placeholder="............" autocomplete="off" spellcheck="false">
+            <button class="go" type="button" aria-label="Unlock with the passphrase"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-arrow"/></svg></button>
+          </div>
+          <p class="help">Never leaves this page.</p>
+        </section>
+      </div>
+
+      <p class="fine">Nothing decrypted leaves the browser. Reads never send a transaction.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================ screen 2 · cold start -->
+<section class="screen" id="s2">
+  <p class="strip"><b>screen 2</b> · cold start</p>
+  <header class="bar">
+    <a class="wm-link" href="#s1" aria-label="kint, top of the app"><span class="wm">k<span class="i">ı</span>nt</span></a>
+    <div class="facts">
+      <span>owner <b>0xC635…87Ec</b></span>
+      <span>tenant <b>kint-demo</b></span>
+      <span>head seq <b>2</b></span>
+      <span>block <b>51,081,880</b></span>
+    </div>
+    <span class="lock"><svg class="ico sm" aria-hidden="true" focusable="false"><use href="#i-unlock"/></svg>Unlocked</span>
+    <button class="tgl" type="button" aria-label="Toggle theme"><svg class="ico md" aria-hidden="true" focusable="false"><use href="#i-theme"/></svg></button>
+  </header>
+
+  <div class="stage">
+    <p class="prog"><span>walking epoch 2 of 2 · block 51,081,880 · 15 rows</span></p>
+
+    <ol class="rail">
+      <li class="node">
+        <p class="nlabel">epoch 1 · block 51,081,867 · 14 rows</p>
+        <p class="nsub"><span>tx 0xbe9bb859…bbe4455</span><span class="pill mute">opened</span></p>
+        <div class="ecard">
+          <div class="row">
+            <div class="row-main">
+              <p class="row-body">never rm -rf a shared path; ask what processes anchor there first</p>
+              <p class="prov">entity · rules · <span class="key">destructive-commands</span></p>
+            </div>
+          </div>
+          <div class="row">
+            <div class="row-main">
+              <p class="row-body"># Release runbook · 1. Green tests. 2. Second reviewer signs off. 3. Never on a Friday. 4. Tag, seal, announce.</p>
+              <p class="prov">reference · <span class="key">runbook-release</span></p>
+            </div>
+          </div>
+          <div class="row">
+            <div class="row-main">
+              <p class="row-body">decision: adopted the Friday release rule after the May 19 incident</p>
+              <p class="prov">journal · <span class="key">2026-05-01 09:00</span></p>
+            </div>
+          </div>
+          <p class="efoot">+ 11 more rows opened</p>
+        </div>
+      </li>
+
+      <li class="node">
+        <p class="nlabel">epoch 2 · block 51,081,880 · +2 rows, 1 deleted</p>
+        <p class="nsub"><span>tx 0x369907fb…9a729</span><span class="pill mute">opened</span></p>
+        <div class="ecard">
+          <div class="row">
+            <div class="row-main">
+              <p class="row-body">role second reviewer · reachable attn</p>
+              <p class="prov">entity · people · <span class="key">reviewer-b</span></p>
+            </div>
+          </div>
+          <div class="row">
+            <div class="row-main">
+              <p class="row-body">observation: kura send --wallet is ignored; switch the default wallet first</p>
+              <p class="prov">journal · <span class="key">2026-09-09 18:25</span></p>
+            </div>
+          </div>
+          <div class="row gone">
+            <div class="row-main">
+              <p class="row-body">compliance layer for the agentic economy · status paused</p>
+              <p class="prov">entity · projects · <span class="key">sigil</span> · gone at block 51,081,880</p>
+            </div>
+            <div class="row-side"><span class="pill mute">gone</span></div>
+          </div>
+          <p class="efoot">1 row rewritten in this epoch · entity rules/release-gate</p>
+        </div>
+      </li>
+
+      <li class="node term">
+        <p class="nlabel">restored 15 rows</p>
+        <p class="nsub"><span>rows_root 390336ff71dbcb85 matches the chain · in 1.2 s</span><span class="pill ok"><svg class="ico sm" aria-hidden="true" focusable="false"><use href="#i-check"/></svg>verified</span></p>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<!-- ============================================ screen 3 · the memory -->
+<section class="screen" id="s3">
+  <p class="strip"><b>screen 3</b> · the memory</p>
+  <header class="bar">
+    <a class="wm-link" href="#s1" aria-label="kint, top of the app"><span class="wm">k<span class="i">ı</span>nt</span></a>
+    <div class="facts">
+      <span>owner <b>0xC635…87Ec</b></span>
+      <span>tenant <b>kint-demo</b></span>
+      <span>head seq <b>2</b></span>
+      <span>block <b>51,081,880</b></span>
+    </div>
+    <span class="lock"><svg class="ico sm" aria-hidden="true" focusable="false"><use href="#i-unlock"/></svg>Unlocked</span>
+    <button class="tgl" type="button" aria-label="Toggle theme"><svg class="ico md" aria-hidden="true" focusable="false"><use href="#i-theme"/></svg></button>
+  </header>
+
+  <div class="stage">
+    <p class="tiers">
+      <span class="t on">entities 7</span><span class="sep">·</span>
+      <span class="t">state 2</span><span class="sep">·</span>
+      <span class="t">reference 2</span><span class="sep">·</span>
+      <span class="t">journal 4</span>
+    </p>
+
+    <ol class="rail">
+      <li class="node">
+        <p class="nlabel">block 51,081,867 · epoch 1 · 14 rows</p>
+        <p class="nsub"><span>11 rows at this block</span><span class="pill ok"><svg class="ico sm" aria-hidden="true" focusable="false"><use href="#i-check"/></svg>verified</span></p>
+        <div class="ecard">
+          <div class="row">
+            <div class="row-main">
+              <p class="row-body">never rm -rf a shared path; ask what processes anchor there first</p>
+              <p class="prov">entity · rules · <span class="key">destructive-commands</span></p>
+            </div>
+            <div class="row-side">
+              <span class="chip">51081867</span>
+              <button class="icn" type="button" aria-label="Copy the key destructive-commands"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-copy"/></svg></button>
+              <button class="icn" type="button" aria-label="Open the memory at block 51,081,867"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-open"/></svg></button>
+            </div>
+          </div>
+          <div class="row">
+            <div class="row-main">
+              <p class="row-body">role founder · tz WIB · prefers short answers, no walls of text</p>
+              <p class="prov">entity · people · <span class="key">elpabl0</span></p>
+            </div>
+            <div class="row-side">
+              <span class="chip">51081867</span>
+              <button class="icn" type="button" aria-label="Copy the key elpabl0"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-copy"/></svg></button>
+              <button class="icn" type="button" aria-label="Open the memory at block 51,081,867"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-open"/></svg></button>
+            </div>
+          </div>
+          <div class="row">
+            <div class="row-main">
+              <p class="row-body">role second reviewer · reachable attn</p>
+              <p class="prov">entity · people · <span class="key">reviewer-a</span></p>
+            </div>
+            <div class="row-side">
+              <span class="chip">51081867</span>
+              <button class="icn" type="button" aria-label="Copy the key reviewer-a"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-copy"/></svg></button>
+              <button class="icn" type="button" aria-label="Open the memory at block 51,081,867"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-open"/></svg></button>
+            </div>
+          </div>
+          <div class="row">
+            <div class="row-main">
+              <p class="row-body">Sibyl Memory that outlives the laptop · chain Base · status hackathon build</p>
+              <p class="prov">entity · projects · <span class="key">kint</span></p>
+            </div>
+            <div class="row-side">
+              <span class="chip">51081867</span>
+              <button class="icn" type="button" aria-label="Copy the key kint"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-copy"/></svg></button>
+              <button class="icn" type="button" aria-label="Open the memory at block 51,081,867"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-open"/></svg></button>
+            </div>
+          </div>
+          <div class="row">
+            <div class="row-main">
+              <p class="row-body">Tue to Thu, 09:00 to 17:00 WIB · why: support coverage</p>
+              <p class="prov">entity · facts · <span class="key">deploy-window</span></p>
+            </div>
+            <div class="row-side">
+              <span class="chip">51081867</span>
+              <button class="icn" type="button" aria-label="Copy the key deploy-window"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-copy"/></svg></button>
+              <button class="icn" type="button" aria-label="Open the memory at block 51,081,867"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-open"/></svg></button>
+            </div>
+          </div>
+          <div class="row">
+            <div class="row-main">
+              <p class="row-body">top: kint submission, sigil audit · updated 2026-09-09</p>
+              <p class="prov">state · <span class="key">priorities</span></p>
+            </div>
+            <div class="row-side">
+              <span class="chip">51081867</span>
+              <button class="icn" type="button" aria-label="Copy the key priorities"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-copy"/></svg></button>
+              <button class="icn" type="button" aria-label="Open the memory at block 51,081,867"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-open"/></svg></button>
+            </div>
+          </div>
+          <div class="row">
+            <div class="row-main">
+              <p class="row-body">last_task: wire the harnesses to kint-server</p>
+              <p class="prov">state · <span class="key">session</span></p>
+            </div>
+            <div class="row-side">
+              <span class="chip">51081867</span>
+              <button class="icn" type="button" aria-label="Copy the key session"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-copy"/></svg></button>
+              <button class="icn" type="button" aria-label="Open the memory at block 51,081,867"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-open"/></svg></button>
+            </div>
+          </div>
+          <div class="row">
+            <div class="row-main">
+              <p class="row-body" title="# Release runbook · 1. Green tests. 2. Second reviewer signs off. 3. Never on a Friday. 4. Tag, seal, announce."># Release runbook · 1. Green tests. 2. Second reviewer signs off. 3. Never on a Friday. 4. Tag, seal, announce.</p>
+              <p class="prov">reference · <span class="key">runbook-release</span></p>
+            </div>
+            <div class="row-side">
+              <span class="chip">51081867</span>
+              <button class="icn" type="button" aria-label="Copy the key runbook-release"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-copy"/></svg></button>
+              <button class="icn" type="button" aria-label="Open the memory at block 51,081,867"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-open"/></svg></button>
+            </div>
+          </div>
+          <div class="row">
+            <div class="row-main">
+              <p class="row-body" title="epoch: one anchored change set. space: keccak of the tenant id. leaf: hash of a stored row.">epoch: one anchored change set. space: keccak of the tenant id. leaf: hash of a stored row.</p>
+              <p class="prov">reference · <span class="key">glossary</span></p>
+            </div>
+            <div class="row-side">
+              <span class="chip">51081867</span>
+              <button class="icn" type="button" aria-label="Copy the key glossary"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-copy"/></svg></button>
+              <button class="icn" type="button" aria-label="Open the memory at block 51,081,867"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-open"/></svg></button>
+            </div>
+          </div>
+          <div class="row">
+            <div class="row-main">
+              <p class="row-body">decision: adopted the Friday release rule after the May 19 incident</p>
+              <p class="prov">journal · <span class="key">2026-05-01 09:00</span></p>
+            </div>
+            <div class="row-side">
+              <span class="chip">51081867</span>
+              <button class="icn" type="button" aria-label="Copy the key 2026-05-01 09:00"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-copy"/></svg></button>
+              <button class="icn" type="button" aria-label="Open the memory at block 51,081,867"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-open"/></svg></button>
+            </div>
+          </div>
+          <div class="row">
+            <div class="row-main">
+              <p class="row-body">refusal: ship the hotfix tonight? why: Friday · next: Monday 09:00 WIB</p>
+              <p class="prov">journal · <span class="key">2026-08-28 15:30</span></p>
+            </div>
+            <div class="row-side">
+              <span class="chip">51081867</span>
+              <button class="icn" type="button" aria-label="Copy the key 2026-08-28 15:30"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-copy"/></svg></button>
+              <button class="icn" type="button" aria-label="Open the memory at block 51,081,867"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-open"/></svg></button>
+            </div>
+          </div>
+        </div>
+      </li>
+
+      <li class="node">
+        <p class="nlabel">block 51,081,880 · epoch 2 · +2 rows, 1 deleted</p>
+        <p class="nsub"><span>3 rows at this block · 1 gone</span><span class="pill ok"><svg class="ico sm" aria-hidden="true" focusable="false"><use href="#i-check"/></svg>verified</span></p>
+        <div class="ecard">
+          <div class="row">
+            <div class="row-main">
+              <p class="row-body" title="never ship on a Friday; every release needs a green deadlift test, a second reviewer, AND a passing kint verify">never ship on a Friday; every release needs a green deadlift test, a second reviewer, AND a passing kint verify</p>
+              <p class="prov">entity · rules · <span class="key">release-gate</span> · 2 versions</p>
+            </div>
+            <div class="row-side">
+              <span class="chip">51081880</span>
+              <button class="icn" type="button" aria-label="Copy the key release-gate"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-copy"/></svg></button>
+              <button class="icn" type="button" aria-label="Open the memory at block 51,081,880"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-open"/></svg></button>
+            </div>
+          </div>
+          <div class="row">
+            <div class="row-main">
+              <p class="row-body">role second reviewer · reachable attn</p>
+              <p class="prov">entity · people · <span class="key">reviewer-b</span></p>
+            </div>
+            <div class="row-side">
+              <span class="chip">51081880</span>
+              <button class="icn" type="button" aria-label="Copy the key reviewer-b"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-copy"/></svg></button>
+              <button class="icn" type="button" aria-label="Open the memory at block 51,081,880"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-open"/></svg></button>
+            </div>
+          </div>
+          <div class="row">
+            <div class="row-main">
+              <p class="row-body" title="observation: kura send --wallet is ignored; switch the default wallet first">observation: kura send --wallet is ignored; switch the default wallet first</p>
+              <p class="prov">journal · <span class="key">2026-09-09 18:25</span></p>
+            </div>
+            <div class="row-side">
+              <span class="chip">51081880</span>
+              <button class="icn" type="button" aria-label="Copy the key 2026-09-09 18:25"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-copy"/></svg></button>
+              <button class="icn" type="button" aria-label="Open the memory at block 51,081,880"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-open"/></svg></button>
+            </div>
+          </div>
+          <div class="row gone">
+            <div class="row-main">
+              <p class="row-body">compliance layer for the agentic economy · status paused</p>
+              <p class="prov">entity · projects · <span class="key">sigil</span> · gone at block 51,081,880</p>
+            </div>
+            <div class="row-side">
+              <span class="pill mute">gone</span>
+              <button class="icn" type="button" aria-label="Open the memory at block 51,081,867, where sigil still stood"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-open"/></svg></button>
+            </div>
+          </div>
+        </div>
+      </li>
+    </ol>
+
+    <p class="footline">verified 15 of 15 rows against block 51,081,880 in 1.2 s · 2 epochs · 4 KB each</p>
+  </div>
+</section>
+
+<!-- ================================================ screen 4 · history -->
+<section class="screen" id="s4">
+  <p class="strip"><b>screen 4</b> · history</p>
+  <header class="bar">
+    <a class="wm-link" href="#s1" aria-label="kint, top of the app"><span class="wm">k<span class="i">ı</span>nt</span></a>
+    <div class="facts">
+      <span>owner <b>0xC635…87Ec</b></span>
+      <span>tenant <b>kint-demo</b></span>
+      <span>head seq <b>2</b></span>
+      <span>block <b>51,081,880</b></span>
+    </div>
+    <span class="lock"><svg class="ico sm" aria-hidden="true" focusable="false"><use href="#i-unlock"/></svg>Unlocked</span>
+    <button class="tgl" type="button" aria-label="Toggle theme"><svg class="ico md" aria-hidden="true" focusable="false"><use href="#i-theme"/></svg></button>
+  </header>
+
+  <div class="stage">
+    <header class="head4">
+      <h2 class="h-md">rules / release-gate <span class="mut">· 2 versions</span></h2>
+      <p class="cap">A row's block height is an upper bound: it existed no later than that block.</p>
+    </header>
+
+    <ol class="rail">
+      <li class="node">
+        <p class="nlabel">epoch 2 · block &lt;= 51,081,880</p>
+        <p class="nsub"><span>leaf 4ac605528bbb00e7</span><span class="pill mute">current</span><span class="pill ok"><svg class="ico sm" aria-hidden="true" focusable="false"><use href="#i-check"/></svg>verified</span></p>
+        <div class="ecard">
+          <div class="ver">
+            <p class="row-body">never ship on a Friday; every release needs a green deadlift test, a second reviewer, <span class="diff">AND a passing kint verify</span></p>
+            <p class="prov">since 2026-09-09 · source: kint hackathon build, supersedes the May rule</p>
+            <p class="acts">
+              <span class="txt">tx 0x369907fb…9a729</span>
+              <a href="https://basescan.org/address/0xa22E03f7a4145Bf4909a83595C90a38E14d79600">EpochAnchor on basescan</a>
+              <button class="lk" type="button">open the memory at this block</button>
+            </p>
+          </div>
+        </div>
+      </li>
+
+      <li class="node">
+        <p class="nlabel">epoch 1 · block &lt;= 51,081,867</p>
+        <p class="nsub"><span>leaf f406bb0919d23360</span><span class="pill ok"><svg class="ico sm" aria-hidden="true" focusable="false"><use href="#i-check"/></svg>verified</span></p>
+        <div class="ecard">
+          <div class="ver">
+            <p class="row-body">never ship on a Friday; every release needs a green deadlift test <span class="diff">and</span> a second reviewer</p>
+            <p class="prov">since 2026-05-01 · source: postmortem of the May 19 incident</p>
+            <p class="acts">
+              <span class="txt">tx 0xbe9bb859…bbe4455</span>
+              <a href="https://basescan.org/address/0xa22E03f7a4145Bf4909a83595C90a38E14d79600">EpochAnchor on basescan</a>
+              <button class="lk" type="button">open the memory at this block</button>
+            </p>
+          </div>
+        </div>
+      </li>
+
+      <li class="node term">
+        <p class="endline">End of history for this row</p>
+      </li>
+    </ol>
+
+    <div class="banner">
+      <span class="pill bad"><svg class="ico sm" aria-hidden="true" focusable="false"><use href="#i-x"/></svg>refused</span>
+      <p>epoch 3 claims to be a snapshot its plaintext does not back up; the history was read the long way round.</p>
+    </div>
+
+    <section class="errs">
+      <p class="eyebrow">Error states</p>
+      <ul>
+        <li><b>wrong passphrase:</b> refused by the key tag before any decrypt</li>
+        <li><b>chain unreadable:</b> two RPC operators disagree on the head; refusing to restore</li>
+        <li><b>fork:</b> another machine wrote epoch 3 first; this machine's 2 unanchored rows are refused</li>
+      </ul>
+    </section>
+
+    <ul class="legend">
+      <li>
+        <span class="pill ok"><svg class="ico sm" aria-hidden="true" focusable="false"><use href="#i-check"/></svg>verified</span>
+        <span class="gloss">stored text matches the leaf anchored on Base</span>
+      </li>
+      <li>
+        <span class="pill bad"><svg class="ico sm" aria-hidden="true" focusable="false"><use href="#i-x"/></svg>refused</span>
+        <span class="gloss">stored text does not match the leaf anchored at epoch 2, block 51,081,880</span>
+      </li>
+      <li>
+        <span class="pill closed"><svg class="ico sm" aria-hidden="true" focusable="false"><use href="#i-dot"/></svg>closed</span>
+        <span class="gloss">an epoch sealed under a retired key</span>
+      </li>
+    </ul>
+  </div>
+</section>
+
+<script>
+(function(){
+  function current(){
+    var a=document.documentElement.getAttribute('data-theme');
+    if(a==='dark'||a==='light'){return a;}
+    return (window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';
+  }
+  function apply(t){
+    document.documentElement.setAttribute('data-theme',t);
+    try{localStorage.setItem('kint-theme',t);}catch(e){}
+  }
+  var buttons=document.querySelectorAll('.tgl');
+  for(var i=0;i<buttons.length;i++){
+    buttons[i].addEventListener('click',function(){
+      apply(current()==='dark'?'light':'dark');
+    });
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>kint tittle measure</title>
+<link href="https://fonts.googleapis.com/css2?family=GFS+Didot&family=Martian+Mono:wght@300..800&family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=Doto:wght@100..900&family=Schibsted+Grotesk:ital,wght@0,400..900;1,400..900&family=DM+Mono:wght@300;400;500&family=EB+Garamond:ital,wght@0,400..800;1,400..800&family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Archivo:ital,wdth,wght@0,62..125,100..900;1,62..125,100..900&family=Cormorant+Garamond:ital,wght@0,300..700;1,300..700&family=Hanken+Grotesk:wght@300..800&family=Host+Grotesk:wght@300..800&family=Syne:wght@400..800&family=Space+Grotesk:wght@300..700&family=Cardo:ital,wght@0,400;0,700;1,400&family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&family=Xanh+Mono:ital@0;1&family=Azeret+Mono:wght@300..800&display=swap" rel="stylesheet">
+<style>
+@font-face{font-family:'Satoshi';src:url('fonts/Satoshi-Variable.woff2') format('woff2');font-weight:300 900}
+@font-face{font-family:'Instrument Sans';src:url('fonts/instrument-sans-var.ttf') format('truetype');font-weight:400 700}
+@font-face{font-family:'Open Sauce One';src:url('fonts/OpenSauceOne-SemiBold.ttf') format('truetype');font-weight:600}
+@font-face{font-family:'Fragment Mono';src:url('fonts/FragmentMono-Regular.ttf') format('truetype');font-weight:400}
+@font-face{font-family:'Geist Mono';src:url('fonts/geist-mono-var.ttf') format('truetype');font-weight:100 900}
+body{font-family:monospace;padding:20px;color:#111;background:#fff}
+/* warm every face so document.fonts.ready covers them */
+.warm span{font-size:40px;margin-right:8px}
+</style>
+</head>
+<body>
+<div class="warm" id="warm"></div>
+<pre id="out">measuring</pre>
+<script>
+/* For each face: draw "i" and dotless "ı" at 200px, scan ink rows, and report where the tittle sits
+   relative to the inline content box top (fontBoundingBoxAscent), in em. The wordmark trick draws a
+   0.18em square with position:absolute top:T inside a relative dotless-i span, so T = tittle centre
+   from the content top minus 0.09em. Faces are measured at the weight the mocks use. */
+var FACES = [
+  ['Satoshi', 700], ['Instrument Sans', 600], ['Open Sauce One', 600], ['Fragment Mono', 400], ['Geist Mono', 500],
+  ['GFS Didot', 400], ['Martian Mono', 500], ['Bricolage Grotesque', 600], ['Doto', 700], ['Schibsted Grotesk', 700],
+  ['DM Mono', 500], ['EB Garamond', 500], ['Courier Prime', 700], ['Archivo', 600], ['Cormorant Garamond', 600],
+  ['Hanken Grotesk', 600], ['Host Grotesk', 600], ['Syne', 600], ['Space Grotesk', 600], ['Cardo', 700],
+  ['Bodoni Moda', 600], ['Xanh Mono', 400], ['Azeret Mono', 500],
+];
+var warm = document.getElementById('warm');
+FACES.forEach(function(f){ var s = document.createElement('span'); s.style.fontFamily = '"' + f[0] + '"'; s.style.fontWeight = f[1]; s.textContent = 'kint ı'; warm.appendChild(s); });
+
+function inkRows(ctx, w, h){
+  var d = ctx.getImageData(0, 0, w, h).data, rows = [];
+  for (var y = 0; y < h; y++) { var on = false; for (var x = 0; x < w; x++) { if (d[(y * w + x) * 4 + 3] > 40) { on = true; break; } } rows.push(on); }
+  return rows;
+}
+function measure(face, weight){
+  var S = 200, W = 300, H = 400, base = 300;
+  var cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  var ctx = cv.getContext('2d'); ctx.font = weight + ' ' + S + 'px "' + face + '"'; ctx.fillStyle = '#000'; ctx.textBaseline = 'alphabetic';
+  var m = ctx.measureText('i'), asc = m.fontBoundingBoxAscent || (m.actualBoundingBoxAscent * 1.2);
+  ctx.clearRect(0, 0, W, H); ctx.fillText('i', 40, base); var ri = inkRows(ctx, W, H);
+  ctx.clearRect(0, 0, W, H); ctx.fillText('ı', 40, base); var rd = inkRows(ctx, W, H);
+  var iTop = ri.indexOf(true), dTop = rd.indexOf(true);
+  /* the tittle: from iTop down to the first empty row */
+  var tBot = iTop; while (tBot < H && ri[tBot]) tBot++;
+  var tittleH = (tBot - iTop) / S, tittleCentre = (iTop + tBot) / 2;
+  var gap = (dTop - tBot) / S;
+  var xh = (base - dTop) / S;
+  var centreFromTop = (tittleCentre - (base - asc)) / S;   /* em from content-box top */
+  var loaded = document.fonts.check(weight + ' 20px "' + face + '"');
+  return { face: face, weight: weight, loaded: loaded, ascent_em: +(asc / S).toFixed(3), x_height_em: +xh.toFixed(3),
+           tittle_h_em: +tittleH.toFixed(3), gap_em: +gap.toFixed(3), centre_from_top_em: +centreFromTop.toFixed(3),
+           top_for_018_square: +(centreFromTop - 0.09).toFixed(3) };
+}
+document.fonts.ready.then(function(){
+  setTimeout(function(){
+    var out = FACES.map(function(f){ try { return measure(f[0], f[1]); } catch (e) { return { face: f[0], error: String(e) }; } });
+    document.getElementById('out').textContent = JSON.stringify(out);
+    window.__measure = out;
+  }, 800);
+});
+</script>
+</body>
+</html>

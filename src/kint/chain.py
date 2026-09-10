@@ -16,6 +16,7 @@ from __future__ import annotations
 import json
 import os
 import platform
+import re
 import subprocess
 import time
 from dataclasses import dataclass
@@ -27,6 +28,7 @@ from eth_account.messages import encode_typed_data
 from eth_utils import keccak, to_checksum_address
 from web3 import Web3
 from web3.exceptions import ContractLogicError
+from web3.providers.rpc.utils import ExceptionRetryConfiguration
 
 CHAIN_ID = 8453
 PUBLIC_RPC = "https://mainnet.base.org"
@@ -85,11 +87,15 @@ def secondary_rpc_url() -> str:
     url = os.environ.get("KINT_RPC_URL_2")
     if url:
         return url
-    return PUBLIC_RPC_2 if primary_rpc_url() == PUBLIC_RPC else PUBLIC_RPC
+    # a trailing slash on KINT_RPC_URL must not make this the SAME endpoint as the primary
+    return PUBLIC_RPC_2 if primary_rpc_url().rstrip("/") == PUBLIC_RPC else PUBLIC_RPC
 
 
-def redact(url: str) -> str:
-    """Never print a keyed URL: keep scheme and host, drop any path, query or userinfo."""
+_URL_IN_TEXT = re.compile(r"[a-zA-Z][a-zA-Z0-9+.-]*://[^\s\"'<>,)\]}]+")
+_KEY_PATH = re.compile(r"/v2/[A-Za-z0-9_\-]{8,}")
+
+
+def _redact_url(url: str) -> str:
     from urllib.parse import urlsplit
     try:
         u = urlsplit(url)
@@ -99,6 +105,58 @@ def redact(url: str) -> str:
     port = f":{u.port}" if u.port else ""
     tail = "/<redacted>" if (u.path.strip("/") or u.query) else ""
     return f"{u.scheme}://{host}{port}{tail}"
+
+
+_SCRUB_CACHE: dict[tuple, tuple[str, ...]] = {}
+
+
+def _secret_url_parts() -> tuple[str, ...]:
+    """The path-and-query of every RPC URL kint is configured with, longest first.
+
+    A provider puts its key wherever it likes (a path segment, a query parameter, a subdomain),
+    so the only shape-independent rule is: whatever comes after the host of an endpoint kint was
+    given is secret, wherever it turns up in the text. Cached per environment because reading the
+    primary URL can cost a Keychain lookup and redact() runs on every error string.
+    """
+    env = (os.environ.get("KINT_RPC_URL"), os.environ.get("KINT_RPC_URL_2"), os.environ.get("KINT_NO_KEYCHAIN"))
+    hit = _SCRUB_CACHE.get(env)
+    if hit is not None:
+        return hit
+    from urllib.parse import urlsplit
+    parts: set[str] = set()
+    for fn in (primary_rpc_url, secondary_rpc_url):
+        try:
+            u = urlsplit(fn())
+        except Exception:  # noqa: BLE001
+            continue
+        path = u.path if u.path.strip("/") else ""
+        if path and u.query:
+            parts.add(f"{path}?{u.query}")
+        if path:
+            parts.add(path)
+        if u.query:
+            parts.add(f"?{u.query}")
+    out = tuple(sorted(parts, key=len, reverse=True))
+    _SCRUB_CACHE[env] = out
+    return out
+
+
+def redact(text: str) -> str:
+    """Never print a keyed URL: keep scheme and host, drop any path, query or userinfo.
+
+    Takes a bare URL or ANY text that may contain one, so every exception string on its way to a
+    tool result or a log goes through here (a web3 error carries the endpoint it called, and that
+    endpoint carries the API key). Three passes: every URL in the text loses its path and query,
+    then the configured endpoints' own paths and queries go wherever they appear bare (requests
+    prints the path on its own line), then the Alchemy /v2/<key> shape as a belt.
+    """
+    if not text:
+        return text
+    out = _URL_IN_TEXT.sub(lambda m: _redact_url(m.group(0)), str(text))
+    for part in _secret_url_parts():
+        if part in out:
+            out = out.replace(part, "/<redacted>")
+    return _KEY_PATH.sub("/v2/<redacted>", out)
 
 
 def contract_address() -> str:
@@ -132,10 +190,36 @@ class EpochEvent:
     tx_hash: str
 
 
+DEFAULT_TIMEOUT = 10   # seconds per JSON-RPC call (KINT_RPC_TIMEOUT); a hung RPC must not hang a server start
+RPC_RETRIES = 2        # per read, on connection-level errors only
+RPC_BACKOFF = 0.1      # seconds, web3's backoff factor
+
+
+def _retry_config() -> ExceptionRetryConfiguration:
+    # requests is web3's own HTTP dependency, not one kint declares: imported here so that it is
+    # only needed by the machines that actually build a provider
+    import requests
+    return ExceptionRetryConfiguration(
+        errors=(ConnectionError, requests.HTTPError, requests.Timeout),
+        retries=RPC_RETRIES, backoff_factor=RPC_BACKOFF,
+    )
+
+
 class Anchor:
-    def __init__(self, rpc_url: str | None = None, address: str | None = None, timeout: int = 60):
+    def __init__(self, rpc_url: str | None = None, address: str | None = None, timeout: int | None = None):
         self.rpc_url = rpc_url or primary_rpc_url()
-        self.w3 = Web3(Web3.HTTPProvider(self.rpc_url, request_kwargs={"timeout": timeout}))
+        if timeout is None:
+            try:
+                timeout = int(float(os.environ.get("KINT_RPC_TIMEOUT") or DEFAULT_TIMEOUT))
+            except ValueError:
+                timeout = DEFAULT_TIMEOUT
+        # web3's default retries a failing request 5 times with a growing backoff, so one hung
+        # endpoint costs minutes before anything is reported. Two retries with a short backoff is
+        # the middle: a blip on one read heals itself, and a dead endpoint is reported in seconds.
+        # Retries only ever fire for the connection-level errors named here, on the methods in
+        # web3's own allowlist; a reverted or refused call is never retried.
+        self.w3 = Web3(Web3.HTTPProvider(self.rpc_url, request_kwargs={"timeout": timeout},
+                                         exception_retry_configuration=_retry_config()))
         self.address = to_checksum_address(address or contract_address())
         self.contract = self.w3.eth.contract(address=self.address, abi=load_abi())
         self._epoch_topic = "0x" + keccak(
@@ -230,7 +314,7 @@ class Anchor:
                 if chunk > 50:
                     chunk //= 2
                     continue
-                raise ChainError(f"eth_getLogs failed even at chunk {chunk}: {e}") from e
+                raise ChainError(f"eth_getLogs failed even at chunk {chunk}: {redact(str(e))}") from e
             out.extend(self._parse_epoch_log(l) for l in logs)
             start = end + 1
         return out
@@ -271,7 +355,7 @@ class Anchor:
         try:
             est = self.w3.eth.estimate_gas(tx)
         except ContractLogicError as e:
-            raise ChainError(f"transaction would revert: {e}") from e
+            raise ChainError(f"transaction would revert: {redact(str(e))}") from e
         tx["gas"] = int(est * gas_margin) + 10000
         signed = account.sign_transaction(tx)
         h = self.w3.eth.send_raw_transaction(signed.raw_transaction)

@@ -1,0 +1,821 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script>(function(){try{var t=localStorage.getItem('kint-theme');if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>kint, Sibyl Memory that outlives the laptop</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=Cormorant+Garamond:ital,wght@1,300..700&display=swap" rel="stylesheet">
+<style>
+/* ---------------------------------------------------------------
+   L8 Split. A rule grid and a headline in two voices.
+   Faces: Archivo (display wdth 125 / body wdth 100), Cormorant
+   Garamond italic for the second headline line only, Fragment Mono
+   for labels and machine facts.
+   Every rule on this page is a 1px gap with the hairline field
+   showing through, so no two cell edges ever sum into a double line.
+   --------------------------------------------------------------- */
+
+@font-face{
+  font-family:'Fragment Mono';
+  src:url('fonts/FragmentMono-Regular.ttf') format('truetype');
+  font-weight:400; font-style:normal; font-display:swap;
+}
+
+/* (a) bare :root carries the COMPLETE light palette */
+:root{
+  --page:#FFFFFF;
+  --ink:#0B0B0B;
+  --ink-2:#3A3A3A;
+  --muted:#6B6B6B;
+  --hair:#5B5B5B;
+  --hair-2:#D6D6D6;
+  --accent:#0000FF;
+  --accent-2:#0000C4;
+  --accent-soft:rgb(0 0 255 / .16);
+  --on-accent:#FFFFFF;
+  --ok:#1F6B57;
+  --bad:#A8434B;
+
+  --sans:'Archivo','Helvetica Neue',Arial,sans-serif;
+  --serif:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --mono:'Fragment Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+
+  --t1:clamp(2.15rem,4.8vw,5rem);
+  --t2:clamp(1.25rem,1.75vw,1.65rem);
+  --t3:17px;
+  --t4:13.5px;
+  --t5:12px;
+
+  --pad:clamp(20px,2.2vw,36px);
+  --ease-out-expo:cubic-bezier(0.16,1,0.3,1);
+}
+
+/* (b) unstamped default state follows the operating system */
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --page:#0C0C0C;
+    --ink:#F3F3F1;
+    --ink-2:#C6C6C2;
+    --muted:#8F8F8B;
+    --hair:#8A8A8A;
+    --hair-2:#2C2C2C;
+    --accent:#5B8CFF;
+    --accent-2:#8AACFF;
+    --accent-soft:rgb(91 140 255 / .26);
+    --on-accent:#0C0C0C;
+    --ok:#6FBFA6;
+    --bad:#D98A92;
+  }
+}
+
+/* (c) an explicit choice wins in both directions */
+:root[data-theme="dark"]{
+  --page:#0C0C0C;
+  --ink:#F3F3F1;
+  --ink-2:#C6C6C2;
+  --muted:#8F8F8B;
+  --hair:#8A8A8A;
+  --hair-2:#2C2C2C;
+  --accent:#5B8CFF;
+  --accent-2:#8AACFF;
+  --accent-soft:rgb(91 140 255 / .26);
+  --on-accent:#0C0C0C;
+  --ok:#6FBFA6;
+  --bad:#D98A92;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+
+/* (d) body paints its own ground from the tokens */
+body.v-l8{
+  margin:0;
+  background:var(--page);
+  color:var(--ink);
+  font-family:var(--sans);
+  font-size:var(--t3);
+  font-weight:400;
+  font-variation-settings:"wdth" 100,"wght" 400;
+  font-variant-numeric:tabular-nums;
+  line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+
+.v-l8 h1,.v-l8 h2,.v-l8 h3,.v-l8 p,.v-l8 ul,.v-l8 figure,.v-l8 pre{margin:0}
+.v-l8 ul{padding:0;list-style:none}
+.v-l8 p{text-wrap:pretty}
+.v-l8 h1,.v-l8 h2,.v-l8 h3,.v-l8 .lead,.v-l8 .pull{text-wrap:balance}
+
+.v-l8 ::selection{background:var(--accent);color:var(--on-accent)}
+
+.v-l8 a{color:inherit}
+
+/* the focus ring: one hairline of accent, one soft halo behind it */
+.v-l8 a:focus-visible,
+.v-l8 button:focus-visible,
+.v-l8 [tabindex]:focus-visible{
+  outline:1px solid var(--accent);
+  outline-offset:2px;
+}
+.v-l8 .btn-ghost:focus-visible,
+.v-l8 .toggle:focus-visible{box-shadow:inset 0 0 0 1px var(--hair),0 0 0 4px var(--accent-soft)}
+.v-l8 .btn-primary:focus-visible,
+.v-l8 .term:focus-visible{box-shadow:0 0 0 4px var(--accent-soft)}
+.v-l8 a.fact:focus-visible{box-shadow:inset 0 -1px 0 var(--ink),0 0 0 4px var(--accent-soft)}
+
+/* the wordmark: dotless i, the tittle drawn as the accent square */
+.v-l8 .wm{
+  font-family:var(--sans);
+  font-weight:600;
+  font-variation-settings:"wdth" 125,"wght" 600;
+  letter-spacing:-0.01em;
+  color:var(--ink);
+}
+.v-l8 .wm .i{position:relative}
+.v-l8 .wm .i::after{
+  content:"";
+  position:absolute;
+  left:50%;
+  transform:translateX(-50%);
+  top:0.122em;
+  width:.18em;
+  height:.18em;
+  background:var(--accent);
+}
+
+/* labels, eyebrows, machine facts */
+.v-l8 .label{
+  font-family:var(--mono);
+  font-weight:400;
+  font-size:var(--t5);
+  line-height:1.4;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  color:var(--muted);
+}
+.v-l8 .mono{
+  font-family:var(--mono);
+  font-weight:400;
+  font-size:var(--t4);
+  line-height:1.6;
+  letter-spacing:0;
+}
+.v-l8 .display{
+  font-family:var(--sans);
+  font-weight:600;
+  font-variation-settings:"wdth" 125,"wght" 600;
+  letter-spacing:-0.015em;
+  line-height:1.06;
+}
+.v-l8 .lead{
+  font-size:var(--t2);
+  font-weight:600;
+  font-variation-settings:"wdth" 100,"wght" 600;
+  line-height:1.25;
+  letter-spacing:-0.01em;
+}
+.v-l8 .prose{
+  font-size:var(--t3);
+  color:var(--ink-2);
+  max-width:62ch;
+}
+
+/* ---------- the rule grid ----------
+   the sheet is a 1px field of hairline; every tile paints the page
+   colour and the 1px gaps between them are the rules. */
+.v-l8 .wrap{width:min(1680px,100% - 40px);margin:0 auto}
+.v-l8 .sheet{
+  background:var(--hair);
+  padding:1px;
+  display:flex;
+  flex-direction:column;
+  gap:1px;
+  margin:32px 0 40px;
+}
+.v-l8 .sheet > *{background:var(--page)}
+.v-l8 .rule-grid{display:grid;gap:1px;background:var(--hair)}
+.v-l8 .stack{display:flex;flex-direction:column;gap:1px;background:var(--hair)}
+.v-l8 .cell{background:var(--page);padding:var(--pad);min-width:0}
+
+/* ---------- top band ---------- */
+.v-l8 .topbar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  padding:0 var(--pad);
+  min-height:60px;
+}
+.v-l8 .topbar .wm{font-size:var(--t2)}
+.v-l8 .nav-right{display:flex;align-items:center;gap:22px}
+.v-l8 .nav-link{
+  display:inline-block;
+  font-family:var(--mono);
+  font-size:var(--t5);
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  color:var(--muted);
+  text-decoration:none;
+  padding:6px 0;
+  transition:color .18s var(--ease-out-expo),box-shadow .18s var(--ease-out-expo),transform .12s var(--ease-out-expo);
+}
+.v-l8 .toggle{
+  width:34px;height:34px;
+  display:inline-flex;align-items:center;justify-content:center;
+  padding:0;
+  background:transparent;
+  color:var(--ink);
+  border:0;
+  box-shadow:inset 0 0 0 1px var(--hair);
+  cursor:pointer;
+  transition:background .18s var(--ease-out-expo),color .18s var(--ease-out-expo),transform .12s var(--ease-out-expo);
+}
+.v-l8 .toggle svg{display:block}
+
+/* ---------- hero box ----------
+   the hero rule falls at 56 percent and the proof strip's middle
+   rule lands on the same line, so one vertical runs the first screen. */
+.v-l8 .hero{grid-template-columns:minmax(0,2.8fr) minmax(0,2.2fr)}
+.v-l8 .hero-copy{padding:clamp(44px,6vw,96px) var(--pad) clamp(48px,6.4vw,104px)}
+.v-l8 .hero-art{
+  padding:clamp(36px,4.6vw,72px) var(--pad);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.v-l8 .eyebrow-hero{
+  font-family:var(--mono);
+  font-size:var(--t5);
+  letter-spacing:.06em;
+  color:var(--muted);
+  margin-bottom:clamp(24px,3vw,44px);
+}
+.v-l8 h1{
+  font-family:var(--sans);
+  font-size:var(--t1);
+  font-weight:600;
+  font-variation-settings:"wdth" 125,"wght" 600;
+  line-height:0.98;
+  letter-spacing:-0.025em;
+  color:var(--ink);
+}
+.v-l8 h1 .line-a{display:block}
+/* the second voice: Cormorant italic, sized so both lines run the same width */
+.v-l8 h1 .line-b{
+  display:block;
+  margin-top:.02em;
+  font-family:var(--serif);
+  font-style:italic;
+  font-weight:500;
+  font-size:1.19em;
+  line-height:0.96;
+  letter-spacing:0;
+  color:var(--accent);
+}
+.v-l8 .hero-lede{
+  margin-top:clamp(26px,2.6vw,40px);
+  font-size:var(--t2);
+  line-height:1.35;
+  letter-spacing:-0.005em;
+  color:var(--ink);
+  max-width:30ch;
+}
+.v-l8 .cta-row{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:12px;
+  margin-top:clamp(28px,3vw,44px);
+}
+.v-l8 .btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  height:52px;
+  padding:0 26px;
+  font-family:var(--sans);
+  font-size:var(--t3);
+  font-weight:500;
+  font-variation-settings:"wdth" 100,"wght" 500;
+  text-decoration:none;
+  border:0;
+  transition:background .18s var(--ease-out-expo),color .18s var(--ease-out-expo),box-shadow .18s var(--ease-out-expo),transform .12s var(--ease-out-expo);
+}
+.v-l8 .btn-primary{background:var(--accent);color:var(--on-accent)}
+.v-l8 .btn-ghost{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 1px var(--hair)}
+.v-l8 .install{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:baseline;
+  gap:12px;
+  margin-top:clamp(24px,2.4vw,36px);
+}
+.v-l8 .install .val{
+  color:var(--ink);
+  font-family:var(--mono);
+  font-size:var(--t4);
+  -webkit-user-select:all;
+  user-select:all;
+  padding-bottom:2px;
+  transition:box-shadow .18s var(--ease-out-expo);
+}
+
+/* the drawing: rows, leaf, rows_root, block */
+.v-l8 .art-fig{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:22px;
+  width:100%;
+}
+.v-l8 .art{
+  width:100%;
+  max-width:300px;
+  height:auto;
+  color:var(--ink);
+}
+.v-l8 .art .art-num{
+  font-family:var(--mono);
+  font-size:var(--t5);
+  fill:var(--muted);
+  letter-spacing:.02em;
+}
+.v-l8 .art-legend{
+  font-family:var(--mono);
+  font-size:var(--t5);
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  color:var(--muted);
+}
+
+/* ---------- proof cells ---------- */
+.v-l8 .proof{grid-template-columns:minmax(0,1.55fr) minmax(0,1.25fr) minmax(0,1.1fr) minmax(0,1.1fr)}
+.v-l8 .proof .cell{
+  padding-block:clamp(22px,2vw,32px);
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:8px;
+}
+.v-l8 .proof .label{margin-bottom:4px}
+.v-l8 .fact{
+  display:block;
+  font-family:var(--mono);
+  font-size:var(--t4);
+  line-height:1.5;
+  color:var(--ink-2);
+  text-decoration:none;
+  overflow-wrap:anywhere;
+  padding-bottom:2px;
+  transition:color .18s var(--ease-out-expo),box-shadow .18s var(--ease-out-expo),transform .12s var(--ease-out-expo);
+}
+.v-l8 .fact.sub{font-size:var(--t5);line-height:1.5;color:var(--muted)}
+/* a link to the chain carries its hairline at rest, not only on hover */
+.v-l8 a.fact{box-shadow:inset 0 -1px 0 var(--hair-2)}
+
+/* ---------- section heads ---------- */
+.v-l8 .sec-head{
+  display:flex;
+  align-items:baseline;
+  gap:16px;
+  padding:18px var(--pad);
+  background:var(--page);
+}
+.v-l8 .sec-head .num{
+  font-family:var(--mono);
+  font-size:var(--t5);
+  color:var(--muted);
+  letter-spacing:.14em;
+}
+
+/* ---------- the three actors ----------
+   left cell: the numeral square and the actor's line.
+   right cell: the sentence. The rule falls at 31 percent, the same
+   line the proof strip first rule and the two sections below use. */
+.v-l8 .actor{grid-template-columns:minmax(0,1.55fr) minmax(0,3.45fr)}
+.v-l8 .actor .cell{padding-block:clamp(26px,2.8vw,46px)}
+.v-l8 .num-box{
+  width:32px;height:32px;
+  display:flex;align-items:center;justify-content:center;
+  padding-top:1px;
+  box-shadow:inset 0 0 0 1px var(--hair);
+  font-family:var(--mono);
+  font-size:var(--t4);
+  line-height:1;
+  color:var(--ink);
+  margin-bottom:22px;
+}
+.v-l8 .actor .lead{color:var(--ink);max-width:20ch}
+
+/* ---------- the beat ---------- */
+.v-l8 .beat{grid-template-columns:minmax(0,1.55fr) minmax(0,3.45fr)}
+.v-l8 .beat .cell{padding-block:clamp(26px,2.8vw,46px)}
+.v-l8 .caption{
+  margin-top:18px;
+  font-size:var(--t4);
+  line-height:1.55;
+  color:var(--muted);
+  max-width:34ch;
+  font-family:var(--sans);
+  font-weight:400;
+}
+.v-l8 .term{
+  overflow-x:auto;
+  -webkit-overflow-scrolling:touch;
+  padding-bottom:6px;
+}
+.v-l8 pre.transcript{
+  font-family:var(--mono);
+  font-size:var(--t4);
+  line-height:1.72;
+  color:var(--ink-2);
+  white-space:pre;
+  tab-size:2;
+}
+.v-l8 pre.transcript .cmd{color:var(--ink)}
+.v-l8 pre.transcript .ok{color:var(--ok)}
+.v-l8 pre.transcript .bad{color:var(--bad)}
+
+/* ---------- what Sibyl does ---------- */
+.v-l8 .box{grid-template-columns:minmax(0,1.55fr) minmax(0,3.45fr)}
+.v-l8 .box .cell{padding-block:clamp(40px,5.6vw,96px)}
+.v-l8 .box h3{
+  font-size:var(--t2);
+  max-width:18ch;
+  color:var(--ink);
+}
+.v-l8 .box .prose{font-size:var(--t3);line-height:1.62}
+.v-l8 .box .pull{
+  margin-top:26px;
+  padding-top:22px;
+  box-shadow:inset 0 1px 0 var(--hair-2);
+  font-size:var(--t2);
+  font-weight:600;
+  font-variation-settings:"wdth" 100,"wght" 600;
+  line-height:1.3;
+  letter-spacing:-0.01em;
+  color:var(--ink);
+  max-width:26ch;
+}
+.v-l8 code{
+  font-family:var(--mono);
+  font-size:var(--t4);
+  color:var(--ink);
+}
+
+/* ---------- honest limits: the rule falls at 56 percent, on the
+   hero's line ---------- */
+.v-l8 .limits{grid-template-columns:minmax(0,2.8fr) minmax(0,2.2fr)}
+.v-l8 .limits .cell{padding-block:clamp(26px,2.8vw,44px)}
+.v-l8 .limits .label{margin-bottom:14px;display:block}
+.v-l8 .limits p{font-size:var(--t3);color:var(--ink-2);max-width:52ch}
+
+/* ---------- footer ---------- */
+.v-l8 .foot{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  padding:22px var(--pad);
+}
+.v-l8 .foot .wm{font-size:var(--t2)}
+.v-l8 .foot .mono{color:var(--muted)}
+.v-l8 .foot a{
+  color:var(--muted);
+  text-decoration:none;
+  padding-bottom:2px;
+  box-shadow:inset 0 -1px 0 var(--hair-2);
+  transition:color .18s var(--ease-out-expo),box-shadow .18s var(--ease-out-expo);
+}
+
+/* ---------- press feedback on everything pressable ---------- */
+.v-l8 .btn:active,
+.v-l8 .toggle:active,
+.v-l8 .nav-link:active,
+.v-l8 a.fact:active{transform:scale(0.97)}
+
+/* ---------- hover, only where a pointer can actually hover ---------- */
+@media (hover:hover) and (pointer:fine){
+  .v-l8 .nav-link:hover{color:var(--ink);box-shadow:inset 0 -1px 0 var(--ink)}
+  .v-l8 .toggle:hover{background:var(--ink);color:var(--page)}
+  .v-l8 .btn-primary:hover{background:var(--accent-2)}
+  .v-l8 .btn-ghost:hover{background:var(--ink);color:var(--page)}
+  .v-l8 a.fact:hover{color:var(--ink);box-shadow:inset 0 -1px 0 var(--ink)}
+  .v-l8 .install .val:hover{box-shadow:inset 0 -1px 0 var(--hair-2)}
+  .v-l8 .foot a:hover{color:var(--ink);box-shadow:inset 0 -1px 0 var(--ink)}
+}
+
+/* ---------- narrow ---------- */
+@media (max-width:1240px){
+  /* the contract address holds one line only while the cell is wide */
+  .v-l8 .proof{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:1180px){
+  .v-l8 .hero{grid-template-columns:minmax(0,1fr)}
+  .v-l8 .hero-art{padding-block:clamp(28px,5vw,56px)}
+  .v-l8 .hero-lede{max-width:44ch}
+  .v-l8 .box{grid-template-columns:minmax(0,1fr)}
+  .v-l8 .beat{grid-template-columns:minmax(0,1fr)}
+  .v-l8 .box h3{max-width:22ch}
+}
+@media (max-width:920px){
+  .v-l8 .actor{grid-template-columns:minmax(0,1fr)}
+  .v-l8 .actor .lead{max-width:28ch}
+  .v-l8 .limits{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:700px){
+  .v-l8 .wrap{width:min(1680px,100% - 20px)}
+  .v-l8 .sheet{margin:14px 0 22px}
+  .v-l8 .proof{grid-template-columns:minmax(0,1fr)}
+  .v-l8 .caption{max-width:100%}
+  .v-l8 .topbar{min-height:56px;padding:10px var(--pad)}
+  .v-l8 .nav-right{gap:16px}
+  .v-l8 .art-fig{gap:18px}
+  .v-l8 .num-box{margin-bottom:18px}
+  /* mobile CTA: one full width primary, the second action as a link */
+  .v-l8 .cta-row{display:flex;flex-direction:column;align-items:flex-start;gap:0}
+  .v-l8 .btn{height:50px;width:100%}
+  .v-l8 .btn-ghost{
+    width:auto;
+    height:auto;
+    margin-top:20px;
+    padding:4px 0;
+    background:transparent;
+    color:var(--ink);
+    box-shadow:inset 0 -1px 0 var(--hair);
+    justify-content:flex-start;
+  }
+  /* the link still presses, from its left edge */
+  .v-l8 .btn-ghost{transform-origin:left center}
+}
+@media (prefers-reduced-motion: reduce){
+  .v-l8 *{transition-duration:.12s !important}
+  .v-l8 .btn:active,
+  .v-l8 .toggle:active,
+  .v-l8 .nav-link:active,
+  .v-l8 a.fact:active{transform:scale(0.99)}
+}
+</style>
+</head>
+<body class="v-l8">
+<div class="wrap">
+<div class="sheet">
+
+  <!-- top band -->
+  <header class="topbar">
+    <span class="wm">k<span class="i">&#305;</span>nt</span>
+    <nav class="nav-right" aria-label="Main">
+      <a class="nav-link" href="#">App</a>
+      <a class="nav-link" href="#">GitHub</a>
+      <button class="toggle" type="button" id="themeToggle" aria-label="Toggle theme">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true" focusable="false">
+          <circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.4"/>
+          <path d="M8 1.5v13A6.5 6.5 0 0 0 8 1.5Z" fill="currentColor"/>
+        </svg>
+      </button>
+    </nav>
+  </header>
+
+  <!-- hero box -->
+  <section class="hero rule-grid" aria-labelledby="h1">
+    <div class="cell hero-copy">
+      <p class="eyebrow-hero">Built on Sibyl Memory, under it. Live on Base mainnet.</p>
+      <h1 id="h1"><span class="line-a">Sibyl Memory that</span><span class="line-b">outlives the laptop.</span></h1>
+      <p class="hero-lede">Wipe the machine, connect the wallet, and the agent comes back knowing
+        what it knew, and proves it was not tampered with.</p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="#">Open the app</a>
+        <a class="btn btn-ghost" href="#">Read the README</a>
+      </div>
+      <p class="install">
+        <span class="label">Install</span>
+        <span class="val">uv tool install kint</span>
+      </p>
+    </div>
+
+    <div class="cell hero-art">
+      <figure class="art-fig">
+        <svg class="art" viewBox="0 0 300 344" fill="none" role="img"
+             aria-label="Diagram: six rows on a laptop screen rise into a leaf, then into the rows_root under a small padlock, then into the block 51,081,880.">
+          <title>Rows on a laptop screen rise to a leaf, to the rows_root under a padlock, to the block</title>
+          <g stroke="currentColor" stroke-width="1.5" stroke-linecap="square" vector-effect="non-scaling-stroke">
+            <!-- the block: the largest square, at the top of the chain -->
+            <rect x="133" y="16" width="34" height="34"/>
+            <path d="M150 50 V84"/>
+            <!-- the rows_root, with the padlock on it -->
+            <rect x="135" y="84" width="30" height="30"/>
+            <rect x="142" y="98" width="16" height="12"/>
+            <path d="M145.5 98 V94.5 A4.5 4.5 0 0 1 154.5 94.5 V98"/>
+            <path d="M150 114 V146"/>
+            <!-- the leaf -->
+            <rect x="137" y="146" width="26" height="26"/>
+            <path d="M150 172 V196"/>
+            <!-- the laptop, its screen holding six rows -->
+            <rect x="60" y="196" width="180" height="112"/>
+            <path d="M78 214 H196"/>
+            <path d="M78 230 H222"/>
+            <path d="M78 246 H176"/>
+            <path d="M78 262 H210"/>
+            <path d="M78 278 H188"/>
+            <path d="M78 294 H164"/>
+            <path d="M36 308 H264 L280 332 H20 Z"/>
+            <path d="M136 324 H164"/>
+          </g>
+          <text class="art-num" x="176" y="70">51,081,880</text>
+        </svg>
+        <figcaption class="art-legend">rows &middot; leaf &middot; rows_root &middot; block</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- proof cells: the live facts; the contract links to its address
+       page and each epoch links to its own transaction page -->
+  <section class="proof rule-grid" aria-label="Live facts on Base mainnet">
+    <div class="cell">
+      <span class="label">Contract</span>
+      <span class="fact">EpochAnchor</span>
+      <a class="fact sub" href="https://basescan.org/address/0xa22E03f7a4145Bf4909a83595C90a38E14d79600">0xa22E03f7a4145Bf4909a83595C90a38E14d79600</a>
+    </div>
+    <div class="cell">
+      <span class="label">Head</span>
+      <span class="fact">head seq 2 &middot; block 51,081,880</span>
+      <a class="fact sub" href="https://basescan.org/tx/0xbe9bb8596c825a8891c3eafe4381e0c6522d647641735c635ca58fcf4bbe4455">epoch 1 &middot; tx 0xbe9bb859&#8230;</a>
+      <a class="fact sub" href="https://basescan.org/tx/0x369907fb1bccc3222365b2e07b4d6d831642831d481a5f7cb99357823e2a9729">epoch 2 &middot; tx 0x369907fb&#8230;</a>
+    </div>
+    <div class="cell">
+      <span class="label">Digest</span>
+      <span class="fact">digest 7df5378a8c4fa866</span>
+      <span class="fact sub">rows_root 390336ff71dbcb85</span>
+    </div>
+    <div class="cell">
+      <span class="label">Store</span>
+      <span class="fact">15 rows &middot; 4 KB bucket</span>
+      <span class="fact sub">Base mainnet</span>
+    </div>
+  </section>
+
+  <!-- the three actors -->
+  <section class="actors stack" aria-labelledby="sec-actors">
+    <div class="sec-head">
+      <span class="num">01</span>
+      <h2 class="label" id="sec-actors">The three actors</h2>
+    </div>
+
+    <div class="actor rule-grid">
+      <div class="cell">
+        <span class="num-box" aria-hidden="true">1</span>
+        <p class="lead">The wallet owns.</p>
+      </div>
+      <div class="cell">
+        <p class="prose">One frozen message, signed once per machine, derives the key. Nothing
+          decrypted ever leaves the machine.</p>
+      </div>
+    </div>
+
+    <div class="actor rule-grid">
+      <div class="cell">
+        <span class="num-box" aria-hidden="true">2</span>
+        <p class="lead">The passphrase or the signature unlocks.</p>
+      </div>
+      <div class="cell">
+        <p class="prose">A Base Account owner types a passphrase. An EOA owner signs. Either opens
+          the same vault, and a recovery code covers the day both are gone.</p>
+      </div>
+    </div>
+
+    <div class="actor rule-grid">
+      <div class="cell">
+        <span class="num-box" aria-hidden="true">3</span>
+        <p class="lead">kint does the rest.</p>
+      </div>
+      <div class="cell">
+        <p class="prose">Every change is packed, padded, encrypted and written to Base as calldata
+          under a small contract. On any machine you connect, kint pulls, verifies every epoch
+          against the chain, and replays the rows through Sibyl's own write methods.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- the beat -->
+  <section class="beat-sec stack" aria-labelledby="sec-beat">
+    <div class="sec-head">
+      <span class="num">02</span>
+      <h2 class="label" id="sec-beat">The beat</h2>
+    </div>
+    <div class="beat rule-grid">
+      <div class="cell">
+        <span class="label">Transcript</span>
+        <p class="caption">A row's block height is an upper bound: it existed no later than that
+          block.</p>
+      </div>
+      <div class="cell">
+        <div class="term" tabindex="0" role="group" aria-label="Terminal transcript, scrolls sideways">
+<pre class="transcript"><span class="cmd">$ kint status</span>
+tenant kint-demo  space bd2a3b5b8f3fb4c8  store ~/.sibyl-memory/memory.db
+owner 0xC635e6Eb223aE14143E23cEEa9440bC773dc87Ec  data key cached
+last anchored on this machine: seq 2 block 51081880 rows 15
+chain head: seq 2 digest 7df5378a8c4fa866 block 51081880 (in step)
+
+<span class="cmd">$ kint verify "release rule"</span>
+sibyl verdict: ok  hits: 3
+  <span class="ok">verified</span>   entity rules/release-gate: stored text matches the leaf anchored on Base
+  <span class="ok">verified</span>   reference runbook-release: stored text matches the leaf anchored on Base
+DECISION: PROCEED: verified against rows_root 390336ff71dbcb85 anchored at epoch 2, block 51081880
+
+<span class="cmd">$ sqlite3 ~/.sibyl-memory/memory.db "update entities set body = replace(body, 'never', 'always') where name = 'release-gate'"</span>
+<span class="cmd">$ kint verify "release rule"</span>
+  <span class="bad">REFUSED</span>    entity rules/release-gate: stored text does not match the leaf anchored at epoch 2, block 51081880
+DECISION: REFUSE: refusal written back as entity kint_refusal/release-gate
+
+<span class="cmd">$ kint history entity release-gate --category rules</span>
+epoch 1 block &lt;= 51081867 leaf f406bb0919d23360: {"rule":"never ship on a Friday; every release needs a green deadlift test and a second reviewer", ...}
+epoch 2 block &lt;= 51081880 leaf 4ac605528bbb00e7: {"rule":"never ship on a Friday; every release needs a green deadlift test, a second reviewer, AND a passing kint verify", ...}</pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- what Sibyl does: the judged box -->
+  <section class="box-sec stack" aria-labelledby="sec-box">
+    <div class="sec-head">
+      <span class="num">03</span>
+      <h2 class="label" id="sec-box">What Sibyl does</h2>
+    </div>
+    <div class="box rule-grid">
+      <div class="cell">
+        <h3 class="display">Delete the Sibyl Memory layer and what breaks.</h3>
+      </div>
+      <div class="cell">
+        <p class="prose">The decision beat reaches the row through Sibyl's <code>memory_search</code>
+          (four FTS5 indexes plus the shadow fallback) and keys on the typed verdict from
+          <code>verdicts.py</code>. Without Sibyl there is no ranked candidate and no verdict to key
+          on: the epoch is a decrypted blob with no query surface, so a fresh session neither
+          refuses nor proceeds. Base holds the ciphertext; Sibyl is what turns it back into an
+          answerable store.</p>
+        <p class="pull">Their eight tools ship unmodified; kint adds six.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- honest limits -->
+  <section class="limits-sec stack" aria-labelledby="sec-limits">
+    <div class="sec-head">
+      <span class="num">04</span>
+      <h2 class="label" id="sec-limits">Honest limits</h2>
+    </div>
+    <ul class="limits rule-grid">
+      <li class="cell">
+        <span class="label">01</span>
+        <p>One wallet owns one memory; many machines may write under it, one at a time. Two machines
+          writing at once is a fork: kint refuses and tells you.</p>
+      </li>
+      <li class="cell">
+        <span class="label">02</span>
+        <p>Base holds ciphertext, but the row count and the size bucket are public.</p>
+      </li>
+      <li class="cell">
+        <span class="label">03</span>
+        <p>A phished derive signature is a permanent key. The EIP-712 message says so in the one
+          field every wallet renders. kint never accepts that signature as a login and never sends
+          it anywhere.</p>
+      </li>
+      <li class="cell">
+        <span class="label">04</span>
+        <p>A cold start stops at the newest snapshot epoch, so restore cost is bounded by the size
+          of the memory, not its history.</p>
+      </li>
+    </ul>
+  </section>
+
+  <!-- footer -->
+  <footer class="foot">
+    <span class="wm">k<span class="i">&#305;</span>nt</span>
+    <p class="mono">MIT &middot; Built for the Sibyl Labs Hackathon, September 2026 &middot;
+      s0nderlabs &middot;
+      <a href="https://basescan.org/address/0xa22E03f7a4145Bf4909a83595C90a38E14d79600">on Base</a></p>
+  </footer>
+
+</div>
+</div>
+<script>
+(function(){
+  var root = document.documentElement;
+  var btn = document.getElementById('themeToggle');
+  if (!btn) return;
+  btn.addEventListener('click', function(){
+    var cur = root.getAttribute('data-theme');
+    if (cur !== 'dark' && cur !== 'light') {
+      cur = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+    }
+    var flip = cur === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', flip);
+    try { localStorage.setItem('kint-theme', flip); } catch (e) {}
+  });
+})();
+</script>
+</body>
+</html>

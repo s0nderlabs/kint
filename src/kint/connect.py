@@ -51,6 +51,11 @@ class ChainUnreadable(ConnectError):
     """The chain could not be read (RPC down, rate limited, pruned). Never a security verdict."""
 
 
+class NotAKintEpoch(ConnectError):
+    """The bytes an epoch anchored are not a kint epoch header. The chain was read correctly and
+    what it holds cannot be parsed: the ONE failure a walk back to an older epoch may step over."""
+
+
 def _write_recovery(owner: str, space_hex: str, dek: bytes) -> Path:
     """The one place the recovery file is written (fresh vault, `kint recovery-code`, rekey)."""
     p = paths.recovery_path(space_hex)
@@ -90,27 +95,76 @@ class ConnectResult:
     account_kind: int
 
 
-def _chain_head_header(owner: str, space: bytes, anchor: Anchor | None) -> crypto.Header | None:
-    """The head epoch's header, when the chain already has epochs for this owner and space."""
+HEAD_FALLBACK_DEPTH = 32   # how far back connect and rekey look when the head epoch is unreadable
+MIN_SESSION_BALANCE_WEI = 20_000_000_000_000   # below this the session key cannot pay for an epoch; doctor and join agree
+
+
+def _header_of_event(anchor: Anchor, ev) -> crypto.Header:
+    """The header of one Epoch event's ciphertext, checked against the event digest.
+
+    Three distinct outcomes on purpose, because only one of them may be walked past: the calldata
+    could not be fetched (ChainUnreadable), what came back is not what the event vouches for
+    (ConnectError, a lying or corrupt RPC), or the bytes are genuinely on the chain and are not a
+    kint epoch (NotAKintEpoch).
+    """
+    try:
+        _, _, _, blob = anchor.epoch_ciphertext(ev.tx_hash)
+    except Exception as e:  # noqa: BLE001
+        raise ChainUnreadable(f"cannot fetch the calldata of epoch {ev.seq}: {redact(str(e))}") from e
+    if crypto.keccak(blob) != ev.digest:
+        raise ConnectError("ciphertext digest does not match the Epoch event")
+    try:
+        return crypto.peek_header(blob)
+    except Exception as e:  # noqa: BLE001
+        raise NotAKintEpoch(f"epoch {ev.seq} does not carry a kint header: {type(e).__name__}") from e
+
+
+def _chain_head_header(owner: str, space: bytes, anchor: Anchor | None, log=None) -> crypto.Header | None:
+    """The newest epoch header this machine can READ, when the chain has epochs for this space.
+
+    Normally that is the head epoch. When the head epoch is not a readable kint epoch (anyone
+    holding an authorized session key can append junk, and that would otherwise wedge connect and
+    rekey for good), walk back through prevBlock and take the newest epoch whose header parses.
+    The set of wraps this returns is what a new machine can actually open, which is exactly what
+    connect and rekey need; the pull path still refuses to APPLY the unreadable epoch.
+    """
     try:
         anchor = anchor or Anchor()
         head = anchor.head(owner, space)
     except Exception as e:  # noqa: BLE001
-        raise ChainUnreadable(f"cannot read the chain head: {e}") from e
+        raise ChainUnreadable(f"cannot read the chain head: {redact(str(e))}") from e
     if head.seq == 0:
         return None
     try:
         evs = [e for e in anchor.epoch_at_block(owner, space, head.block_number) if e.seq == head.seq]
-        if not evs:
-            raise ChainUnreadable("the head says there are epochs but none was found at its block")
-        _, _, _, blob = anchor.epoch_ciphertext(evs[0].tx_hash)
-    except ChainUnreadable:
-        raise
     except Exception as e:  # noqa: BLE001
-        raise ChainUnreadable(f"cannot read the head epoch: {e}") from e
-    if crypto.keccak(blob) != evs[0].digest:
-        raise ConnectError("head ciphertext digest does not match the Epoch event")
-    return crypto.peek_header(blob)
+        raise ChainUnreadable(f"cannot read the head epoch: {redact(str(e))}") from e
+    if not evs:
+        raise ChainUnreadable("the head says there are epochs but none was found at its block")
+    try:
+        return _header_of_event(anchor, evs[0])
+    except NotAKintEpoch as head_error:
+        # the ONLY failure an older epoch supersedes: the head epoch was read correctly and is not
+        # a kint epoch. A fetch failure or a digest disagreement is the chain not being read at
+        # all, and walking back over that would answer from a picture nobody has verified.
+        why = redact(str(head_error))
+    if log:
+        log(f"connect: the head epoch {head.seq} at block {head.block_number} is not a readable kint epoch "
+            f"({why}); looking for the newest epoch before it that is")
+    try:
+        events = anchor.walk_epochs(owner, space, stop_seq=max(head.seq - HEAD_FALLBACK_DEPTH, 0), head=head)
+    except Exception as e:  # noqa: BLE001
+        raise ChainUnreadable(f"cannot read the head epoch ({why}) and cannot walk back from it: "
+                              f"{redact(str(e))}") from e
+    for ev in events[1:]:
+        try:
+            header = _header_of_event(anchor, ev)
+        except NotAKintEpoch:   # the one failure that may be walked past; unreadable or lying calldata propagates
+            continue
+        if log:
+            log(f"connect: using epoch {ev.seq} at block {ev.block_number}, the newest readable one")
+        return header
+    raise ChainUnreadable(f"cannot read the head epoch: {why}")
 
 
 def _finish(owner: str, tenant: str, space: bytes, kek: bytes | None, tag: bytes | None, kind: int,
@@ -274,7 +328,7 @@ class RekeyResult:
 
 def rekey(owner: str, tenant: str, *, signature: bytes | None = None, passphrase: str | None = None,
           smart_account_passphrase: str | None = None, extra_passphrase: str | None = None,
-          drop_missing: bool = False, anchor: Anchor | None = None, db_path,
+          drop_missing: bool = False, over_skipped: bool = False, anchor: Anchor | None = None, db_path,
           confirmations: int = 2, log=print) -> RekeyResult:
     """Rotate the data key: a new DEK, new wraps under the SAME keys, one snapshot epoch, a new
     recovery code.
@@ -285,6 +339,10 @@ def rekey(owner: str, tenant: str, *, signature: bytes | None = None, passphrase
 
     Epochs sealed before the rotation stay readable to whoever held the old key. That is a
     property of a public ledger, not something a rotation can undo.
+
+    `over_skipped` rotates even though this machine stopped at an epoch it could not apply: the
+    new snapshot chains on the chain head instead of the mirror. That is the recovery path when a
+    leaked session key appended an epoch nobody can open.
     """
     owner = to_checksum_address(owner)
     space = crypto.space_id(tenant)
@@ -296,14 +354,14 @@ def rekey(owner: str, tenant: str, *, signature: bytes | None = None, passphrase
     with head_lock(space_hex):
         return _rekey_locked(owner, tenant, space, enrol, signature=signature, passphrase=passphrase,
                              smart_account_passphrase=smart_account_passphrase, extra_passphrase=extra_passphrase,
-                             drop_missing=drop_missing, anchor=anchor, db_path=db_path,
-                             confirmations=confirmations, log=log)
+                             drop_missing=drop_missing, over_skipped=over_skipped, anchor=anchor,
+                             db_path=db_path, confirmations=confirmations, log=log)
 
 
 def _rekey_locked(owner: str, tenant: str, space: bytes, enrol, *, signature, passphrase, smart_account_passphrase,
-                  extra_passphrase, drop_missing, anchor, db_path, confirmations, log) -> RekeyResult:
+                  extra_passphrase, drop_missing, over_skipped, anchor, db_path, confirmations, log) -> RekeyResult:
     space_hex = space.hex()
-    header = _chain_head_header(owner, space, anchor) if os.environ.get("KINT_OFFLINE") != "1" else None
+    header = _chain_head_header(owner, space, anchor, log=log) if os.environ.get("KINT_OFFLINE") != "1" else None
     # The chain head header is the set of keys a NEW machine sees, so it decides what must be
     # carried over; the local file only speaks when the chain has no epochs yet.
     current = list(header.wraps) if header is not None else load_wraps(space_hex)
@@ -351,7 +409,7 @@ def _rekey_locked(owner: str, tenant: str, space: bytes, enrol, *, signature, pa
         + (f", dropping {', '.join(dropped_kinds)}" if dropped_kinds else "")
         + "; anchoring one snapshot epoch under the new data key")
     rep = _push_locked(owner=owner, tenant=tenant, db_path=db_path, anchor=anchor, dek=new_dek, wraps=new_wraps,
-                       snapshot=True, confirmations=confirmations, log=log)
+                       snapshot=True, override_skipped=over_skipped, confirmations=confirmations, log=log)
 
     # only now, with the new key on the chain, does anything on this machine change; the head
     # lock is still held, so no other process on this machine can seal under the retired key
@@ -382,7 +440,7 @@ def session_key_info(anchor: Anchor | None = None, owner: str | None = None) -> 
                 info["authorized"] = anchor.can_write(owner, addr)
                 info["expiry"] = anchor.session_key_expiry(owner, addr)
         except Exception as e:  # noqa: BLE001
-            info["error"] = str(e)
+            info["error"] = redact(str(e))
     return info
 
 
@@ -394,7 +452,7 @@ def doctor(owner: str | None, tenant: str, db_path) -> list[tuple[str, str, str]
         import sibyl_memory_client, sibyl_memory_mcp
         rows.append(("sibyl", "ok", f"client {getattr(sibyl_memory_client, '__version__', '?')}, mcp {getattr(sibyl_memory_mcp, '__version__', '?')}"))
     except Exception as e:  # noqa: BLE001
-        rows.append(("sibyl", "fail", str(e)))
+        rows.append(("sibyl", "fail", redact(str(e))))
     home = paths.kint_home()
     mode = oct(home.stat().st_mode & 0o777)
     rows.append(("kint home", "ok" if mode == "0o700" else "warn", f"{home} mode {mode}"))
@@ -425,26 +483,26 @@ def doctor(owner: str | None, tenant: str, db_path) -> list[tuple[str, str, str]
         cid = anchor.chain_id()
         rows.append(("rpc primary", "ok" if cid == crypto.CHAIN_ID else "fail", f"{redact(anchor.rpc_url)} chain {cid}, block {anchor.block_number()}"))
     except Exception as e:  # noqa: BLE001
-        rows.append(("rpc primary", "fail", str(e)[:120]))
+        rows.append(("rpc primary", "fail", redact(str(e))[:120]))
     try:
         from .chain import secondary_rpc_url
         a2 = Anchor(rpc_url=secondary_rpc_url(), address=anchor.address if anchor else None)
         same = a2.rpc_url == (anchor.rpc_url if anchor else None)
         rows.append(("rpc secondary", "warn" if same else "ok", f"{redact(secondary_rpc_url())} block {a2.block_number()}" + (" (SAME as primary: no second opinion on a cold start)" if same else "")))
     except Exception as e:  # noqa: BLE001
-        rows.append(("rpc secondary", "warn", str(e)[:120]))
+        rows.append(("rpc secondary", "warn", redact(str(e))[:120]))
     if anchor is not None:
         try:
             rows.append(("contract", "ok" if anchor.has_code(anchor.address) else "fail", f"{anchor.address} {'has code' if anchor.has_code(anchor.address) else 'has NO code'}"))
         except Exception as e:  # noqa: BLE001
-            rows.append(("contract", "fail", str(e)[:120]))
+            rows.append(("contract", "fail", redact(str(e))[:120]))
     sk = session_key_info(anchor, owner)
     if not sk["exists"]:
         rows.append(("session key", "warn", "none: kint session-key create"))
     else:
         bal = sk.get("balance_eth")
         auth = sk.get("authorized")
-        st = "ok" if (bal and bal > 0.00002 and auth) else "warn"
+        st = "ok" if (sk.get("balance_wei", 0) >= MIN_SESSION_BALANCE_WEI and auth) else "warn"
         rows.append(("session key", st, f"{sk['address']} balance {bal if bal is not None else '?'} ETH, authorized {auth}"))
     if owner and anchor is not None:
         try:
@@ -453,13 +511,13 @@ def doctor(owner: str | None, tenant: str, db_path) -> list[tuple[str, str, str]
             same = m is not None and (m.seq, m.digest) == (head.seq, head.digest.hex())
             rows.append(("head", "ok" if same else "warn", f"chain seq {head.seq} block {head.block_number}; mirror seq {m.seq if m else 'none'}{' (in step)' if same else ' (pull or push needed)'}"))
         except Exception as e:  # noqa: BLE001
-            rows.append(("head", "warn", str(e)[:120]))
+            rows.append(("head", "warn", redact(str(e))[:120]))
     try:
         from .push import unanchored_changes
         c, d = unanchored_changes(tenant, db)
         rows.append(("unanchored changes", "ok" if not (c or d) else "warn", f"{c} changed, {d} deleted rows since the last anchored epoch"))
     except Exception as e:  # noqa: BLE001
-        rows.append(("unanchored changes", "warn", str(e)[:120]))
+        rows.append(("unanchored changes", "warn", redact(str(e))[:120]))
     rows.append(("python", "ok", f"{platform.python_version()} {'(PYTHONPATH is set: run with env -u PYTHONPATH)' if os.environ.get('PYTHONPATH') else ''}".strip()))
     return rows
 

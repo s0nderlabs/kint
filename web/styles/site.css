@@ -1,0 +1,31 @@
+/* Shared chrome for every page that is not the landing: the nav and the footer. Tokens from app/globals.css. */
+.wrap{width:min(var(--wide),100% - 48px);margin-inline:auto}
+.snav{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:22px 32px 0}
+.snav-wm{display:block;color:var(--ink)}
+.snav-links{display:flex;align-items:center;gap:22px;font-size:var(--t1)}
+.snav-links a{text-decoration:none;color:var(--ink-2)}
+.snav-links a:hover{color:var(--ink)}
+.snav-toggle{background:transparent;border:0;padding:6px 10px;border-radius:999px;box-shadow:inset 0 0 0 1px var(--hair);font-family:var(--mono);font-size:var(--t1);letter-spacing:.02em;color:var(--ink-2);cursor:pointer}
+.snav-toggle:hover{color:var(--ink)}
+.snav-toggle:active{transform:scale(.97)}
+.sfoot{position:relative;z-index:2;box-shadow:inset 0 1px 0 var(--hair);padding:clamp(48px,7vh,80px) 0 28px;background:var(--page-2)}
+.sfgrid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:24px}
+.sfbrand{grid-column:span 5;padding-right:24px}
+.sfwm{display:block;width:fit-content;color:var(--ink)}
+.sfbrand p{margin:18px 0 0;max-width:36ch;color:var(--ink-2);line-height:1.5;text-wrap:pretty}
+.sfbrand .sfmono{margin-top:14px;font-family:var(--mono);font-size:var(--t1);color:var(--muted);letter-spacing:.02em}
+.sfcol{grid-column:span 2;display:flex;flex-direction:column;gap:9px}
+.sfcol:first-of-type{grid-column:7 / span 2}
+.sfh{font-size:var(--t1);color:var(--muted);margin-bottom:4px}
+.sfcol a{color:var(--ink-2);text-decoration:none;width:fit-content;box-shadow:inset 0 -1px 0 transparent;transition:color .18s var(--ease),box-shadow .18s var(--ease)}
+.sfcol a:hover{color:var(--ink);box-shadow:inset 0 -1px 0 var(--hair)}
+.sfbar{margin-top:clamp(36px,5vh,56px);padding-top:22px;box-shadow:inset 0 1px 0 var(--hair);display:flex;align-items:center;justify-content:space-between;gap:16px 28px;flex-wrap:wrap;font-family:var(--mono);font-size:var(--t1);letter-spacing:.02em;color:var(--muted)}
+.sflinks{display:flex;align-items:center;gap:18px}
+.sflinks a{color:var(--ink-2);text-decoration:none}
+@media (max-width:760px){
+  .snav{padding:18px 20px 0}
+  .snav-links{gap:14px}
+  .sfgrid{grid-template-columns:1fr 1fr}
+  .sfbrand{grid-column:1 / -1;padding-right:0}
+  .sfcol,.sfcol:first-of-type{grid-column:auto}
+}

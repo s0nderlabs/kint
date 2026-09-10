@@ -1,0 +1,621 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script>(function(){try{var t=localStorage.getItem('kint-theme');if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>kint, Sibyl Memory that outlives the laptop</title>
+<style>
+/* ============================================================
+   L1 Ledger. A quiet document on ruled paper.
+   660px reading column, 200px margin column to its right.
+   Faces: Satoshi (display 500, body 400) + Fragment Mono.
+   ============================================================ */
+
+@font-face{font-family:'Satoshi';src:url('fonts/Satoshi-Variable.woff2') format('woff2');font-weight:300 900;font-style:normal;font-display:swap}
+@font-face{font-family:'Satoshi';src:url('fonts/Satoshi-VariableItalic.woff2') format('woff2');font-weight:300 900;font-style:italic;font-display:swap}
+@font-face{font-family:'Fragment Mono';src:url('fonts/FragmentMono-Regular.ttf') format('truetype');font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:'Fragment Mono';src:url('fonts/FragmentMono-Italic.ttf') format('truetype');font-weight:400;font-style:italic;font-display:swap}
+
+/* ---- tokens: complete light palette on bare :root ---- */
+:root{
+  color-scheme:light;
+  --page:#F7F6F2;
+  --card:#FFFFFF;
+  --well:#EFEDE6;
+  --ink:#1A1916;
+  --ink-2:#4F4C46;
+  --muted:#6E6A62;
+  --hair:rgba(26,25,22,.12);
+  --hair-soft:rgba(26,25,22,.07);
+  --accent:#0000FF;
+  --ok:#157A5F;
+  --bad:#B3404A;
+  --on-fill:#F7F6F2;
+  --on-accent:#FFFFFF;
+  --grain:.035;
+  --sans:'Satoshi',Helvetica,Arial,sans-serif;
+  --mono:'Fragment Mono',ui-monospace,Menlo,monospace;
+  --t-h1:clamp(2.6rem,5.5vw,4.6rem);
+  --t-h2:clamp(1.375rem,2.2vw,1.75rem);
+  --t-body:1.0625rem;
+  --t-mono:.75rem;
+  --t-mono-lg:.875rem;
+  --ease-out-expo:cubic-bezier(0.16,1,0.3,1);
+  --col-read:660px;
+  --col-note:200px;
+  --col-gap:40px;
+}
+
+/* ---- tokens only: OS dark, unless an explicit light choice is stamped ---- */
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --page:#161513;
+    --card:#1E1D1A;
+    --well:#100F0D;
+    --ink:#ECEAE4;
+    --ink-2:#C9C6BE;
+    --muted:#8F8B82;
+    --hair:rgba(236,234,228,.14);
+    --hair-soft:rgba(236,234,228,.08);
+    --accent:#4D7CFF;
+    --ok:#3AD1A6;
+    --bad:#EE8295;
+    --on-fill:#161513;
+    --on-accent:#161513;
+    --grain:.05;
+  }
+}
+
+/* ---- tokens only: the toggle wins in both directions ---- */
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --page:#161513;
+  --card:#1E1D1A;
+  --well:#100F0D;
+  --ink:#ECEAE4;
+  --ink-2:#C9C6BE;
+  --muted:#8F8B82;
+  --hair:rgba(236,234,228,.14);
+  --hair-soft:rgba(236,234,228,.08);
+  --accent:#4D7CFF;
+  --ok:#3AD1A6;
+  --bad:#EE8295;
+  --on-fill:#161513;
+  --on-accent:#161513;
+  --grain:.05;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+
+body{
+  margin:0;
+  background:var(--page);
+  color:var(--ink);
+  font-family:var(--sans);
+  font-weight:400;
+  font-size:var(--t-body);
+  line-height:1.62;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+
+/* the house grain */
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  z-index:9999;
+  pointer-events:none;
+  opacity:var(--grain);
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size:256px 256px;
+}
+
+.v-l1 :focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:2px}
+
+/* ---- the ledger grid ---- */
+.v-l1 .wrap{width:min(100% - 48px,900px);margin-inline:auto}
+.v-l1 .wrap-wide{width:min(100% - 48px,1060px);margin-inline:auto}
+
+.v-l1 .grid{
+  display:grid;
+  grid-template-columns:var(--col-read) var(--col-note);
+  column-gap:var(--col-gap);
+  align-items:start;
+  position:relative;
+}
+.v-l1 .grid.fluid{grid-template-columns:minmax(0,1fr) var(--col-note)}
+.v-l1 .grid > .col-read{grid-column:1;grid-row:1;min-width:0}
+.v-l1 .grid > .col-note{grid-column:2;grid-row:1;min-width:0}
+
+/* the ledger margin rule, drawn down the gutter */
+.v-l1 .ruled::before{
+  content:"";
+  position:absolute;
+  top:.35rem;
+  bottom:.35rem;
+  left:calc(var(--col-read) + (var(--col-gap) / 2));
+  width:1px;
+  background:var(--hair);
+}
+.v-l1 .grid.fluid.ruled::before{left:auto;right:calc(var(--col-note) + (var(--col-gap) / 2))}
+
+/* ---- type ---- */
+.v-l1 h1,.v-l1 h2,.v-l1 h3,.v-l1 p,.v-l1 ul,.v-l1 ol{margin:0}
+.v-l1 .h1{
+  font-family:var(--sans);
+  font-weight:500;
+  font-size:var(--t-h1);
+  line-height:1.02;
+  letter-spacing:-.024em;
+  color:var(--ink);
+  max-width:14ch;
+}
+.v-l1 .h1 .hot{color:var(--accent)}
+.v-l1 .h2{
+  font-family:var(--sans);
+  font-weight:500;
+  font-size:var(--t-h2);
+  line-height:1.2;
+  letter-spacing:-.014em;
+  color:var(--ink);
+  max-width:26ch;
+}
+.v-l1 .lede{
+  font-family:var(--sans);
+  font-weight:400;
+  font-size:var(--t-h2);
+  line-height:1.42;
+  letter-spacing:-.01em;
+  color:var(--ink-2);
+  max-width:34ch;
+}
+.v-l1 .p{font-weight:400;color:var(--ink-2);max-width:62ch}
+.v-l1 .p strong{font-weight:500;color:var(--ink)}
+.v-l1 .p + .p{margin-top:.9em}
+
+.v-l1 .mono{font-family:var(--mono);font-weight:400;font-size:var(--t-mono);line-height:1.5;letter-spacing:.01em}
+.v-l1 .mono-lg{font-family:var(--mono);font-weight:400;font-size:var(--t-mono-lg);line-height:1.5}
+
+/* the section opener, identical every time */
+.v-l1 .opener{margin-bottom:26px}
+.v-l1 .rule24{display:block;width:24px;height:1px;background:var(--accent);margin-bottom:14px}
+.v-l1 .eyebrow{
+  font-family:var(--mono);
+  font-weight:400;
+  font-size:var(--t-mono);
+  line-height:1.4;
+  letter-spacing:.12em;
+  color:var(--muted);
+}
+.v-l1 .opener .h2{margin-top:12px}
+
+/* margin column notes */
+.v-l1 .note{font-family:var(--mono);font-weight:400;font-size:var(--t-mono);line-height:1.65;color:var(--muted);letter-spacing:.01em;word-break:break-word}
+.v-l1 .note .num{display:block;color:var(--ink-2);letter-spacing:.12em;margin-bottom:10px}
+.v-l1 .note .lab{display:block;color:var(--ink-2);letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px}
+.v-l1 .note b{font-weight:400;color:var(--ink-2)}
+.v-l1 .note .stack{display:block;margin-top:8px}
+
+/* ---- the wordmark ---- */
+.v-l1 .wm{font-family:var(--sans);font-weight:500;letter-spacing:-.02em;line-height:1;color:var(--ink);display:inline-block}
+.v-l1 .wm .i{position:relative}
+.v-l1 .wm .i::after{content:"";position:absolute;left:50%;transform:translateX(-50%);top:0.253em;width:.18em;height:.18em;background:var(--accent)}
+
+/* ---- nav ---- */
+.v-l1 .nav{border-bottom:1px solid var(--hair)}
+.v-l1 .nav-in{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:20px;height:64px;
+}
+.v-l1 .nav .wm{font-size:var(--t-body)}
+.v-l1 .nav-right{display:flex;align-items:center;gap:22px}
+.v-l1 .navlink{
+  font-family:var(--mono);font-weight:400;font-size:var(--t-mono);letter-spacing:.06em;
+  color:var(--ink-2);text-decoration:none;
+  padding-bottom:2px;border-bottom:1px solid var(--hair);
+  transition:color .18s var(--ease-out-expo),border-color .18s var(--ease-out-expo);
+}
+.v-l1 .navlink:hover{color:var(--accent);border-bottom-color:var(--accent)}
+
+.v-l1 .toggle{
+  appearance:none;background:transparent;border:1px solid var(--hair);
+  width:34px;height:34px;border-radius:999px;cursor:pointer;
+  display:inline-flex;align-items:center;justify-content:center;color:var(--ink-2);
+  transition:border-color .18s var(--ease-out-expo),color .18s var(--ease-out-expo);
+}
+.v-l1 .toggle:hover{border-color:var(--accent);color:var(--accent)}
+.v-l1 .toggle svg{display:block}
+
+/* ---- hero ---- */
+.v-l1 .hero{padding-top:clamp(56px,8vh,116px);padding-bottom:clamp(48px,7vh,92px)}
+.v-l1 .hero .eyebrow{letter-spacing:.08em;color:var(--ink-2);margin-bottom:22px}
+.v-l1 .hero .h1{max-width:none;margin-bottom:32px}
+.v-l1 .hero .lede{max-width:38ch}
+.v-l1 .cta{display:flex;align-items:center;gap:26px;flex-wrap:wrap;margin-top:34px}
+
+.v-l1 .pill{
+  display:inline-flex;align-items:center;justify-content:center;
+  height:46px;padding:0 26px;border-radius:999px;
+  background:var(--ink);color:var(--on-fill);
+  font-family:var(--sans);font-weight:500;font-size:var(--t-body);letter-spacing:-.005em;
+  text-decoration:none;border:1px solid var(--ink);
+  transition:background .2s var(--ease-out-expo),border-color .2s var(--ease-out-expo),color .2s var(--ease-out-expo);
+}
+.v-l1 .pill:hover{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+
+.v-l1 .tlink{
+  font-family:var(--sans);font-weight:500;font-size:var(--t-body);
+  color:var(--ink);text-decoration:none;
+  padding-bottom:3px;border-bottom:1px solid var(--hair);
+  transition:color .18s var(--ease-out-expo),border-color .18s var(--ease-out-expo);
+}
+.v-l1 .tlink:hover{color:var(--accent);border-bottom-color:var(--accent)}
+
+.v-l1 .install{
+  margin-top:38px;padding-top:16px;border-top:1px solid var(--hair-soft);
+  font-family:var(--mono);font-weight:400;font-size:var(--t-mono-lg);color:var(--muted);
+}
+.v-l1 .install b{font-weight:400;color:var(--ink)}
+
+/* ---- proof strip: a full width band of hairline separated mono cells ---- */
+.v-l1 .strip{
+  background:var(--card);
+  border-top:1px solid var(--hair);
+  border-bottom:1px solid var(--hair);
+  overflow-x:auto;
+  scrollbar-width:thin;
+}
+.v-l1 .strip-in{display:flex;width:max-content;min-width:100%;padding-inline:clamp(16px,4vw,40px)}
+.v-l1 .cell{
+  flex:1 0 auto;
+  padding:15px 20px;
+  border-left:1px solid var(--hair-soft);
+  white-space:nowrap;
+  font-family:var(--mono);font-weight:400;font-size:var(--t-mono);line-height:1.5;letter-spacing:.01em;
+  color:var(--muted);
+}
+.v-l1 .cell:first-child{border-left:0;padding-left:0}
+.v-l1 .cell:last-child{padding-right:0}
+.v-l1 .cell .v{color:var(--ink);font-variant-numeric:tabular-nums}
+.v-l1 a.cell{text-decoration:none;transition:color .18s var(--ease-out-expo)}
+.v-l1 a.cell .v{border-bottom:1px solid var(--hair);padding-bottom:1px;transition:color .18s var(--ease-out-expo),border-color .18s var(--ease-out-expo)}
+.v-l1 a.cell:hover .v{color:var(--accent);border-bottom-color:var(--accent)}
+
+/* ---- sections ---- */
+.v-l1 .sec{padding-top:clamp(72px,9vh,144px)}
+.v-l1 .sec-head{margin-bottom:clamp(28px,3vh,44px)}
+
+/* one ledger entry: a ruled row, reading column plus margin note */
+.v-l1 .entry{border-top:1px solid var(--hair);padding-block:26px}
+.v-l1 .entry:last-of-type{border-bottom:1px solid var(--hair)}
+.v-l1 .entry .col-read > * + *{margin-top:.5em}
+
+/* ---- the beat: the transcript on a deeper card, no window chrome ---- */
+.v-l1 .term-card{
+  background:var(--well);
+  border:1px solid var(--hair);
+  border-radius:14px;
+  padding:26px clamp(16px,2.4vw,30px);
+  overflow-x:auto;
+  scrollbar-width:thin;
+}
+.v-l1 .term{
+  margin:0;
+  font-family:var(--mono);
+  font-weight:400;
+  font-size:var(--t-mono-lg);
+  line-height:1.72;
+  color:var(--ink-2);
+  white-space:pre;
+  tab-size:2;
+}
+.v-l1 .term .pr{color:var(--muted)}
+.v-l1 .term .cmd{color:var(--ink)}
+.v-l1 .term .ok{color:var(--ok)}
+.v-l1 .term .bad{color:var(--bad)}
+.v-l1 .caption{margin-top:0;color:var(--muted);max-width:62ch}
+.v-l1 .beat-cap{margin-top:30px}
+
+/* ---- the box: what Sibyl does ---- */
+.v-l1 .boxcard{
+  background:var(--card);
+  border:1px solid var(--hair);
+  border-radius:16px;
+  padding:clamp(28px,4vw,56px);
+}
+.v-l1 .boxcard .h2{max-width:22ch}
+.v-l1 .boxcard .p{margin-top:20px;max-width:62ch}
+.v-l1 .tally{border-left:1px solid var(--hair);padding-left:16px}
+.v-l1 .tally .row{display:flex;justify-content:space-between;gap:12px;padding-block:7px}
+.v-l1 .tally .row + .row{border-top:1px solid var(--hair-soft)}
+.v-l1 .tally .k{color:var(--muted);letter-spacing:.12em}
+.v-l1 .tally .v{color:var(--ink);font-variant-numeric:tabular-nums}
+
+/* ---- limits ---- */
+.v-l1 .limits .entry .col-read{color:var(--ink-2)}
+
+/* ---- footer ---- */
+.v-l1 .foot{
+  margin-top:clamp(72px,9vh,144px);
+  border-top:1px solid var(--hair);
+  padding-block:28px 40px;
+}
+.v-l1 .foot-in{display:flex;align-items:baseline;justify-content:space-between;gap:20px;flex-wrap:wrap}
+.v-l1 .foot .wm{font-size:var(--t-body)}
+.v-l1 .foot .mono{color:var(--muted)}
+
+/* ---- 960 and below: the margin column folds under the sentence it proves ---- */
+@media (max-width:959px){
+  .v-l1 .grid,.v-l1 .grid.fluid{grid-template-columns:minmax(0,1fr);row-gap:16px}
+  .v-l1 .grid > .col-read,.v-l1 .grid > .col-note{grid-column:1;grid-row:auto}
+  .v-l1 .ruled::before{display:none}
+  .v-l1 .grid > .col-note{border-left:1px solid var(--hair);padding-left:14px}
+  .v-l1 .tally{border-left:0;padding-left:0}
+  .v-l1 .h1{max-width:16ch}
+  .v-l1 .lede,.v-l1 .hero .lede{max-width:42ch}
+}
+@media (max-width:600px){
+  .v-l1 .wrap,.v-l1 .wrap-wide{width:min(100% - 32px,900px)}
+  .v-l1 .nav-right{gap:16px}
+  .v-l1 .cta{gap:18px}
+  .v-l1 .pill{width:100%}
+  .v-l1 .term-card{border-radius:12px;padding:20px 16px}
+  .v-l1 .foot-in{flex-direction:column;align-items:flex-start;gap:14px}
+}
+@media (prefers-reduced-motion:reduce){
+  .v-l1 *{transition-duration:.001ms !important}
+}
+</style>
+</head>
+<body class="v-l1">
+
+<header class="nav" id="top">
+  <div class="wrap nav-in">
+    <span class="wm" role="img" aria-label="kint">k<span class="i">ı</span>nt</span>
+    <nav class="nav-right" aria-label="Primary">
+      <a class="navlink" href="#">App</a>
+      <a class="navlink" href="#">GitHub</a>
+      <button class="toggle" type="button" id="themeToggle" aria-label="Toggle theme">
+        <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+          <circle cx="8" cy="8" r="6.25" fill="none" stroke="currentColor" stroke-width="1.25"></circle>
+          <path d="M8 1.75a6.25 6.25 0 0 1 0 12.5z" fill="currentColor"></path>
+        </svg>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+  <!-- hero -->
+  <section class="hero">
+    <div class="wrap">
+      <p class="eyebrow">Built on Sibyl Memory, under it. Live on Base mainnet.</p>
+      <h1 class="h1">Sibyl Memory that <span class="hot">outlives</span> the laptop.</h1>
+      <p class="lede">Wipe the machine, connect the wallet, and the agent comes back knowing what it knew, and proves it was not tampered with.</p>
+      <div class="cta">
+        <a class="pill" href="#">Open the app</a>
+        <a class="tlink" href="#">Read the README</a>
+      </div>
+      <p class="install"><b>uv tool install kint</b></p>
+    </div>
+  </section>
+
+  <!-- proof strip: live facts -->
+  <section class="strip" aria-label="Live chain facts">
+    <div class="strip-in">
+      <a class="cell" href="https://basescan.org/address/0xa22E03f7a4145Bf4909a83595C90a38E14d79600" rel="noreferrer noopener">EpochAnchor <span class="v">0xa22E03f7a4145Bf4909a83595C90a38E14d79600</span></a>
+      <span class="cell">head seq <span class="v" data-count="2">2</span></span>
+      <span class="cell">block <span class="v" data-count="51081880" data-comma="1">51,081,880</span></span>
+      <span class="cell">digest <span class="v">7df5378a8c4fa866</span></span>
+      <span class="cell"><span class="v" data-count="15">15</span> rows</span>
+      <span class="cell"><span class="v" data-count="4">4</span> KB bucket</span>
+      <span class="cell">Base mainnet</span>
+    </div>
+  </section>
+
+  <!-- the three actors -->
+  <section class="sec" aria-labelledby="actors-h">
+    <div class="wrap">
+      <div class="sec-head opener">
+        <span class="rule24"></span>
+        <p class="eyebrow">THE THREE ACTORS</p>
+        <h2 class="h2" id="actors-h">The three actors</h2>
+      </div>
+
+      <div class="grid ruled entry">
+        <div class="col-note">
+          <p class="note"><span class="num">01</span>owner<br><b>0xC635…87Ec</b></p>
+        </div>
+        <div class="col-read">
+          <p class="p"><strong>The wallet owns.</strong> One frozen message, signed once per machine, derives the key. Nothing decrypted ever leaves the machine.</p>
+        </div>
+      </div>
+
+      <div class="grid ruled entry">
+        <div class="col-note">
+          <p class="note"><span class="num">02</span>space<br><b>bd2a3b5b8f3fb4c8</b></p>
+        </div>
+        <div class="col-read">
+          <p class="p"><strong>The passphrase or the signature unlocks.</strong> A Base Account owner types a passphrase. An EOA owner signs. Either opens the same vault, and a recovery code covers the day both are gone.</p>
+        </div>
+      </div>
+
+      <div class="grid ruled entry">
+        <div class="col-note">
+          <p class="note"><span class="num">03</span>rows_root<br><b>390336ff71dbcb85</b><span class="stack">block 51,081,880</span></p>
+        </div>
+        <div class="col-read">
+          <p class="p"><strong>kint does the rest.</strong> Every change is packed, padded, encrypted and written to Base as calldata under a small contract. On any machine you connect, kint pulls, verifies every epoch against the chain, and replays the rows through Sibyl's own write methods.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- the beat -->
+  <section class="sec" aria-labelledby="beat-h">
+    <div class="wrap">
+      <div class="sec-head opener">
+        <span class="rule24"></span>
+        <p class="eyebrow">THE BEAT</p>
+        <h2 class="h2" id="beat-h">The beat</h2>
+      </div>
+
+      <div class="term-card">
+<pre class="term"><span class="pr">$</span> <span class="cmd">kint status</span>
+tenant kint-demo  space bd2a3b5b8f3fb4c8  store ~/.sibyl-memory/memory.db
+owner 0xC635e6Eb223aE14143E23cEEa9440bC773dc87Ec  data key cached
+last anchored on this machine: seq 2 block 51081880 rows 15
+chain head: seq 2 digest 7df5378a8c4fa866 block 51081880 (in step)
+
+<span class="pr">$</span> <span class="cmd">kint verify "release rule"</span>
+sibyl verdict: ok  hits: 3
+  <span class="ok">verified</span>   entity rules/release-gate: stored text matches the leaf anchored on Base
+  <span class="ok">verified</span>   reference runbook-release: stored text matches the leaf anchored on Base
+<span class="ok">DECISION: PROCEED:</span> verified against rows_root 390336ff71dbcb85 anchored at epoch 2, block 51081880
+
+<span class="pr">$</span> <span class="cmd">sqlite3 ~/.sibyl-memory/memory.db "update entities set body = replace(body, 'never', 'always') where name = 'release-gate'"</span>
+<span class="pr">$</span> <span class="cmd">kint verify "release rule"</span>
+  <span class="bad">REFUSED</span>    entity rules/release-gate: stored text does not match the leaf anchored at epoch 2, block 51081880
+<span class="bad">DECISION: REFUSE:</span> refusal written back as entity kint_refusal/release-gate
+
+<span class="pr">$</span> <span class="cmd">kint history entity release-gate --category rules</span>
+epoch 1 block &lt;= 51081867 leaf f406bb0919d23360: {"rule":"never ship on a Friday; every release needs a green deadlift test and a second reviewer", ...}
+epoch 2 block &lt;= 51081880 leaf 4ac605528bbb00e7: {"rule":"never ship on a Friday; every release needs a green deadlift test, a second reviewer, AND a passing kint verify", ...}</pre>
+      </div>
+
+      <div class="grid ruled entry beat-cap">
+        <div class="col-note">
+          <p class="note"><span class="lab">epoch 2</span>leaf<br><b>4ac605528bbb00e7</b></p>
+        </div>
+        <div class="col-read">
+          <p class="p caption">A row's block height is an upper bound: it existed no later than that block.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- what Sibyl does: the box -->
+  <section class="sec" aria-labelledby="sibyl-h">
+    <div class="wrap-wide">
+      <div class="boxcard">
+        <div class="grid fluid ruled">
+          <div class="col-note">
+            <div class="tally note">
+              <div class="row"><span class="k">SIBYL</span><span class="v">8 tools</span></div>
+              <div class="row"><span class="k">KINT</span><span class="v">+6 tools</span></div>
+            </div>
+          </div>
+          <div class="col-read">
+            <div class="opener">
+              <span class="rule24"></span>
+              <p class="eyebrow">WHAT SIBYL DOES</p>
+            </div>
+            <h2 class="h2" id="sibyl-h">Delete the Sibyl Memory layer and what breaks.</h2>
+            <p class="p">The decision beat reaches the row through Sibyl's memory_search (four FTS5 indexes plus the shadow fallback) and keys on the typed verdict from verdicts.py. Without Sibyl there is no ranked candidate and no verdict to key on: the epoch is a decrypted blob with no query surface, so a fresh session neither refuses nor proceeds. Base holds the ciphertext; Sibyl is what turns it back into an answerable store. Their eight tools ship unmodified; kint adds six.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- honest limits -->
+  <section class="sec limits" aria-labelledby="limits-h">
+    <div class="wrap">
+      <div class="sec-head opener">
+        <span class="rule24"></span>
+        <p class="eyebrow">HONEST LIMITS</p>
+        <h2 class="h2" id="limits-h">Honest limits</h2>
+      </div>
+
+      <div class="grid ruled entry">
+        <div class="col-note"><p class="note"><span class="lab">one writer at a time</span></p></div>
+        <div class="col-read">
+          <p class="p">One wallet owns one memory; many machines may write under it, one at a time. Two machines writing at once is a fork: kint refuses and tells you.</p>
+        </div>
+      </div>
+
+      <div class="grid ruled entry">
+        <div class="col-note"><p class="note"><span class="lab">what is public</span>15 rows<br>4 KB bucket</p></div>
+        <div class="col-read">
+          <p class="p">Base holds ciphertext, but the row count and the size bucket are public.</p>
+        </div>
+      </div>
+
+      <div class="grid ruled entry">
+        <div class="col-note"><p class="note"><span class="lab">the derive signature</span>EIP-712</p></div>
+        <div class="col-read">
+          <p class="p">A phished derive signature is a permanent key. The EIP-712 message says so in the one field every wallet renders. kint never accepts that signature as a login and never sends it anywhere.</p>
+        </div>
+      </div>
+
+      <div class="grid ruled entry">
+        <div class="col-note"><p class="note"><span class="lab">restore cost</span></p></div>
+        <div class="col-read">
+          <p class="p">A cold start stops at the newest snapshot epoch, so restore cost is bounded by the size of the memory, not its history.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <div class="wrap foot-in">
+    <span class="wm" role="img" aria-label="kint">k<span class="i">ı</span>nt</span>
+    <p class="mono">MIT · Built for the Sibyl Labs Hackathon, September 2026 · s0nderlabs · on Base</p>
+  </div>
+</footer>
+
+<script>
+/* theme toggle: reads the stamped attribute, else the OS, sets the opposite, persists it */
+(function(){
+  var root=document.documentElement;
+  var btn=document.getElementById('themeToggle');
+  if(!btn)return;
+  function current(){
+    var a=root.getAttribute('data-theme');
+    if(a==='dark'||a==='light')return a;
+    return (window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';
+  }
+  btn.addEventListener('click',function(){
+    var next=current()==='dark'?'light':'dark';
+    root.setAttribute('data-theme',next);
+    try{localStorage.setItem('kint-theme',next);}catch(e){}
+  });
+})();
+
+/* the one motion beat: the proof strip numbers count up once on load */
+(function(){
+  var els=[].slice.call(document.querySelectorAll('[data-count]'));
+  if(!els.length)return;
+  if(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+  function run(){
+    els.forEach(function(el){
+      var w=el.getBoundingClientRect().width;
+      el.style.display='inline-block';
+      if(w){el.style.minWidth=w+'px';}
+    });
+    var start=null,dur=1000;
+    function frame(ts){
+      if(start===null)start=ts;
+      var t=Math.min(1,(ts-start)/dur);
+      var e=t>=1?1:1-Math.pow(2,-10*t);
+      els.forEach(function(el){
+        var target=parseInt(el.getAttribute('data-count'),10);
+        var v=Math.round(target*e);
+        el.textContent=el.getAttribute('data-comma')?v.toLocaleString('en-US'):String(v);
+      });
+      if(t<1){requestAnimationFrame(frame);}
+    }
+    requestAnimationFrame(frame);
+  }
+  if(document.readyState==='complete'){run();}
+  else{window.addEventListener('load',run);}
+})();
+</script>
+</body>
+</html>

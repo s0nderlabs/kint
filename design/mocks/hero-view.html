@@ -1,0 +1,445 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script>(function(){try{var t=localStorage.getItem('kint-theme');if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>kint hero lab</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&display=swap" rel="stylesheet">
+<style>
+/* kint HERO LAB, Sep 10 2026. One hero, nine layouts, one sky.
+   What stays fixed from L3: the nav (wordmark, App, GitHub, the square toggle), the centred
+   stack (H1, lede, two CTAs, the install line, NO eyebrow), Bricolage Grotesque + Geist Mono,
+   the sandpaper grain. What moves: where the image sits and how it meets the sky.
+   The rule that kills the seam: the hero has ONE sky, painted by the page from a token, and
+   the image's own sky dissolves into it through a mask, so there is never a hard band edge. */
+@font-face{font-family:'Geist Mono';src:url('fonts/geist-mono-var.ttf') format('truetype');font-weight:100 900;font-display:swap}
+
+/* ---- tokens: the COMPLETE light palette on bare :root ---- */
+:root{
+  --page:#F4F1EA;--ink:#171512;--ink-2:#403B34;--muted:#675F57;
+  --hair:rgba(23,21,18,.13);
+  --accent:#1F3FD6;--accent-lite:#A6B8FF;--accent-deep:#16225E;
+  --bone:#F4F1EA;--bone-2:rgba(244,241,234,.86);--bone-hair:rgba(244,241,234,.32);
+  --ink-hair:rgba(23,21,18,.30);
+  /* the three skies: the image's own paper, cobalt, and night */
+  --sky-paper:#EBE0D0;--sky-cobalt:#1F3FD6;--sky-night:#171F2B;--sky-navy:#0B1230;
+  --t1:.8125rem;--t2:1rem;--t3:1.125rem;--t4:clamp(1.28rem,1.85vw,1.5rem);
+  --t5:clamp(2.5rem,5vw,4.5rem);
+  --mono:'Geist Mono',ui-monospace,Menlo,monospace;
+  --display:'Bricolage Grotesque',system-ui,sans-serif;
+  --ease:cubic-bezier(0.16,1,0.3,1);
+  --wide:1180px;--edge:max(24px,calc((100vw - var(--wide))/2));
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --page:#12110F;--ink:#ECEAE4;--ink-2:#C9C6BE;--muted:#9A958B;--hair:rgba(236,234,228,.14);
+    --accent:#7A93FF;--accent-lite:#AEC0FF;
+    --ink-hair:rgba(236,234,228,.30);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --page:#12110F;--ink:#ECEAE4;--ink-2:#C9C6BE;--muted:#9A958B;--hair:rgba(236,234,228,.14);
+  --accent:#7A93FF;--accent-lite:#AEC0FF;
+  --ink-hair:rgba(236,234,228,.30);
+  color-scheme:dark;
+}
+
+/* ---- the sky: resolved from the sky control and the theme, on the hero ----
+   --sky is the ground, --on-sky the type on it, --on-sky-2 the quieter type, --hl the H1 word,
+   --pill-bg/--pill-ink the primary, --rule the hairline under a text link, --sq the wordmark dot. */
+.hero{
+  --sky:var(--sky-paper);--on-sky:#171512;--on-sky-2:rgba(23,21,18,.80);--hl:#1F3FD6;
+  --pill-bg:#171512;--pill-ink:#F4F1EA;--rule:rgba(23,21,18,.30);--sq:#1F3FD6;--veil:235 224 208;
+}
+.hero[data-sky="cobalt"]{
+  --sky:var(--sky-cobalt);--on-sky:#F4F1EA;--on-sky-2:rgba(244,241,234,.86);--hl:#A6B8FF;
+  --pill-bg:#F4F1EA;--pill-ink:#141A3D;--rule:rgba(244,241,234,.32);--sq:#A6B8FF;--veil:31 63 214;
+}
+:root[data-theme="dark"] .hero,:root[data-theme="dark"] .hero[data-sky="paper"]{
+  --sky:var(--sky-night);--on-sky:#F4F1EA;--on-sky-2:rgba(244,241,234,.84);--hl:#AEC0FF;
+  --pill-bg:#F4F1EA;--pill-ink:#141A3D;--rule:rgba(244,241,234,.32);--sq:#AEC0FF;--veil:23 31 43;
+}
+:root[data-theme="dark"] .hero[data-sky="cobalt"]{--sky:var(--sky-navy);--veil:11 18 48}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]) .hero,:root:not([data-theme="light"]) .hero[data-sky="paper"]{
+    --sky:var(--sky-night);--on-sky:#F4F1EA;--on-sky-2:rgba(244,241,234,.84);--hl:#AEC0FF;
+    --pill-bg:#F4F1EA;--pill-ink:#141A3D;--rule:rgba(244,241,234,.32);--sq:#AEC0FF;--veil:23 31 43;
+  }
+  :root:not([data-theme="light"]) .hero[data-sky="cobalt"]{--sky:var(--sky-navy);--veil:11 18 48}
+}
+
+/* ---- the image: one attribute picks the file; every leaves image is the night one in the dark ---- */
+.hero{--img:url('assets/poster-leaves-blue.png')}
+.hero[data-img="leaves-blue"]{--img:url('assets/poster-leaves-blue.png')}
+.hero[data-img="leaves-turning"]{--img:url('assets/poster-leaves-turning.png')}
+.hero[data-img="leaves"]{--img:url('assets/poster-leaves.png')}
+.hero[data-img="leaves-night"]{--img:url('assets/poster-leaves-night.png')}
+.hero[data-img="sand"]{--img:url('assets/poster-kint.png')}
+.hero[data-img="blueprint"]{--img:url('assets/poster-blueprint.png')}
+.hero[data-img="stele"]{--img:url('assets/poster-stele.png')}
+.hero[data-img="hero"]{--img:url('assets/poster-hero-day.png')}
+.hero[data-img="soft"]{--img:url('assets/poster-hero-soft.png')}
+.hero[data-img="ink"]{--img:url('assets/poster-hero-ink.png')}
+:root[data-theme="dark"] .hero[data-img="hero"]{--img:url('assets/poster-hero-night.png')}
+:root[data-theme="dark"] .hero[data-img="soft"]{--img:url('assets/poster-hero-soft-night.png')}
+:root[data-theme="dark"] .hero[data-img="ink"]{--img:url('assets/poster-leaves-night.png')}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .hero[data-img="hero"]{--img:url('assets/poster-hero-night.png')}}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .hero[data-img="soft"]{--img:url('assets/poster-hero-soft-night.png')}:root:not([data-theme="light"]) .hero[data-img="ink"]{--img:url('assets/poster-leaves-night.png')}}
+:root[data-theme="dark"] .hero[data-img^="leaves"]{--img:url('assets/poster-leaves-night.png')}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]) .hero[data-img^="leaves"]{--img:url('assets/poster-leaves-night.png')}
+}
+
+/* ---- base ---- */
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--page);color:var(--ink);
+  font-family:var(--display);font-size:var(--t2);line-height:1.5;
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
+}
+/* the house grain, verbatim */
+body::before{
+  content:"";position:fixed;inset:0;z-index:9999;pointer-events:none;opacity:.03;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+::selection{background:var(--ink);color:var(--page)}
+.mono{font-family:var(--mono);font-size:var(--t1);letter-spacing:.02em}
+a{color:inherit}
+
+/* ---- the hero shell: one sky, painted here ---- */
+.hero{
+  position:relative;isolation:isolate;overflow:hidden;
+  background:var(--sky);color:var(--on-sky);
+  min-height:100svh;display:flex;flex-direction:column;
+}
+/* the sandpaper: a seeded noise tile over the WHOLE hero, sky and image alike, so both share one grain */
+.hero .grain{
+  position:absolute;inset:0;z-index:3;pointer-events:none;
+  background-image:var(--grain-tile);background-size:128px 128px;
+  mix-blend-mode:overlay;opacity:.55;
+}
+.hero[data-grain="off"] .grain{display:none}
+/* the image: a layer whose own sky dissolves into ours through a mask */
+.hero .img{
+  position:absolute;inset:0;z-index:1;
+  background-image:var(--img);background-size:cover;background-position:center bottom;background-repeat:no-repeat;
+}
+/* the veil: a radial pool of the sky colour behind the type, only where a layout puts type on the image */
+.hero .veil{position:absolute;inset:0;z-index:2;pointer-events:none;display:none}
+
+/* ---- nav: L3's, verbatim in spirit ---- */
+.nav{
+  position:relative;z-index:4;
+  display:flex;align-items:center;gap:22px;
+  padding:22px var(--edge) 0;
+}
+.nav .wm{font-size:var(--t3);font-weight:600;font-variation-settings:'opsz' 96;letter-spacing:-.02em;color:var(--on-sky);margin-right:auto;line-height:1;text-decoration:none}
+.wm .i{position:relative}
+.wm .i::after{content:"";position:absolute;left:50%;transform:translateX(-50%);top:.202em;width:.18em;height:.18em;background:var(--sq)}
+.nav a.link{
+  color:var(--on-sky);text-decoration:none;font-size:var(--t2);font-weight:500;line-height:30px;
+  opacity:.82;display:inline-block;border-bottom:1px solid transparent;
+  transition:opacity .18s var(--ease),border-color .18s var(--ease),transform .12s var(--ease);
+}
+.toggle{
+  -webkit-appearance:none;appearance:none;border:0;background:transparent;padding:0;margin:0;
+  width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;
+  color:var(--on-sky);opacity:.82;cursor:pointer;border-radius:999px;
+  transition:opacity .18s var(--ease),transform .12s var(--ease);
+}
+.toggle svg{display:block}
+
+/* ---- the stack: L3's, no eyebrow ---- */
+.stack{
+  position:relative;z-index:4;
+  display:flex;flex-direction:column;align-items:center;text-align:center;
+  padding:0 24px;
+}
+h1{
+  margin:0;color:var(--on-sky);
+  font-size:var(--t5);font-weight:500;font-variation-settings:'opsz' 96;
+  line-height:1.02;letter-spacing:-.035em;max-width:14ch;text-wrap:balance;
+}
+h1 em{font-style:normal;color:var(--hl)}
+.lede{
+  margin:clamp(18px,2.6vh,28px) 0 0;color:var(--on-sky-2);
+  font-size:var(--t4);font-weight:400;line-height:1.5;max-width:46ch;text-wrap:pretty;
+}
+.cta{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:clamp(16px,2.2vw,26px);margin-top:clamp(22px,3.2vh,36px)}
+.pill{
+  display:inline-block;background:var(--pill-bg);color:var(--pill-ink);
+  font-size:var(--t3);font-weight:600;line-height:1;text-decoration:none;
+  padding:15px 26px;border-radius:999px;transition:transform .18s var(--ease);
+}
+.readme{
+  color:var(--on-sky);font-size:var(--t3);font-weight:500;text-decoration:none;display:inline-block;
+  border-bottom:1px solid var(--rule);padding-bottom:3px;opacity:.9;
+  transition:border-color .18s var(--ease),opacity .18s var(--ease),transform .12s var(--ease);
+}
+.install{margin:clamp(16px,2.2vh,24px) 0 0;font-family:var(--mono);font-size:var(--t1);color:var(--on-sky);opacity:.72;letter-spacing:.04em}
+
+/* ---- press and hover, gated ---- */
+@media (hover:hover) and (pointer:fine){
+  .nav a.link:hover{opacity:1;border-bottom-color:var(--rule)}
+  .toggle:hover{opacity:1}
+  .pill:hover{transform:translateY(-1px)}
+  .readme:hover{opacity:1;border-bottom-color:var(--on-sky)}
+}
+.pill:active,.readme:active,.toggle:active,.nav a.link:active{transform:scale(.97)}
+
+.hero[data-layout="over"] .wm,.hero[data-layout="under"] .wm,.hero[data-layout="scrim"] .wm,.hero[data-layout="split-r"] .wm{color:#F4F1EA}
+.hero[data-layout="over"] .wm .i::after,.hero[data-layout="under"] .wm .i::after,.hero[data-layout="scrim"] .wm .i::after,.hero[data-layout="split-r"] .wm .i::after{background:var(--accent-lite)}
+
+/* the dissolves, one per layout, written twice for the engine. The image's own sky fades into ours
+   over the first fraction of its edge, so there is never a hard band edge. */
+.hero[data-layout="over"] .img{-webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 30%);mask-image:linear-gradient(to bottom,transparent 0,#000 30%)}
+.hero[data-layout="stack"] .img{-webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 18%);mask-image:linear-gradient(to bottom,transparent 0,#000 18%)}
+.hero[data-layout="split-l"] .img{-webkit-mask-image:linear-gradient(to right,transparent 0,#000 26%);mask-image:linear-gradient(to right,transparent 0,#000 26%)}
+.hero[data-layout="split-r"] .img{-webkit-mask-image:linear-gradient(to left,transparent 0,#000 30%);mask-image:linear-gradient(to left,transparent 0,#000 30%)}
+.hero[data-layout="corner"] .img{
+  -webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 34%),linear-gradient(to right,transparent 0,#000 38%);
+  -webkit-mask-composite:source-in;
+  mask-image:linear-gradient(to bottom,transparent 0,#000 34%),linear-gradient(to right,transparent 0,#000 38%);
+  mask-composite:intersect;
+}
+.hero[data-layout="film"] .img{-webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 18%,#000 82%,transparent 100%);mask-image:linear-gradient(to bottom,transparent 0,#000 18%,#000 82%,transparent 100%)}
+.hero[data-layout="scrim"] .img{-webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 14%);mask-image:linear-gradient(to bottom,transparent 0,#000 14%)}
+.hero[data-layout="crown"] .img{-webkit-mask-image:linear-gradient(to bottom,#000 0,#000 38%,transparent 100%);mask-image:linear-gradient(to bottom,#000 0,#000 38%,transparent 100%)}
+.hero[data-layout="under"] .img{-webkit-mask-image:linear-gradient(to bottom,#000 0,#000 72%,transparent 100%);mask-image:linear-gradient(to bottom,#000 0,#000 72%,transparent 100%)}
+
+/* =====================================================================
+   THE NINE LAYOUTS. Each one is an attribute on the hero; the same nav and stack are reused.
+   1 over      the stack centred IN the sky, the image full bleed behind, its sky dissolving into ours
+   2 stack     the stack in the sky, the image below it, no overlap, one sky through the dissolve
+   3 split-l   text left, image right, the image fading into the sky at its inner edge
+   4 split-r   image left, text right
+   5 corner    text top-left, the image anchored bottom-right, dissolving on two axes
+   6 card      the stack centred, the image as one framed print with the page's only shadow
+   7 film      the headline larger, the image as a letterbox strip of the leaves in flight
+   8 arch      the image inside an arch (the cave mouth), flush to the foot of the hero
+   9 scrim     L3b's own layout: text left over the full bleed image behind a smoothstep scrim
+   0 crown     the image crowns the top and fades away downward, the stack centred a little below the middle
+   u under     the whole image stays, the stack sits under the flight of the leaves, no pool of sky
+   ===================================================================== */
+
+/* 1 over */
+.hero[data-layout="over"] .stack{flex:1;justify-content:flex-start;padding-top:clamp(56px,9vh,110px);padding-bottom:46vh}
+.hero[data-layout="over"] .img{background-position:center bottom;--fade:30%}
+
+/* 2 stack */
+.hero[data-layout="stack"]{min-height:0}
+.hero[data-layout="stack"] .stack{padding-top:clamp(56px,9vh,110px);padding-bottom:clamp(24px,3vh,40px)}
+.hero[data-layout="stack"] .img{order:5;position:relative;z-index:1;width:100%;height:auto;aspect-ratio:1920/1072;max-height:74svh;background-position:center top;--fade:16%;margin-top:-4vh}
+
+/* 3 split-l and 4 split-r */
+.hero[data-layout="split-l"],.hero[data-layout="split-r"]{display:grid;grid-template-rows:auto 1fr;grid-template-columns:1fr 1fr}
+.hero[data-layout="split-l"] .nav,.hero[data-layout="split-r"] .nav{grid-column:1 / -1}
+.hero[data-layout="split-l"] .stack,.hero[data-layout="split-r"] .stack{
+  grid-row:2;align-items:flex-start;text-align:left;justify-content:center;
+  padding:clamp(40px,6vh,80px) clamp(32px,5vw,72px) clamp(56px,9vh,110px) var(--edge);
+}
+.hero[data-layout="split-l"] .stack{grid-column:1}
+.hero[data-layout="split-r"] .stack{grid-column:2;padding-left:clamp(32px,5vw,72px);padding-right:var(--edge)}
+.hero[data-layout="split-l"] .stack .cta,.hero[data-layout="split-r"] .stack .cta{justify-content:flex-start}
+.hero[data-layout="split-l"] h1,.hero[data-layout="split-r"] h1{max-width:12ch}
+.hero[data-layout="split-l"] .img,.hero[data-layout="split-r"] .img{position:absolute;top:0;bottom:0;width:56%;background-position:left center;background-size:cover}
+.hero[data-layout="split-l"] .img{left:auto;right:0;--fade:24%}
+.hero[data-layout="split-r"] .img{right:auto;left:0;width:52%;--fade:28%;background-position:left center}
+
+/* 5 corner */
+.hero[data-layout="corner"] .stack{flex:1;align-items:flex-start;text-align:left;justify-content:flex-start;padding:clamp(56px,9vh,110px) var(--edge) 40vh}
+.hero[data-layout="corner"] .stack .cta{justify-content:flex-start}
+.hero[data-layout="corner"] .img{left:auto;right:0;top:auto;bottom:0;width:60%;height:66%;background-position:left bottom}
+.hero[data-layout="corner"] .stack{padding-right:40vw}
+
+/* 6 card */
+.hero[data-layout="card"]{min-height:0}
+.hero[data-layout="card"] .stack{padding-top:clamp(56px,9vh,110px);padding-bottom:clamp(36px,5vh,64px)}
+.hero[data-layout="card"] .img{
+  order:5;position:relative;z-index:1;width:min(var(--wide),100% - 48px);margin:0 auto clamp(48px,7vh,96px);
+  aspect-ratio:1920/1072;height:auto;border-radius:14px;background-position:center center;
+  box-shadow:0 1px 2px rgba(20,18,14,.10),0 30px 64px -30px rgba(20,18,14,.45);
+}
+
+/* 7 film */
+.hero[data-layout="film"]{min-height:0}
+.hero[data-layout="film"] .stack{padding-top:clamp(56px,9vh,110px);padding-bottom:clamp(28px,4vh,48px)}
+.hero[data-layout="film"] h1{font-size:calc(var(--t5) * 1.22);max-width:11ch}
+.hero[data-layout="film"] .img{order:5;position:relative;z-index:1;width:100%;height:38svh;min-height:260px;background-position:center 34%;margin-bottom:clamp(40px,6vh,80px)}
+
+/* 8 arch */
+.hero[data-layout="arch"]{min-height:0}
+.hero[data-layout="arch"] .stack{padding-top:clamp(56px,9vh,110px);padding-bottom:clamp(28px,4vh,48px)}
+.hero[data-layout="arch"] .img{
+  order:5;position:relative;z-index:1;width:min(860px,88%);margin:0 auto;height:auto;aspect-ratio:4/3;
+  border-radius:50% 50% 0 0 / 46% 46% 0 0;background-position:28% center;
+}
+
+/* 0 crown: the image crowns the top of the hero and fades away toward the foot; the stack sits centred a little below the midline, over the fade */
+.hero[data-layout="crown"] .img{top:0;bottom:auto;height:76%;background-position:center 22%}
+.hero[data-layout="crown"] .stack{flex:1;justify-content:flex-start;padding-top:50svh;padding-bottom:clamp(56px,9vh,110px)}
+.hero[data-layout="crown"] .veil{
+  display:block;
+  background:radial-gradient(ellipse 44% 30% at 50% 70%,rgb(var(--veil) / .80) 0%,rgb(var(--veil) / .62) 46%,rgb(var(--veil) / 0) 100%);
+}
+.hero[data-layout="crown"] .wm{color:#F4F1EA}
+.hero[data-layout="crown"] .wm .i::after{background:var(--accent-lite)}
+
+/* u under: the whole image stays, the stack sits under the flight of the leaves, no pool of sky behind the type */
+.hero[data-layout="under"] .img{background-position:center top}
+.hero[data-layout="under"] .stack{flex:1;justify-content:flex-start;padding-top:54svh;padding-bottom:clamp(40px,6vh,72px)}
+
+/* NO SKY: data-sky="none" (his call, Sep 10). The page paints nothing: the image is the hero edge to edge,
+   no dissolve, no pool of sky, and the theme swaps the image itself (leaves by day, leaves-night by night).
+   Type follows the image: ink on the day poster, bone on the night one (the theme tokens already do this). */
+.hero[data-sky="none"] .veil{display:none}
+.hero[data-sky="none"][data-layout="over"] .img,
+.hero[data-sky="none"][data-layout="under"] .img,
+.hero[data-sky="none"][data-layout="scrim"] .img,
+.hero[data-sky="none"][data-layout="crown"] .img{
+  top:0;bottom:0;height:auto;background-position:center center;
+  -webkit-mask-image:none;mask-image:none;
+}
+.hero[data-sky="none"][data-layout="crown"] .img{background-position:center 30%}
+
+/* 9 scrim */
+.hero[data-layout="scrim"] .stack{flex:1;align-items:flex-start;text-align:left;justify-content:center;padding:clamp(40px,6vh,80px) var(--edge) clamp(56px,9vh,110px)}
+.hero[data-layout="scrim"] .stack .cta{justify-content:flex-start}
+.hero[data-layout="scrim"] .img{background-position:right center}
+.hero[data-layout="scrim"] .veil{
+  display:block;
+  background-image:linear-gradient(to right,
+    rgb(var(--veil) / .92) 0%,rgb(var(--veil) / .907) 4.4%,rgb(var(--veil) / .870) 8.9%,rgb(var(--veil) / .812) 13.3%,
+    rgb(var(--veil) / .738) 17.7%,rgb(var(--veil) / .651) 22.1%,rgb(var(--veil) / .557) 26.6%,rgb(var(--veil) / .460) 31.0%,
+    rgb(var(--veil) / .363) 35.4%,rgb(var(--veil) / .269) 39.9%,rgb(var(--veil) / .182) 44.3%,rgb(var(--veil) / .108) 48.7%,
+    rgb(var(--veil) / .051) 53.1%,rgb(var(--veil) / .014) 57.6%,rgb(var(--veil) / 0) 62%);
+}
+
+/* ---- narrow: every layout becomes copy first, then the image dissolving in below, one sky ---- */
+@media (max-width:760px){
+  .hero[data-layout]{display:flex;flex-direction:column;min-height:0}
+  .hero[data-layout] .nav{padding-top:18px;gap:16px}
+  .hero[data-layout] .img{order:5}
+  .hero[data-layout] .wm{color:var(--on-sky)}
+  .hero[data-layout] .wm .i::after{background:var(--sq)}
+  .hero[data-layout] .stack{
+    position:relative;align-items:flex-start;text-align:left;
+    padding:clamp(40px,7vh,64px) 20px clamp(20px,3vh,32px);
+  }
+  .hero[data-layout] .stack .cta{flex-direction:column;align-items:stretch;width:100%;gap:16px}
+  .hero[data-layout] .pill{width:100%;text-align:center;padding:16px 26px}
+  .hero[data-layout] .readme{align-self:flex-start}
+  .hero[data-layout] h1{max-width:none;font-size:clamp(2.35rem,11vw,3rem)}
+  .hero[data-layout="film"] h1{font-size:clamp(2.35rem,11vw,3rem)}
+  .hero[data-layout] .img{
+    position:relative;inset:auto;left:auto;right:auto;width:100%;height:auto;aspect-ratio:1920/1072;
+    max-height:none;min-height:0;margin:0;border-radius:0;box-shadow:none;background-position:center center;
+    -webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 18%);mask-image:linear-gradient(to bottom,transparent 0,#000 18%);
+  }
+  .hero[data-layout="card"] .img{width:calc(100% - 32px);margin:0 16px 32px;border-radius:12px;-webkit-mask-image:none;mask-image:none;box-shadow:0 1px 2px rgba(20,18,14,.10),0 24px 48px -28px rgba(20,18,14,.45)}
+  .hero[data-layout="arch"] .img{width:calc(100% - 40px);margin:0 20px;aspect-ratio:4/3;border-radius:50% 50% 0 0 / 46% 46% 0 0;-webkit-mask-image:none;mask-image:none}
+  .hero[data-layout="film"] .img{height:auto;aspect-ratio:16/7;background-position:center 34%}
+  .hero[data-layout="crown"] .img{order:1;aspect-ratio:1920/1200;background-position:center 22%;-webkit-mask-image:linear-gradient(to bottom,#000 0,#000 55%,transparent 100%);mask-image:linear-gradient(to bottom,#000 0,#000 55%,transparent 100%)}
+  .hero[data-layout="crown"] .stack{order:2;padding-top:0;margin-top:-10vw}
+  .hero[data-layout="under"] .img{order:1;aspect-ratio:1920/1200;background-position:center 22%;-webkit-mask-image:linear-gradient(to bottom,#000 0,#000 55%,transparent 100%);mask-image:linear-gradient(to bottom,#000 0,#000 55%,transparent 100%)}
+  .hero[data-layout="under"] .stack{order:2;padding-top:0;margin-top:-10vw}
+  .hero[data-layout] .veil{display:none}
+  .hero[data-sky="none"][data-layout="over"],.hero[data-sky="none"][data-layout="under"],
+  .hero[data-sky="none"][data-layout="scrim"],.hero[data-sky="none"][data-layout="crown"]{position:relative}
+  .hero[data-sky="none"][data-layout="over"] .nav,.hero[data-sky="none"][data-layout="under"] .nav,
+  .hero[data-sky="none"][data-layout="scrim"] .nav,.hero[data-sky="none"][data-layout="crown"] .nav{position:absolute;top:0;left:0;right:0;z-index:4}
+  .hero[data-sky="none"][data-layout="over"] .img,.hero[data-sky="none"][data-layout="under"] .img,
+  .hero[data-sky="none"][data-layout="scrim"] .img,.hero[data-sky="none"][data-layout="crown"] .img{order:0;margin:0;aspect-ratio:1920/1200;background-position:center 30%;-webkit-mask-image:none;mask-image:none}
+  .hero[data-sky="none"][data-layout="over"] .stack,.hero[data-sky="none"][data-layout="under"] .stack,
+  .hero[data-sky="none"][data-layout="scrim"] .stack,.hero[data-sky="none"][data-layout="crown"] .stack{order:2;padding-top:clamp(28px,5vh,44px);margin-top:0}
+  .hero[data-sky="none"][data-layout="over"] .wm,.hero[data-sky="none"][data-layout="under"] .wm,
+  .hero[data-sky="none"][data-layout="scrim"] .wm,.hero[data-sky="none"][data-layout="crown"] .wm{color:#F4F1EA}
+  .hero[data-sky="none"][data-layout="over"] .nav a.link,.hero[data-sky="none"][data-layout="over"] .toggle,
+  .hero[data-sky="none"][data-layout="under"] .nav a.link,.hero[data-sky="none"][data-layout="under"] .toggle,
+  .hero[data-sky="none"][data-layout="scrim"] .nav a.link,.hero[data-sky="none"][data-layout="scrim"] .toggle,
+  .hero[data-sky="none"][data-layout="crown"] .nav a.link,.hero[data-sky="none"][data-layout="crown"] .toggle{color:#171512}
+}
+@media (prefers-reduced-motion:reduce){.pill:hover{transform:none}}
+</style>
+</head>
+<body>
+<header class="hero" id="hero" data-layout="under" data-img="soft" data-sky="none" data-grain="on">
+  <div class="img" id="img" role="img" aria-label="The Sibyl seated at the mouth of her cave, oak leaves lifting from her hand across the sky; the leaves already pinned into a ruled stone ledger have turned cobalt blue."></div>
+  <div class="veil" aria-hidden="true"></div>
+  <div class="grain" aria-hidden="true"></div>
+
+  <nav class="nav" aria-label="Primary">
+    <a class="wm" href="#">k<span class="i">&#305;</span>nt</a>
+    <a class="link" href="#app">App</a>
+    <a class="link" href="#github">GitHub</a>
+    <button class="toggle" id="themeToggle" type="button" aria-label="Toggle theme">
+      <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true" focusable="false">
+        <rect x="0.5" y="0.5" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1"></rect>
+        <path d="M7 0.5 H13.5 V13.5 H7 Z" fill="currentColor"></path>
+      </svg>
+    </button>
+  </nav>
+
+  <div class="stack">
+    <h1>Sibyl Memory that <em>outlives</em> the laptop.</h1>
+    <p class="lede">Wipe the machine, connect the wallet, and the agent comes back knowing what it
+      knew, and proves it was not tampered with.</p>
+    <div class="cta">
+      <a class="pill" href="#app">Open the app</a>
+      <a class="readme" href="#readme">Read the README</a>
+    </div>
+    <p class="install">uv tool install kint</p>
+  </div>
+</header>
+
+<script>
+(function(){
+  var root=document.documentElement, hero=document.getElementById('hero');
+  /* theme toggle, the same as every mock */
+  function current(){var a=root.getAttribute('data-theme');if(a==='dark'||a==='light')return a;try{if(matchMedia('(prefers-color-scheme: dark)').matches)return 'dark';}catch(e){}return 'light';}
+  document.getElementById('themeToggle').addEventListener('click',function(){
+    var next=current()==='dark'?'light':'dark';root.setAttribute('data-theme',next);
+    try{localStorage.setItem('kint-theme',next);}catch(e){}
+  });
+  /* the sandpaper: one seeded 128px noise tile (mulberry32 on the chain digest 7df5378a), drawn once */
+  function prng(seed){return function(){seed=seed+0x6D2B79F5|0;var t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return ((t^t>>>14)>>>0)/4294967296;};}
+  try{
+    var S=128, cv=document.createElement('canvas'); cv.width=S; cv.height=S;
+    var ctx=cv.getContext('2d'), id=ctx.createImageData(S,S), d=id.data, r=prng(0x7df5378a);
+    for(var i=0;i<d.length;i+=4){var v=96+Math.floor(r()*96);d[i]=d[i+1]=d[i+2]=v;d[i+3]=255;}
+    ctx.putImageData(id,0,0);
+    hero.style.setProperty('--grain-tile','url('+cv.toDataURL('image/png')+')');
+  }catch(e){hero.setAttribute('data-grain','off');}
+  /* the lab hooks: the studio (hero.html) drives these; a plain link can pass them in the query */
+  var LAYOUTS={over:1,stack:1,'split-l':1,'split-r':1,corner:1,card:1,film:1,arch:1,scrim:1,crown:1,under:1};
+  var IMGS={soft:1,ink:1,hero:1,'leaves-blue':1,'leaves-turning':1,leaves:1,'leaves-night':1,sand:1,blueprint:1,stele:1};
+  var ALT={
+    soft:'The Sibyl seated at the mouth of her cave, oak leaves lifting from her hand and thinning out across an open sky.',
+    ink:'The Sibyl seated at the mouth of her cave, engraved oak leaves lifting from her hand and thinning out across an open sky.',
+    hero:'The Sibyl seated at the mouth of her cave, oak leaves lifting from her hand: loose and sand-coloured near her, aligning into formation and turning cobalt as they fly toward the upper right and out of the frame, over a low sea and hills.',
+    'leaves-blue':'The Sibyl seated at the mouth of her cave, oak leaves lifting from her hand across the sky; the leaves already pinned into a ruled stone ledger have turned cobalt blue.',
+    'leaves-turning':'The Sibyl at her cave, oak leaves tinting from sand to cobalt as they cross the sky toward a ruled stone ledger.',
+    leaves:'The Sibyl at her cave, oak leaves crossing the sky toward a ruled stone ledger marked with small blue squares.',
+    'leaves-night':'The same scene at night under stars and a crescent moon, the pinned leaves glowing cobalt.',
+    sand:'A lone figure at the centre of rings raked into a sand plain, a closed laptop half sunk in the foreground.',
+    blueprint:'An engraved patent drawing: laptop rows into a sealed envelope, up a staircase of cobalt blocks, back to a second laptop.',
+    stele:'A tall inscribed stone at night lit by the laptop at its base, the Sibyl reading it, a thin cobalt crescent above.'
+  };
+  window.kintHero=function(o){
+    if(o.layout&&LAYOUTS[o.layout])hero.setAttribute('data-layout',o.layout);
+    if(o.img&&IMGS[o.img]){hero.setAttribute('data-img',o.img);document.getElementById('img').setAttribute('aria-label',ALT[o.img]);}
+    if(o.sky==='paper'||o.sky==='cobalt'||o.sky==='none')hero.setAttribute('data-sky',o.sky);
+    if(o.grain==='on'||o.grain==='off')hero.setAttribute('data-grain',o.grain);
+    if(o.theme==='light'||o.theme==='dark')root.setAttribute('data-theme',o.theme);
+    else if(o.theme==='system')root.removeAttribute('data-theme');
+  };
+  var q={};(location.search+'&'+location.hash.slice(1)).replace(/[?&]?([a-z]+)=([a-z-]+)/g,function(_,k,v){q[k]=v;});
+  window.kintHero(q);
+})();
+</script>
+</body>
+</html>

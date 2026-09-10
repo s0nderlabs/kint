@@ -1,0 +1,47 @@
+{
+  "viewBox": "0 0 54.79 100",
+  "ink_src_px": [
+    209.29,
+    395.81
+  ],
+  "vb_scale": 0.242396,
+  "vb_offset": [
+    -4.156,
+    9.573
+  ],
+  "layers": {
+    "ink": {
+      "subpaths": 4,
+      "L": 28,
+      "C": 23,
+      "chars": 1175,
+      "edges_per_shape": [
+        11,
+        9,
+        9,
+        4
+      ],
+      "max_line_dev_px": 5.2052,
+      "axis_snapped": 24,
+      "axis_max_correction_deg": 0.727
+    },
+    "blue": {
+      "subpaths": 3,
+      "L": 8,
+      "C": 142,
+      "chars": 5033,
+      "edges_per_shape": [
+        19,
+        5,
+        4
+      ],
+      "max_line_dev_px": 13.8801,
+      "axis_snapped": 3,
+      "axis_max_correction_deg": 0.428
+    }
+  },
+  "leaf_svg": {
+    "contours": 2,
+    "chars": 5025
+  }
+}

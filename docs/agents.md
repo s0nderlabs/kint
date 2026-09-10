@@ -13,7 +13,7 @@ Two doors:
 ## One-time setup on a machine
 
 ```
-uv tool install kint                 # or: pip install kint   (Python 3.10+)
+uv tool install git+https://github.com/s0nderlabs/kint@v0.3.0   # Python 3.10+; not on PyPI yet
 kint session-key create              # this machine's key; fund it with a little ETH on Base
 kint connect --owner 0x... --signature -        # EOA owners: see the pipe below
 kint connect --owner 0x... --smart-account      # Base Account owners: vault passphrase
@@ -51,7 +51,9 @@ in a terminal, never in an agent chat.
 
 `kint setup claude` runs
 `claude mcp add --scope user kint -e PYTHONPATH=x -- /usr/bin/env -u PYTHONPATH /abs/path/kint-server`
-(the `env -u` keeps a polluting `PYTHONPATH` out of the server). Remove Sibyl's own registration
+(the `env -u` keeps a polluting `PYTHONPATH` out of the server). That registers at user scope; for
+one project, run the same line with `--scope project` in its place (it writes `.mcp.json`, and
+Claude Code asks you to approve the server until the folder is trusted). Remove Sibyl's own registration
 if present (`claude mcp remove -s user sibyl-memory`): one store, one server, or the two servers
 race on the same file. In a session: `memory_search` to recall, `memory_verify` before acting,
 `memory_status` to see the head. Verified Sep 9 2026 with a non-interactive run:
@@ -84,10 +86,13 @@ the exact rule, head seq 2 at block 51081880, decision `proceed`. Give the serve
 `tool_timeout_sec` (a pull on a cold start can take a minute):
 
 ```toml
-[mcp_servers.kint]
+# add to the same [mcp_servers.kint] table as above
 tool_timeout_sec = 180
 startup_timeout_sec = 90
 ```
+
+A hanging RPC endpoint can hold the server's startup for about five minutes (web3 retries)
+before any tool is listed; point `KINT_RPC_URL` at a healthy endpoint if startup stalls.
 
 ## Hermes
 
@@ -134,7 +139,7 @@ already on a public ledger.
 
 ```
 decision: proceed | refuse
-verdict:  Sibyl's typed verdict for the search (ok, no_match, abstained_on, gated, empty_store)
+verdict:  Sibyl's typed verdict for the search (ok, no_match, abstained_on, negation_abstain, gated, empty_store)
 checks:   per hit: verified | drifted | unanchored | missing, the local leaf, the anchored leaf,
           the epoch and block that anchored it, the merkle proof against the anchored rows_root
 ```

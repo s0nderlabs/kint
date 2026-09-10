@@ -1,0 +1,878 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script>(function(){try{var t=localStorage.getItem('kint-theme');if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>kint, Sibyl Memory that outlives the laptop</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&display=swap" rel="stylesheet">
+<style>
+@font-face{
+  font-family:'Geist Mono';
+  src:url('fonts/geist-mono-var.ttf') format('truetype');
+  font-weight:100 900;font-style:normal;font-display:swap;
+}
+
+/* light palette, complete, on bare :root */
+:root{
+  --page:#F4F1EA;
+  --card:#FBF8F1;
+  --ink:#171512;
+  --ink-2:#4A4740;
+  --muted:#7A766E;
+  --hair:rgba(23,21,18,.12);
+  --hair-2:rgba(23,21,18,.20);
+  --accent:#1F3FD6;
+  --accent-lite:#9FB4FF;
+  --accent-soft:rgba(31,63,214,.22);
+  --sky:#1F3FD6;
+  --sand:#E9DFC7;
+  --fig:#171512;
+  --bone:#F4F1EA;
+  --bone-soft:rgba(244,241,234,.16);
+  --bone-hair:rgba(244,241,234,.34);
+  --pill-ink:#141A3A;
+  --ring-faint:rgba(31,63,214,.34);
+
+  /* type over the sand plain, so the annotations read in both palettes */
+  --plain-ink:#171512;
+  --plain-ink-2:rgba(23,21,18,.66);
+  --plain-hair:rgba(23,21,18,.38);
+
+  /* the cobalt band that carries the Sibyl box */
+  --band-ink:#F4F1EA;
+  --band-ink-2:rgba(244,241,234,.80);
+  --band-hair:rgba(244,241,234,.26);
+
+  --sheet-shadow:0 1px 2px rgba(20,16,10,.06),0 24px 60px -32px rgba(20,16,10,.30);
+  --grain-a:.03;
+
+  --t1:12px;
+  --t2:14px;
+  --t3:17px;
+  --t4:clamp(1.28rem,1.85vw,1.5rem);
+  --t5:clamp(2.6rem,6.2vw,5rem);
+
+  --ease-out-expo:cubic-bezier(0.16,1,0.3,1);
+  --col:880px;
+  --pad:clamp(72px,9vh,144px);
+  --edge:clamp(20px,4vw,40px);
+  --sans:'Bricolage Grotesque','Helvetica Neue',Helvetica,Arial,sans-serif;
+  --mono:'Geist Mono',ui-monospace,'SFMono-Regular',Menlo,monospace;
+}
+
+/* dark, tokens only, guarded so an explicit light choice still wins */
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --page:#0F1424;
+    --card:#151B2E;
+    --ink:#ECEAE4;
+    --ink-2:#C2C6D2;
+    --muted:#8B92A6;
+    --hair:rgba(236,234,228,.14);
+    --hair-2:rgba(236,234,228,.22);
+    --accent:#7A93FF;
+    --accent-lite:#A8BCFF;
+    --accent-soft:rgba(122,147,255,.28);
+    --sky:#0B1230;
+    --sand:#2A2618;
+    --fig:#ECEAE4;
+    --bone:#F4F1EA;
+    --pill-ink:#0B1230;
+    --ring-faint:rgba(122,147,255,.40);
+    --plain-ink:#F4F1EA;
+    --plain-ink-2:rgba(244,241,234,.68);
+    --plain-hair:rgba(244,241,234,.34);
+    --band-ink:#ECEAE4;
+    --band-ink-2:rgba(236,234,228,.78);
+    --band-hair:rgba(236,234,228,.20);
+    --sheet-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 1px 2px rgba(0,0,0,.5),0 26px 60px -30px rgba(0,0,0,.8);
+    --grain-a:.04;
+  }
+}
+
+/* dark by explicit choice, tokens only */
+:root[data-theme="dark"]{
+  --page:#0F1424;
+  --card:#151B2E;
+  --ink:#ECEAE4;
+  --ink-2:#C2C6D2;
+  --muted:#8B92A6;
+  --hair:rgba(236,234,228,.14);
+  --hair-2:rgba(236,234,228,.22);
+  --accent:#7A93FF;
+  --accent-lite:#A8BCFF;
+  --accent-soft:rgba(122,147,255,.28);
+  --sky:#0B1230;
+  --sand:#2A2618;
+  --fig:#ECEAE4;
+  --bone:#F4F1EA;
+  --pill-ink:#0B1230;
+  --ring-faint:rgba(122,147,255,.40);
+  --plain-ink:#F4F1EA;
+  --plain-ink-2:rgba(244,241,234,.68);
+  --plain-hair:rgba(244,241,234,.34);
+  --band-ink:#ECEAE4;
+  --band-ink-2:rgba(236,234,228,.78);
+  --band-hair:rgba(236,234,228,.20);
+  --sheet-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 1px 2px rgba(0,0,0,.5),0 26px 60px -30px rgba(0,0,0,.8);
+  --grain-a:.04;
+}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--page);color:var(--ink)}
+
+.v-l3{
+  font-family:var(--sans);
+  font-variation-settings:'opsz' 14;
+  font-weight:400;
+  font-size:var(--t3);
+  line-height:1.62;
+  font-variant-numeric:tabular-nums;
+  overflow-x:hidden;
+}
+
+/* the house grain */
+.v-l3::before{
+  content:"";position:fixed;inset:0;z-index:9999;pointer-events:none;
+  opacity:var(--grain-a);
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='256' height='256' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size:256px 256px;
+}
+
+.v-l3 a{color:inherit}
+
+/* one focus ring for the whole page: a hairline in the accent with a soft halo */
+.v-l3 :focus-visible{
+  outline:1px solid var(--accent);outline-offset:3px;border-radius:3px;
+  box-shadow:0 0 0 4px var(--accent-soft);
+}
+/* over the cobalt sky the ring lifts to the light accent tint */
+.v-l3 .nav :focus-visible,
+.v-l3 .stack :focus-visible{
+  outline-color:var(--accent-lite);box-shadow:0 0 0 4px var(--bone-soft);
+}
+
+/* the wordmark trick, top value measured for this face, do not retune */
+.v-l3 .wm{font-weight:600;letter-spacing:-.02em;font-variation-settings:'opsz' 96;display:inline-block}
+.v-l3 .wm .i{position:relative}
+.v-l3 .wm .i::after{
+  content:"";position:absolute;left:50%;transform:translateX(-50%);
+  top:0.202em;width:.18em;height:.18em;background:var(--wm-dot,var(--accent));
+}
+
+.v-l3 .mono{font-family:var(--mono);font-weight:400;font-size:var(--t1);letter-spacing:.12em;text-transform:uppercase}
+.v-l3 .m{font-family:var(--mono);font-weight:400;letter-spacing:0}
+
+.v-l3 .wrap{width:min(var(--col),100% - 48px);margin-inline:auto}
+.v-l3 .wide{width:min(1180px,100% - 48px);margin-inline:auto}
+
+/* HERO ------------------------------------------------------------ */
+.v-l3 .hero{position:relative;min-height:100svh;display:flex;flex-direction:column;isolation:isolate}
+.v-l3 .poster-fallback{
+  position:absolute;inset:0;z-index:0;
+  background:
+    repeating-radial-gradient(circle at 50% 78%, var(--ring-faint) 0 1px, transparent 1px 34px),
+    linear-gradient(to bottom, var(--sky) 0 55%, var(--sand) 55% 100%);
+}
+.v-l3 canvas.poster{position:absolute;inset:0;z-index:1;width:100%;height:100%;display:block}
+.v-l3.no-canvas canvas.poster{display:none}
+
+/* nav: wordmark left, two links and one icon control right, all one language */
+.v-l3 .nav{
+  position:relative;z-index:3;
+  display:flex;align-items:center;gap:22px;
+  padding:22px var(--edge) 0;
+  --wm-dot:var(--accent-lite);
+}
+.v-l3 .nav .wm{font-size:var(--t3);color:var(--bone);margin-right:auto;line-height:1}
+.v-l3 .nav a{
+  color:var(--bone);text-decoration:none;font-size:var(--t2);font-weight:500;line-height:30px;
+  opacity:.82;display:inline-block;
+  border-bottom:1px solid transparent;
+  transition:opacity .18s var(--ease-out-expo),border-color .18s var(--ease-out-expo),transform .12s var(--ease-out-expo);
+}
+.v-l3 .toggle{
+  -webkit-appearance:none;appearance:none;border:0;background:transparent;padding:0;margin:0;
+  width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;
+  color:var(--bone);opacity:.82;cursor:pointer;border-radius:999px;
+  transition:opacity .18s var(--ease-out-expo),transform .12s var(--ease-out-expo);
+}
+.v-l3 .toggle svg{display:block}
+
+/* the type stack over the sky */
+.v-l3 .stack{
+  position:relative;z-index:2;
+  flex:1;display:flex;flex-direction:column;justify-content:center;
+  align-items:center;text-align:center;
+  padding:0 24px calc(46vh - 40px);
+}
+.v-l3 .stack .eyebrow{margin:0 0 clamp(16px,2.4vh,26px);color:var(--bone);opacity:.78}
+.v-l3 h1{
+  margin:0;color:var(--bone);
+  font-size:var(--t5);font-weight:500;font-variation-settings:'opsz' 96;
+  line-height:1.02;letter-spacing:-.035em;
+  max-width:14ch;text-wrap:balance;
+}
+.v-l3 h1 em{font-style:normal;color:var(--accent-lite)}
+.v-l3 .lede{
+  margin:clamp(18px,2.6vh,28px) 0 0;color:var(--bone);opacity:.9;
+  font-size:var(--t3);font-weight:400;line-height:1.5;max-width:46ch;text-wrap:pretty;
+}
+.v-l3 .cta{
+  display:flex;align-items:center;justify-content:center;flex-wrap:wrap;
+  gap:clamp(16px,2.2vw,26px);margin-top:clamp(22px,3.2vh,36px);
+}
+.v-l3 .pill{
+  display:inline-block;
+  background:var(--bone);color:var(--pill-ink);
+  font-size:var(--t3);font-weight:600;line-height:1;text-decoration:none;
+  padding:15px 26px;border-radius:999px;
+  transition:transform .18s var(--ease-out-expo);
+}
+.v-l3 .readme{
+  color:var(--bone);font-size:var(--t3);font-weight:500;text-decoration:none;display:inline-block;
+  border-bottom:1px solid var(--bone-hair);padding-bottom:3px;
+  transition:border-color .18s var(--ease-out-expo),opacity .18s var(--ease-out-expo),transform .12s var(--ease-out-expo);
+  opacity:.9;
+}
+.v-l3 .install{
+  margin:clamp(16px,2.2vh,24px) 0 0;font-family:var(--mono);font-size:var(--t1);
+  color:var(--bone);opacity:.72;letter-spacing:.04em;
+}
+
+/* POSTER MODE: data-poster on the hero swaps the drawn plain for one of the rendered posters.
+   The copy keeps its cobalt sky; the poster sits under it as a full-width band, uncropped
+   where the viewport allows. The canvas and its ring notes are hidden, nothing else changes. */
+.v-l3 .hero-img{display:none}
+.v-l3 .hero[data-poster]{min-height:0}
+.v-l3 .hero[data-poster] canvas.poster,.v-l3 .hero[data-poster] .plain{display:none}
+.v-l3 .hero[data-poster] .poster-fallback{background:var(--sky)}
+.v-l3 .hero[data-poster] .stack{flex:0 0 auto;padding:clamp(56px,9vh,110px) 24px clamp(48px,7vh,80px)}
+.v-l3 .hero[data-poster] .hero-img{
+  display:block;position:relative;z-index:1;width:100%;
+  aspect-ratio:1920/1072;max-height:78svh;
+  background-image:var(--poster);background-size:cover;background-position:center center;background-repeat:no-repeat;
+  background-color:var(--sand);
+}
+.v-l3 .hero[data-poster="sand"]{--poster:url('assets/poster-kint.png')}
+.v-l3 .hero[data-poster="leaves"]{--poster:url('assets/poster-leaves.png')}
+.v-l3 .hero[data-poster="leaves-blue"]{--poster:url('assets/poster-leaves-blue.png')}
+.v-l3 .hero[data-poster="leaves-turning"]{--poster:url('assets/poster-leaves-turning.png')}
+.v-l3 .hero[data-poster="leaves-night"]{--poster:url('assets/poster-leaves-night.png')}
+.v-l3 .hero[data-poster="blueprint"]{--poster:url('assets/poster-blueprint.png')}
+.v-l3 .hero[data-poster="stele"]{--poster:url('assets/poster-stele.png')}
+/* every leaves mode is the night poster in the dark theme */
+:root[data-theme="dark"] .v-l3 .hero[data-poster^="leaves"]{--poster:url('assets/poster-leaves-night.png')}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]) .v-l3 .hero[data-poster^="leaves"]{--poster:url('assets/poster-leaves-night.png')}
+}
+/* no eyebrow above the headline (his rule, Sep 10): the H1 opens the page */
+.v-l3 .stack .eyebrow{display:none}
+
+/* the annotations: the rings are the epochs, so they carry the epochs' facts */
+.v-l3 .plain{position:absolute;inset:0;z-index:2;pointer-events:none}
+.v-l3 .plain a{pointer-events:auto}
+.v-l3 .ring-note{
+  position:absolute;display:none;text-decoration:none;
+  font-family:var(--mono);font-size:var(--t1);line-height:1.35;color:var(--plain-ink);
+  opacity:0;transition:opacity .55s var(--ease-out-expo);
+}
+.v-l3 .ring-note::before{
+  content:"";position:absolute;right:100%;top:8px;height:1px;
+  width:var(--lead,0px);background:var(--plain-hair);
+}
+.v-l3 .ring-note .sub{display:block;color:var(--plain-ink-2)}
+.v-l3 .ring-note.fig{
+  transform:translateX(-50%);text-align:center;width:auto;white-space:nowrap;color:var(--plain-ink-2);
+}
+.v-l3 .ring-note.fig::before{display:none}
+.v-l3 .hero[data-notes="on"] .ring-note{display:block}
+.v-l3 .hero.notes-in .ring-note{opacity:1}
+
+/* the same facts as a legend where there is no room for leader lines */
+.v-l3 .ring-legend{
+  position:absolute;left:50%;transform:translateX(-50%);bottom:clamp(18px,3.4vh,38px);z-index:2;
+  width:min(100% - 36px,460px);display:grid;gap:8px;text-align:left;
+  font-family:var(--mono);font-size:var(--t1);line-height:1.4;color:var(--plain-ink);
+}
+.v-l3 .ring-legend a{text-decoration:none;display:block}
+.v-l3 .ring-legend .sq{
+  display:inline-block;width:6px;height:6px;background:var(--accent);
+  margin-right:9px;vertical-align:.14em;
+}
+.v-l3 .ring-legend .sq.faint{background:var(--plain-hair)}
+.v-l3 .ring-legend .sub{color:var(--plain-ink-2)}
+.v-l3 .hero[data-notes="on"] .ring-legend{display:none}
+
+/* PROOF STRIP, full bleed, ruled, directly under the hero ---------- */
+.v-l3 .strip{border-bottom:1px solid var(--hair)}
+.v-l3 .strip ul{
+  list-style:none;margin:0;padding:0;
+  display:grid;grid-template-columns:repeat(12,1fr);
+}
+.v-l3 .strip li{
+  grid-column:span 2;min-width:0;
+  padding:17px clamp(14px,1.4vw,20px) 19px;
+  border-left:1px solid var(--hair);
+  display:flex;flex-direction:column;gap:6px;
+}
+.v-l3 .strip li.c5{grid-column:span 5}
+.v-l3 .strip li.c3{grid-column:span 3}
+.v-l3 .strip li:first-child,
+.v-l3 .strip li.row2{border-left:0}
+.v-l3 .strip li:first-child,
+.v-l3 .strip li.row2{padding-left:var(--edge)}
+.v-l3 .strip li.rend{padding-right:var(--edge)}
+.v-l3 .strip li:nth-child(n+5){border-top:1px solid var(--hair)}
+.v-l3 .strip .k{color:var(--muted)}
+.v-l3 .strip .v{
+  font-family:var(--mono);font-weight:400;font-size:var(--t2);color:var(--ink);
+  overflow-wrap:anywhere;
+}
+.v-l3 .strip a.v{
+  text-decoration:none;display:inline-block;
+  border-bottom:1px solid var(--hair-2);
+  transition:color .18s var(--ease-out-expo),border-color .18s var(--ease-out-expo),transform .12s var(--ease-out-expo);
+}
+.v-l3 .strip .v .dim{color:var(--muted)}
+
+/* DOCUMENT -------------------------------------------------------- */
+.v-l3 section.doc{padding:var(--pad) 0}
+.v-l3 .opener{margin:0 0 clamp(24px,3.6vh,40px)}
+.v-l3 .opener .mono{display:block;color:var(--muted)}
+.v-l3 h2{
+  margin:0;font-size:var(--t4);font-weight:600;line-height:1.22;
+  letter-spacing:-.02em;font-variation-settings:'opsz' 24;max-width:22ch;text-wrap:balance;
+}
+.v-l3 p{max-width:62ch;text-wrap:pretty}
+
+/* the three actors: three columns on one hairline */
+.v-l3 .actors{
+  list-style:none;margin:0;padding:0;
+  display:grid;grid-template-columns:repeat(3,1fr);
+  border-top:1px solid var(--hair);
+}
+.v-l3 .actors li{padding:24px clamp(20px,2.4vw,34px) 4px 0;min-width:0}
+.v-l3 .actors li+li{border-left:1px solid var(--hair);padding-left:clamp(20px,2.4vw,34px)}
+.v-l3 .actors .num{
+  display:block;font-family:var(--mono);font-weight:400;font-size:var(--t1);letter-spacing:.12em;
+  color:var(--accent);margin:0 0 14px;
+}
+.v-l3 .actors .lead{
+  font-size:var(--t4);font-weight:500;letter-spacing:-.015em;line-height:1.24;
+  margin:0 0 12px;color:var(--ink);font-variation-settings:'opsz' 24;max-width:20ch;text-wrap:balance;
+}
+.v-l3 .actors p{margin:0;color:var(--ink-2);font-size:var(--t3);max-width:38ch}
+
+/* the beat: one sheet, the only shadow on the page */
+.v-l3 .beat-card{
+  background:var(--card);border-radius:14px;box-shadow:var(--sheet-shadow);
+  padding:clamp(20px,2.4vw,30px);overflow-x:auto;
+}
+.v-l3 pre{
+  margin:0;font-family:var(--mono);font-weight:400;font-size:var(--t2);
+  line-height:1.72;color:var(--ink-2);white-space:pre;
+}
+.v-l3 pre b{font-weight:400;color:var(--ink)}
+.v-l3 .caption{margin:20px 0 0;color:var(--muted);font-size:var(--t2);max-width:62ch}
+
+/* what Sibyl does: the accent reaches mass a second time */
+.v-l3 .box{background:var(--sky);color:var(--band-ink);padding:var(--pad) 0}
+.v-l3 .box .grid{display:grid;grid-template-columns:200px 1fr;gap:0 48px;align-items:start}
+.v-l3 .box .opener{margin:0}
+.v-l3 .box .opener .mono{color:var(--band-ink-2)}
+.v-l3 .box h2{max-width:16ch;color:var(--band-ink)}
+.v-l3 .box p{margin:0;color:var(--band-ink)}
+.v-l3 .m-in{font-family:var(--mono);font-weight:400;font-size:var(--t2);color:var(--band-ink)}
+.v-l3 .box .close{
+  margin:24px 0 0;padding-top:22px;border-top:1px solid var(--band-hair);
+  font-size:var(--t4);font-weight:500;line-height:1.3;letter-spacing:-.015em;
+  color:var(--band-ink);max-width:30ch;font-variation-settings:'opsz' 24;
+}
+
+/* honest limits: a two column ruled list */
+.v-l3 .limits{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr}
+.v-l3 .limits li{
+  padding:22px clamp(20px,2.4vw,34px) 26px 0;
+  border-top:1px solid var(--hair);color:var(--ink-2);font-size:var(--t3);
+}
+.v-l3 .limits li:nth-child(even){
+  border-left:1px solid var(--hair);padding-left:clamp(20px,2.4vw,34px);
+}
+.v-l3 .limits p{margin:0;max-width:44ch}
+
+/* footer, quiet, base layer */
+.v-l3 footer{border-top:1px solid var(--hair);padding:34px 0 46px}
+.v-l3 footer .wide{display:flex;flex-wrap:wrap;gap:16px 28px;align-items:center;justify-content:space-between}
+.v-l3 footer .wm{font-size:var(--t3);color:var(--ink)}
+.v-l3 footer p{margin:0;color:var(--muted);font-size:var(--t2)}
+.v-l3 footer a{
+  text-decoration:none;border-bottom:1px solid var(--hair-2);
+  transition:color .18s var(--ease-out-expo),border-color .18s var(--ease-out-expo);
+}
+
+/* press feedback on everything pressable */
+.v-l3 .pill:active,.v-l3 .readme:active,.v-l3 .nav a:active,
+.v-l3 .toggle:active,.v-l3 .strip a.v:active{transform:scale(.97)}
+
+/* hover, gated */
+@media (hover:hover) and (pointer:fine){
+  .v-l3 .nav a:hover{opacity:1;border-bottom-color:var(--bone)}
+  .v-l3 .toggle:hover{opacity:1}
+  .v-l3 .pill:hover{transform:translateY(-2px)}
+  .v-l3 .readme:hover{opacity:1;border-bottom-color:var(--bone)}
+  .v-l3 .strip a.v:hover{color:var(--accent);border-bottom-color:var(--accent)}
+  .v-l3 .ring-note:hover .lead,.v-l3 .ring-legend a:hover .lead{
+    box-shadow:inset 0 -1px 0 var(--plain-hair);
+  }
+  .v-l3 footer a:hover{color:var(--accent);border-bottom-color:var(--accent)}
+}
+
+/* narrow ---------------------------------------------------------- */
+@media (max-width:1080px){
+  .v-l3 .strip ul{grid-template-columns:repeat(2,1fr)}
+  .v-l3 .strip li,.v-l3 .strip li.c5,.v-l3 .strip li.c3{grid-column:span 1}
+  .v-l3 .strip li{border-left:1px solid var(--hair);border-top:1px solid var(--hair)}
+  .v-l3 .strip li:nth-child(even){border-left:0;padding-left:var(--edge)}
+  .v-l3 .strip li:nth-child(odd){padding-right:var(--edge)}
+  .v-l3 .strip li:first-child{grid-column:span 2;border-left:0;border-top:0;padding-left:var(--edge);padding-right:var(--edge)}
+  .v-l3 .actors{grid-template-columns:1fr}
+  .v-l3 .actors li{padding:24px 0 4px}
+  .v-l3 .actors li+li{border-left:0;border-top:1px solid var(--hair);padding-left:0}
+  .v-l3 .actors p{max-width:60ch}
+  .v-l3 .actors .lead{max-width:30ch}
+  .v-l3 .box .grid{grid-template-columns:1fr;gap:26px}
+  .v-l3 .box .opener{margin:0 0 4px}
+}
+@media (max-width:760px){
+  .v-l3 .limits{grid-template-columns:1fr}
+  .v-l3 .limits li{padding:20px 0 24px}
+  .v-l3 .limits li:nth-child(even){border-left:0;padding-left:0}
+}
+@media (max-width:640px){
+  .v-l3 .wrap,.v-l3 .wide{width:calc(100% - 32px)}
+  .v-l3 .strip ul{grid-template-columns:1fr}
+  .v-l3 .strip li,.v-l3 .strip li:first-child,.v-l3 .strip li:nth-child(3){
+    grid-column:span 1;border-left:0;padding-left:var(--edge);
+  }
+  .v-l3 .strip li{padding-right:var(--edge)}
+  .v-l3 .stack{padding-bottom:calc(40vh - 30px)}
+  .v-l3 .cta{flex-direction:column;align-items:stretch;width:min(100%,320px);gap:16px}
+  .v-l3 .pill{width:100%;text-align:center;padding:16px 26px}
+  .v-l3 .readme{align-self:center}
+  .v-l3 .nav{gap:16px;padding-top:18px}
+  .v-l3 .beat-card{border-radius:12px;padding:18px}
+}
+@media (prefers-reduced-motion: reduce){
+  .v-l3 .ring-note{transition-duration:.01ms}
+  .v-l3 .pill:hover{transform:none}
+}
+</style>
+</head>
+<body class="v-l3">
+
+<header class="hero" id="hero">
+  <div class="poster-fallback" aria-hidden="true"></div>
+  <canvas class="poster" id="poster" role="img"
+    aria-label="A cobalt sky over a sand plain. Two rings of dots, one for each epoch anchored on Base, spread out around a single small figure standing at the centre: the figure is one row of the memory. Each ring is labelled with its block height."></canvas>
+
+  <nav class="nav" aria-label="Primary">
+    <span class="wm">k<span class="i">&#305;</span>nt</span>
+    <a href="#app">App</a>
+    <a href="#github">GitHub</a>
+    <button class="toggle" id="themeToggle" type="button" aria-label="Toggle theme">
+      <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true" focusable="false">
+        <rect x="0.5" y="0.5" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1"></rect>
+        <path d="M7 0.5 H13.5 V13.5 H7 Z" fill="currentColor"></path>
+      </svg>
+    </button>
+  </nav>
+
+  <div class="stack">
+    <p class="eyebrow mono">Built on Sibyl Memory, under it. Live on Base mainnet.</p>
+    <h1>Sibyl Memory that <em>outlives</em> the laptop.</h1>
+    <p class="lede">Wipe the machine, connect the wallet, and the agent comes back knowing what it
+      knew, and proves it was not tampered with.</p>
+    <div class="cta">
+      <a class="pill" href="#app">Open the app</a>
+      <a class="readme" href="#readme">Read the README</a>
+    </div>
+    <p class="install m">uv tool install kint</p>
+  </div>
+
+  <div class="plain" id="plain">
+    <a class="ring-note" id="note1"
+      href="https://basescan.org/tx/0xbe9bb8596c825a8891c3eafe4381e0c6522d647641735c635ca58fcf4bbe4455">
+      <span class="lead">epoch 1 &middot; block 51,081,867</span>
+      <span class="sub">14 rows</span>
+    </a>
+    <a class="ring-note" id="note2"
+      href="https://basescan.org/tx/0x369907fb1bccc3222365b2e07b4d6d831642831d481a5f7cb99357823e2a9729">
+      <span class="lead">epoch 2 &middot; block 51,081,880</span>
+      <span class="sub">+2 rows, 1 gone</span>
+    </a>
+    <span class="ring-note fig" id="noteFig">rules / release-gate</span>
+
+    <div class="ring-legend" id="legend">
+      <a href="https://basescan.org/tx/0xbe9bb8596c825a8891c3eafe4381e0c6522d647641735c635ca58fcf4bbe4455">
+        <span class="sq faint"></span><span class="lead">epoch 1 &middot; block 51,081,867 &middot; 14 rows</span>
+      </a>
+      <a href="https://basescan.org/tx/0x369907fb1bccc3222365b2e07b4d6d831642831d481a5f7cb99357823e2a9729">
+        <span class="sq"></span><span class="lead">epoch 2 &middot; block 51,081,880 &middot; +2 rows, 1 gone</span>
+      </a>
+      <p class="sub" style="margin:0">the figure is one row: rules / release-gate</p>
+    </div>
+  </div>
+  <div class="hero-img" aria-hidden="true"></div>
+</header>
+
+<div class="strip">
+  <ul>
+    <li class="c5">
+      <span class="k mono">EpochAnchor</span>
+      <a class="v" href="https://basescan.org/address/0xa22E03f7a4145Bf4909a83595C90a38E14d79600">0xa22E03f7a4145Bf4909a83595C90a38E14d79600</a>
+    </li>
+    <li><span class="k mono">head seq</span><span class="v">2</span></li>
+    <li><span class="k mono">block</span><span class="v">51,081,880</span></li>
+    <li class="c3 rend"><span class="k mono">digest</span><span class="v">7df5378a8c4fa866</span></li>
+    <li class="row2"><span class="k mono">rows</span><span class="v">15</span></li>
+    <li><span class="k mono">bucket</span><span class="v">4 KB</span></li>
+    <li><span class="k mono">network</span><span class="v">Base mainnet</span></li>
+    <li class="c3">
+      <span class="k mono">epoch 1</span>
+      <a class="v" href="https://basescan.org/tx/0xbe9bb8596c825a8891c3eafe4381e0c6522d647641735c635ca58fcf4bbe4455">block 51,081,867 <span class="dim">&middot; 14 rows</span></a>
+    </li>
+    <li class="c3 rend">
+      <span class="k mono">epoch 2</span>
+      <a class="v" href="https://basescan.org/tx/0x369907fb1bccc3222365b2e07b4d6d831642831d481a5f7cb99357823e2a9729">block 51,081,880 <span class="dim">&middot; +2 rows, 1 gone</span></a>
+    </li>
+  </ul>
+</div>
+
+<section class="doc" id="actors">
+  <div class="wide">
+    <div class="opener">
+      <span class="mono">The three actors</span>
+    </div>
+    <ol class="actors">
+      <li>
+        <span class="num">01</span>
+        <p class="lead">The wallet owns.</p>
+        <p>One frozen message, signed once per machine, derives the key. Nothing decrypted ever
+          leaves the machine.</p>
+      </li>
+      <li>
+        <span class="num">02</span>
+        <p class="lead">The passphrase or the signature unlocks.</p>
+        <p>A Base Account owner types a passphrase. An EOA owner signs. Either opens the same
+          vault, and a recovery code covers the day both are gone.</p>
+      </li>
+      <li>
+        <span class="num">03</span>
+        <p class="lead">kint does the rest.</p>
+        <p>Every change is packed, padded, encrypted and written to Base as calldata under a
+          small contract. On any machine you connect, kint pulls, verifies every epoch against
+          the chain, and replays the rows through Sibyl’s own write methods.</p>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<section class="doc" id="beat">
+  <div class="wide">
+    <div class="opener">
+      <span class="mono">The beat</span>
+    </div>
+    <div class="beat-card">
+<pre><b>$ kint status</b>
+tenant kint-demo  space bd2a3b5b8f3fb4c8  store ~/.sibyl-memory/memory.db
+owner 0xC635e6Eb223aE14143E23cEEa9440bC773dc87Ec  data key cached
+last anchored on this machine: seq 2 block 51081880 rows 15
+chain head: seq 2 digest 7df5378a8c4fa866 block 51081880 (in step)
+
+<b>$ kint verify "release rule"</b>
+sibyl verdict: ok  hits: 3
+  verified   entity rules/release-gate: stored text matches the leaf anchored on Base
+  verified   reference runbook-release: stored text matches the leaf anchored on Base
+DECISION: PROCEED: verified against rows_root 390336ff71dbcb85 anchored at epoch 2, block 51081880
+
+<b>$ sqlite3 ~/.sibyl-memory/memory.db "update entities set body = replace(body, 'never', 'always') where name = 'release-gate'"</b>
+<b>$ kint verify "release rule"</b>
+  REFUSED    entity rules/release-gate: stored text does not match the leaf anchored at epoch 2, block 51081880
+DECISION: REFUSE: refusal written back as entity kint_refusal/release-gate
+
+<b>$ kint history entity release-gate --category rules</b>
+epoch 1 block &lt;= 51081867 leaf f406bb0919d23360: {"rule":"never ship on a Friday; every release needs a green deadlift test and a second reviewer", ...}
+epoch 2 block &lt;= 51081880 leaf 4ac605528bbb00e7: {"rule":"never ship on a Friday; every release needs a green deadlift test, a second reviewer, AND a passing kint verify", ...}</pre>
+    </div>
+    <p class="caption">A row’s block height is an upper bound: it existed no later than that block.</p>
+  </div>
+</section>
+
+<section class="box" id="sibyl">
+  <div class="wide grid">
+    <div class="opener">
+      <span class="mono">What Sibyl does</span>
+    </div>
+    <div>
+      <h2>Delete the Sibyl Memory layer and what breaks.</h2>
+      <p style="margin-top:22px">The decision beat reaches the row through Sibyl’s
+        <span class="m-in">memory_search</span> (four FTS5 indexes plus the shadow fallback) and
+        keys on the typed verdict from <span class="m-in">verdicts.py</span>. Without Sibyl there
+        is no ranked candidate and no verdict to key on: the epoch is a decrypted blob with no
+        query surface, so a fresh session neither refuses nor proceeds. Base holds the ciphertext;
+        Sibyl is what turns it back into an answerable store.</p>
+      <p class="close">Their eight tools ship unmodified; kint adds six.</p>
+    </div>
+  </div>
+</section>
+
+<section class="doc" id="limits">
+  <div class="wide">
+    <div class="opener">
+      <span class="mono">Honest limits</span>
+    </div>
+    <ul class="limits">
+      <li><p>One wallet owns one memory; many machines may write under it, one at a time. Two
+        machines writing at once is a fork: kint refuses and tells you.</p></li>
+      <li><p>Base holds ciphertext, but the row count and the size bucket are public.</p></li>
+      <li><p>A phished derive signature is a permanent key. The EIP-712 message says so in the
+        one field every wallet renders. kint never accepts that signature as a login and never
+        sends it anywhere.</p></li>
+      <li><p>A cold start stops at the newest snapshot epoch, so restore cost is bounded by the
+        size of the memory, not its history.</p></li>
+    </ul>
+  </div>
+</section>
+
+<footer>
+  <div class="wide">
+    <span class="wm">k<span class="i">&#305;</span>nt</span>
+    <p>MIT &middot; Built for the Sibyl Labs Hackathon, September 2026 &middot; s0nderlabs &middot;
+      <a href="https://basescan.org/address/0xa22E03f7a4145Bf4909a83595C90a38E14d79600">on Base</a></p>
+  </div>
+</footer>
+
+<script>
+/* theme toggle, three states honoured */
+(function(){
+  var root=document.documentElement, btn=document.getElementById('themeToggle');
+  function current(){
+    var t=root.getAttribute('data-theme');
+    if(t==='dark'||t==='light'){return t;}
+    try{return window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}
+    catch(e){return 'light';}
+  }
+  if(!btn){return;}
+  btn.addEventListener('click',function(){
+    var next=current()==='dark'?'light':'dark';
+    root.setAttribute('data-theme',next);
+    try{localStorage.setItem('kint-theme',next);}catch(e){}
+    if(window.kintPoster&&!window.kintPosterAuto){window.kintPoster();}
+  });
+})();
+
+/* the poster: sky, sand, one ring of dots per anchored epoch, one figure for one row.
+   The rings carry their own block heights as HTML labels placed from this geometry. */
+(function(){
+  var cv=document.getElementById('poster');
+  var hero=document.getElementById('hero');
+  var n1=document.getElementById('note1');
+  var n2=document.getElementById('note2');
+  var nf=document.getElementById('noteFig');
+  var lg=document.getElementById('legend');
+  var ctx=(cv&&cv.getContext)?cv.getContext('2d'):null;
+  var off=document.createElement('canvas');
+  var octx=off.getContext?off.getContext('2d'):null;
+  if(!ctx||!octx){
+    document.body.classList.add('no-canvas');
+    if(hero){hero.setAttribute('data-notes','off');}
+    return;
+  }
+
+  var W=0,H=0,DPR=1,reduce=false;
+  try{reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;}catch(e){}
+
+  function tok(n){
+    return getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  }
+  /* mulberry32, seeded with the real chain digest 7df5378a so the grain is the same every load */
+  function prng(seed){
+    return function(){
+      seed=seed+0x6D2B79F5|0;
+      var t=Math.imul(seed^seed>>>15,1|seed);
+      t=t+Math.imul(t^t>>>7,61|t)^t;
+      return ((t^t>>>14)>>>0)/4294967296;
+    };
+  }
+  function clip(v){return v<0?0:(v>255?255:v);}
+
+  /* the two epochs: fraction of the plain, dot count is the row count, weight, alpha */
+  var epochs=[
+    {f:0.40,n:14,r:2.6,a:0.95},
+    {f:0.88,n:15,r:2.6,a:0.95}
+  ];
+  var guides=[0.16,0.28,0.52,0.64,0.76,1.00];
+
+  /* geometry, shared by the canvas and the labels */
+  function geom(){
+    var horizon=H*0.55, band=H-horizon;
+    var annot=W>=1060;
+    var rx=Math.min(W*(annot?0.30:0.42),(band*(annot?0.46:0.34))/0.33);
+    return {cx:annot?W*0.465:W/2, cy:horizon+band*(annot?0.46:0.40), rx:rx, ry:rx*0.33, annot:annot, horizon:horizon};
+  }
+
+  function ground(){
+    off.width=W;off.height=H;
+    var horizon=Math.round(H*0.55);
+    octx.fillStyle=tok('--sky');octx.fillRect(0,0,W,horizon);
+    octx.fillStyle=tok('--sand');octx.fillRect(0,horizon,W,H-horizon);
+    var img=octx.getImageData(0,0,W,H),d=img.data,rnd=prng(0x7df5378a),n;
+    for(var i=0;i<d.length;i+=4){
+      n=(rnd()-0.5)*92;
+      d[i]=clip(d[i]+n);d[i+1]=clip(d[i+1]+n);d[i+2]=clip(d[i+2]+n);
+    }
+    octx.putImageData(img,0,0);
+  }
+
+  function ellipseDots(cx,cy,rx,ry,count,dot,alpha,phase){
+    ctx.globalAlpha=alpha;
+    for(var i=0;i<count;i++){
+      var a=phase+(i/count)*Math.PI*2;
+      var x=cx+Math.cos(a)*rx, y=cy+Math.sin(a)*ry;
+      ctx.beginPath();ctx.arc(x,y,dot,0,Math.PI*2);ctx.fill();
+    }
+    ctx.globalAlpha=1;
+  }
+
+  function draw(p){
+    var g=geom();
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+    ctx.clearRect(0,0,W,H);
+    ctx.drawImage(off,0,0,W,H);
+
+    var front=p*1.18;
+    ctx.fillStyle=tok('--accent');
+    var i,t,gg,e;
+    for(i=0;i<guides.length;i++){
+      gg=guides[i];t=(front-gg)/0.18;if(t<=0){continue;}if(t>1){t=1;}
+      ellipseDots(g.cx,g.cy,g.rx*gg*(0.88+0.12*t),g.ry*gg*(0.88+0.12*t),150,1.35,0.30*t,0.06);
+    }
+    for(i=0;i<epochs.length;i++){
+      e=epochs[i];t=(front-e.f)/0.18;if(t<=0){continue;}if(t>1){t=1;}
+      ellipseDots(g.cx,g.cy,g.rx*e.f*(0.88+0.12*t),g.ry*e.f*(0.88+0.12*t),e.n*12,e.r,e.a*t,i*Math.PI/(e.n*12));
+    }
+
+    /* the row: two rectangles and a circle, standing at the centre of both epochs */
+    var fa=p*3;if(fa>1){fa=1;}
+    ctx.globalAlpha=fa;
+    ctx.fillStyle=tok('--fig');
+    ctx.fillRect(g.cx-4.0,g.cy-9.5,8.0,9.5);
+    ctx.fillRect(g.cx-5.8,g.cy-25.0,11.6,15.5);
+    ctx.beginPath();ctx.arc(g.cx,g.cy-29.5,4.7,0,Math.PI*2);ctx.fill();
+    ctx.globalAlpha=1;
+  }
+
+  /* the labels sit on the same geometry the rings are drawn from */
+  function place(){
+    var g=geom();
+    window.__rings=[
+      {key:'epoch 1',block:51081867,cx:g.cx,cy:g.cy,rx:g.rx*0.40,ry:g.ry*0.40},
+      {key:'epoch 2',block:51081880,cx:g.cx,cy:g.cy,rx:g.rx*0.88,ry:g.ry*0.88}
+    ];
+    var gut=Math.round(g.cx+g.rx+34);
+    var avail=Math.round(W-24-gut);
+    if(!g.annot||avail<170||!n1||!n2||!nf){
+      /* no room for leader lines: the same facts land as a legend under the rings */
+      hero.setAttribute('data-notes','off');
+      if(lg){
+        var lh=lg.offsetHeight||70;
+        var lt=Math.round(g.cy+g.ry*0.88+26);
+        if(lt>H-lh-16){lt=H-lh-16;}
+        lg.style.top=lt+'px';lg.style.bottom='auto';
+      }
+      return;
+    }
+    var notes=[{f:0.40,ang:-26,el:n1},{f:0.88,ang:22,el:n2}];
+    for(var i=0;i<notes.length;i++){
+      var a=notes[i].ang*Math.PI/180;
+      var ax=g.cx+g.rx*notes[i].f*Math.cos(a);
+      var ay=g.cy+g.ry*notes[i].f*Math.sin(a);
+      var el=notes[i].el;
+      el.style.left=gut+'px';
+      el.style.top=Math.round(ay-8)+'px';
+      el.style.width=Math.min(avail,240)+'px';
+      el.style.setProperty('--lead',Math.round(gut-ax)+'px');
+    }
+    nf.style.left=Math.round(g.cx)+'px';
+    nf.style.top=Math.round(g.cy+16)+'px';
+    hero.setAttribute('data-notes','on');
+  }
+
+  function easeOutExpo(t){return t===1?1:1-Math.pow(2,-10*t);}
+
+  function size(){
+    var host=cv.parentNode;
+    W=Math.max(1,host.clientWidth);
+    H=Math.max(1,host.clientHeight);
+    DPR=Math.min(2,window.devicePixelRatio||1);
+    cv.width=Math.round(W*DPR);cv.height=Math.round(H*DPR);
+    ground();
+  }
+
+  var raf=0;
+  function landed(){hero.classList.add('notes-in');}
+  function run(animate){
+    if(raf){cancelAnimationFrame(raf);raf=0;}
+    if(!animate||reduce){draw(1);landed();return;}
+    var start=null;
+    function frame(ts){
+      if(start===null){start=ts;}
+      var t=(ts-start)/1200;if(t>1){t=1;}
+      draw(easeOutExpo(t));
+      if(t<1){raf=requestAnimationFrame(frame);}else{raf=0;landed();}
+    }
+    raf=requestAnimationFrame(frame);
+  }
+
+  function refresh(){size();place();run(false);}
+  window.kintPoster=refresh;
+
+  size();place();run(true);
+
+  /* the ground is painted from tokens, so it is repainted whenever the theme changes */
+  try{
+    if(window.MutationObserver){
+      new MutationObserver(refresh).observe(document.documentElement,
+        {attributes:true,attributeFilter:['data-theme']});
+      window.kintPosterAuto=true;
+    }
+  }catch(e){}
+  try{
+    var mq=window.matchMedia('(prefers-color-scheme: dark)');
+    if(mq.addEventListener){mq.addEventListener('change',refresh);}
+    else if(mq.addListener){mq.addListener(refresh);}
+  }catch(e){}
+
+  var pending=0;
+  window.addEventListener('resize',function(){
+    if(pending){cancelAnimationFrame(pending);}
+    pending=requestAnimationFrame(function(){pending=0;refresh();});
+  });
+})();
+</script>
+<script>
+(function(){
+  var ok={sand:1,leaves:1,'leaves-blue':1,'leaves-turning':1,'leaves-night':1,blueprint:1,stele:1};
+  function pick(){var m=(location.search+location.hash).match(/[?&#]poster=([a-z-]+)/);return m?m[1]:null;}
+  window.kintPosterMode=function(name){
+    var h=document.getElementById('hero');if(!h)return;
+    if(name==='rings'||!ok[name]){h.removeAttribute('data-poster');}else{h.setAttribute('data-poster',name);}
+  };
+  var p=pick();if(p)window.kintPosterMode(p);
+})();
+</script>
+</body>
+</html>
