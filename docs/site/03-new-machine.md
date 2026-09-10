@@ -313,6 +313,22 @@ chain head: seq 2 digest 7df5378a8c4fa866 block 51081880 (in step)  contract 0xa
 
 Those are three of `kint status`'s lines on the demo tenant: the mirror and the head agree. Then `kint verify "release rule"` (or `memory_verify` from the agent) searches through Sibyl's gated search, checks that the chain head is still the one this machine pulled, re-reads each hit's stored text and proves it against the anchored `rows_root`, and `kint doctor` checks every moving part, including whether the second RPC is the same as the first. What the restored agent does with a row it recalls is [Verify before acting](/docs/verify).
 
+## See the demo memory
+
+The demo tenant from the launch film is a purpose-built set of fixtures on Base mainnet, so its vault passphrase is public: `an0Co1E8--gzFk8VNoGTX6lS`. Anyone can open it, two ways, both read-only: a write needs a session key funded and authorized by the owner wallet, and the passphrase is not that.
+
+**In the browser.** Open [the app](/app), press **Fill the demo lane** (owner `0xd3390EDAC3d0EB41248C132792B0DcC5f0b0D4E3`, tenant `kint-demo`) and type the passphrase. The page reads the epochs off Base, checks each ciphertext against the digest in its `Epoch` event, opens them in the tab and shows every row with its anchored versions. Nothing decrypted leaves the page ([kint-core](/docs/kint-core) is the code it runs).
+
+**In a terminal, the cold-start beat from the film.** On any machine:
+
+```sh
+uv tool install git+https://github.com/s0nderlabs/kint@v0.3.0
+kint join --owner 0xd3390EDAC3d0EB41248C132792B0DcC5f0b0D4E3 --base-account --tenant kint-demo --db /tmp/kint-demo.db --no-setup
+kint --tenant kint-demo --db /tmp/kint-demo.db status
+```
+
+`join` prompts `vault passphrase:`, pulls the epochs, checks each against its `Epoch` event, replays the rows through Sibyl's own write methods and reports `store root matches the anchored root`. It writes nothing to the chain and registers no harness; `--db` keeps the restore out of your own Sibyl store. The contract, the owner's epochs and their digests are on [BaseScan](https://basescan.org/address/0xa22E03f7a4145Bf4909a83595C90a38E14d79600).
+
 Read [How it works](/docs/how-it-works) next.
 
 Source: [`src/kint/pull.py`](https://github.com/s0nderlabs/kint/blob/main/src/kint/pull.py), [`src/kint/restore.py`](https://github.com/s0nderlabs/kint/blob/main/src/kint/restore.py), [`src/kint/connect.py`](https://github.com/s0nderlabs/kint/blob/main/src/kint/connect.py), [`src/kint/epoch.py`](https://github.com/s0nderlabs/kint/blob/main/src/kint/epoch.py), [`src/kint/server.py`](https://github.com/s0nderlabs/kint/blob/main/src/kint/server.py), [`src/kint/cli.py`](https://github.com/s0nderlabs/kint/blob/main/src/kint/cli.py), [`src/kint/chain.py`](https://github.com/s0nderlabs/kint/blob/main/src/kint/chain.py).

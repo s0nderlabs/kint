@@ -85,6 +85,26 @@ and `keccak256` of that ciphertext is the digest.
 | epoch 2, the release rule rewritten | [`0x369907fb…`](https://basescan.org/tx/0x369907fb1bccc3222365b2e07b4d6d831642831d481a5f7cb99357823e2a9729), block 51081880 |
 | a Base Account (Coinbase Smart Wallet) authorizing a machine from the browser, then its epoch | owner `0xd3390EDAC3d0EB41248C132792B0DcC5f0b0D4E3`, [`0x9c64e2c2…`](https://basescan.org/tx/0x9c64e2c21b294843888680bd34d6da8242cb5313bc894864552163e167049c12), block 51082012 |
 
+**See the demo memory itself.** The demo tenant is a purpose-built set of fixtures, so its vault
+passphrase is public: `an0Co1E8--gzFk8VNoGTX6lS`. Two ways in, both read-only (a write needs a session key funded and
+authorized by the owner wallet):
+
+- **Browser.** Open [kint.s0nderlabs.xyz/app](https://kint.s0nderlabs.xyz/app), press **Fill the demo lane**
+  (owner `0xd3390EDAC3d0EB41248C132792B0DcC5f0b0D4E3`, tenant `kint-demo`) and type the passphrase. The page
+  reads the epochs off Base, opens them in the tab and shows every row with its anchored versions.
+  Nothing decrypted leaves the page.
+- **Terminal, the cold-start beat from the film.** On any machine:
+
+  ```
+  uv tool install git+https://github.com/s0nderlabs/kint@v0.3.0
+  kint join --owner 0xd3390EDAC3d0EB41248C132792B0DcC5f0b0D4E3 --base-account --tenant kint-demo --db /tmp/kint-demo.db --no-setup
+  kint --tenant kint-demo --db /tmp/kint-demo.db status
+  ```
+
+  `join` prompts `vault passphrase:`, pulls the epochs, checks each against its `Epoch` event, replays the
+  rows through Sibyl's own write methods and reports `store root matches the anchored root`. It writes
+  nothing to the chain and registers no harness; `--db` keeps the restore out of your own Sibyl store.
+
 **Where to look in under two minutes.** [`docs/judge.md`](docs/judge.md) maps every claim to a
 file and line: `src/kint/verify.py` for the decision beat, `src/kint/restore.py` for the replay
 through the SDK, `src/kint/store.py` for the cap volunteering, `src/kint/server.py` for the
