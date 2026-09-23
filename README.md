@@ -304,3 +304,5 @@ The documentation is markdown in `docs/site/` (one file per chapter), rendered b
 `scripts/build_docs.py` into static pages, per-page markdown, `llms.txt` and `llms-full.txt`.
 
 MIT. Built for the Sibyl Labs Hackathon, September 2026.
+
+Hackathon payout wallet (team s0nderlabs, USDC on Base): `0x9df5B30eCad4b42d60D58fC26C9FF105396E58B9`
